@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -61,17 +60,18 @@ fun TopBar(
                     modifier = modifier.weight(1f),
                     horizontalAlignment = Alignment.End
                 ) {
+//                  TODO: improve this part
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("0")
+                        Text("10000")
                         IconButton(
                             onClick = { onDestinationChange() }
                         ) {
-                           Icon(
-                               painter = painterResource(id = R.drawable.capicon),
-                               contentDescription = "Menu",
-                               modifier = Modifier.size(24.dp),
-                               tint = Color.Unspecified
-                           )
+                            Icon(
+                                painter = painterResource(id = R.drawable.capicon),
+                                contentDescription = "Menu",
+                                modifier = Modifier.size(24.dp),
+                                tint = Color.Unspecified
+                            )
                         }
                         IconButton(
                             onClick = { onShoppingCartClick() }

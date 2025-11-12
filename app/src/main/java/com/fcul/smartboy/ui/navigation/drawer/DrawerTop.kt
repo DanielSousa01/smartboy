@@ -13,6 +13,10 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun DrawerTop() {
     Spacer(Modifier.height(12.dp))
-    Text("Drawer Title", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleLarge)
+    Text(
+        "Drawer Title",
+        modifier = Modifier.padding(16.dp),
+        style = MaterialTheme.typography.titleLarge
+    )
     HorizontalDivider()
 }

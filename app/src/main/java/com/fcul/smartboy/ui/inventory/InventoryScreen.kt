@@ -1,21 +1,27 @@
 package com.fcul.smartboy.ui.inventory
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.ui.inventory.model.Category
 import com.fcul.smartboy.ui.inventory.model.Item
 
 @Composable
 fun InventoryScreen(
-    items: List<Item> = sampleCategories()
+    items: List<Item> = sampleItems()
 ) {
 
     val itemsByCategory: Map<Int, List<Item>> = items.groupBy { it.category }
@@ -46,7 +52,10 @@ fun InventoryScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(text = invItem.name, style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "x${invItem.quantity}", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = "x${invItem.quantity}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
             } else {
@@ -66,7 +75,7 @@ fun InventoryScreen(
     }
 }
 
-private fun sampleCategories(): List<Item> {
+private fun sampleItems(): List<Item> {
     return listOf(
         Item(id = 1, name = "Sword", quantity = 1, category = Category.WEAPONS.ordinal),
         Item(id = 2, name = "Bow", quantity = 2, category = Category.WEAPONS.ordinal),
@@ -75,7 +84,6 @@ private fun sampleCategories(): List<Item> {
         Item(id = 5, name = "Shield", quantity = 1, category = Category.WEAPONS.ordinal)
     )
 }
-
 
 
 @Preview(showBackground = true)

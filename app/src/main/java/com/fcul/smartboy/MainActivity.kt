@@ -14,14 +14,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.fcul.smartboy.ui.navigation.BottomTab
 import com.fcul.smartboy.ui.navigation.DrawerNavigation
 import com.fcul.smartboy.ui.navigation.NavGraph
 import com.fcul.smartboy.ui.navigation.Screens
 import com.fcul.smartboy.ui.navigation.TopBar
 import com.fcul.smartboy.ui.theme.SmartBoyTheme
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -49,13 +49,13 @@ fun SmartBoyApp() {
     val currentScreen = Screens.entries.firstOrNull { it.route == currentRoute } ?: Screens.MAP
 
 
-    DrawerNavigation (
+    DrawerNavigation(
         rightDrawerState = rightDrawerState,
         leftDrawerState = leftDrawerState,
 
         leftDrawerContent = {},
         rightDrawerContent = {}
-    ){
+    ) {
         BottomTab(
             currentDestination = currentScreen,
             onDestinationChange = { destination ->

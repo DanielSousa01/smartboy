@@ -6,7 +6,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.runtime.Composable
 
 @Composable
-fun  BottomTab(
+fun BottomTab(
     currentDestination: Screens,
     onDestinationChange: (Screens) -> Unit,
     content: @Composable () -> Unit
