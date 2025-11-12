@@ -37,7 +37,7 @@ fun TopBar(
             titleContentColor = MaterialTheme.colorScheme.primary,
         ),
         title = {
-            Row(modifier.fillMaxWidth()) {
+            Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(
                     modifier = modifier.weight(1f),
                     horizontalAlignment = Alignment.Start
@@ -61,7 +61,8 @@ fun TopBar(
                     modifier = modifier.weight(1f),
                     horizontalAlignment = Alignment.End
                 ) {
-                    Row {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("0")
                         IconButton(
                             onClick = { onDestinationChange() }
                         ) {
