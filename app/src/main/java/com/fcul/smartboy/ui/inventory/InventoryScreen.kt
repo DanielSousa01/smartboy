@@ -46,7 +46,6 @@ fun InventoryScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(text = invItem.name, style = MaterialTheme.typography.bodyLarge)
-                        Button() { }
                         Text(text = "x${invItem.quantity}", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
