@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import com.fcul.smartboy.ui.navigation.BottomTab
 import com.fcul.smartboy.ui.navigation.DrawerNavigation
 import com.fcul.smartboy.ui.navigation.NavGraph
@@ -38,7 +39,8 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartBoyApp() {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val rightDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val leftDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
 
@@ -46,8 +48,13 @@ fun SmartBoyApp() {
     val currentRoute = navBackStackEntry?.destination?.route
     val currentScreen = Screens.entries.firstOrNull { it.route == currentRoute } ?: Screens.MAP
 
+
     DrawerNavigation (
-        drawerState = drawerState
+        rightDrawerState = rightDrawerState,
+        leftDrawerState = leftDrawerState,
+
+        leftDrawerContent = {},
+        rightDrawerContent = {}
     ){
         BottomTab(
             currentDestination = currentScreen,
@@ -58,11 +65,30 @@ fun SmartBoyApp() {
                     restoreState = true
                 }
             },
-        ) {
+        )
+        {
             Column(modifier = Modifier.fillMaxSize()) {
-                TopBar(onMenuClick = { scope.launch { drawerState.open() } })
-                NavGraph(navController = navController, modifier = Modifier.weight(1f))
+                TopBar(
+                    onMenuClick = { scope.launch { leftDrawerState.open() } },
+                    onDestinationChange = {
+                        navController.navigate(Screens.WALLET.route) {
+                            // Avoid building up backstack for repeated taps
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onShoppingCartClick = { scope.launch { rightDrawerState.open() } },
+                )
+                NavGraph(navController = navController)
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun SmartBoyAppPreview() {
+    SmartBoyTheme {
+        SmartBoyApp()
     }
 }

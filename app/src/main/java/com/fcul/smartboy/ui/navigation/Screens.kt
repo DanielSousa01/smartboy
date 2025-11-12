@@ -28,8 +28,6 @@ enum class Screens(
 
 val bottomBarScreens = listOf(
     Screens.CHAT,
-    Screens.INVENTORY,
     Screens.MAP,
-    Screens.CART,
-    Screens.WALLET,
+    Screens.INVENTORY,
 )

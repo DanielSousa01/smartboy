@@ -20,12 +20,10 @@ import com.fcul.smartboy.ui.wallet.WalletScreen
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
         startDestination = Screens.MAP.route,
-        modifier = modifier
     ) {
         composable(route = Screens.MAP.route) {
             HomeScreen()
