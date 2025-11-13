@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.fcul.smartboy.ui.navigation.drawer.DrawerPartial
+import com.fcul.smartboy.ui.navigation.drawer.left.LeftDrawer
 
 @Composable
 fun DrawerNavigation(
@@ -33,7 +33,6 @@ fun DrawerNavigation(
                                 .padding(horizontal = 16.dp)
                                 .verticalScroll(rememberScrollState())
                         ) {
-                            DrawerPartial()
                             rightDrawerContent()
                         }
                     }
@@ -51,7 +50,6 @@ fun DrawerNavigation(
                                     .padding(horizontal = 16.dp)
                                     .verticalScroll(rememberScrollState())
                             ) {
-                                DrawerPartial()
                                 leftDrawerContent()
                             }
                         }
