@@ -16,12 +16,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.fcul.smartboy.ui.inventory.model.Category
-import com.fcul.smartboy.ui.inventory.model.Item
+import com.fcul.smartboy.domain.inventory.Category
+import com.fcul.smartboy.domain.inventory.Item
 
 @Composable
 fun InventoryScreen(
-    items: List<Item> = sampleItems()
+    items: List<Item> = sampleItems(),
 ) {
 
     val itemsByCategory: Map<Int, List<Item>> = items.groupBy { it.category }

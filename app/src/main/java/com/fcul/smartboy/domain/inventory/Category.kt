@@ -1,4 +1,4 @@
-package com.fcul.smartboy.ui.inventory.model
+package com.fcul.smartboy.domain.inventory
 
 enum class Category(val displayName: String) {
     WEAPONS("Weapons"),

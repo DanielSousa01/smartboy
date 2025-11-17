@@ -13,8 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.fcul.smartboy.ui.wallet.model.Transaction
-import com.fcul.smartboy.ui.wallet.model.User
+import com.fcul.smartboy.domain.transaction.Transaction
+import com.fcul.smartboy.domain.user.User
 import java.util.Date
 import kotlin.compareTo
 import kotlin.toString

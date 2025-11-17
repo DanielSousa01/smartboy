@@ -1,4 +1,4 @@
-package com.fcul.smartboy
+package com.fcul.smartboy.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
@@ -6,6 +6,9 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.fcul.smartboy.MainActivity
+import com.fcul.smartboy.R
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
@@ -13,7 +16,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
-class SignInActivity : ComponentActivity() {
+@ExperimentalMaterial3ExpressiveApi
+class AuthActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
 
     private val signIn: ActivityResultLauncher<Intent> =

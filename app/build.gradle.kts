@@ -64,6 +64,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:19.0.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation(libs.play.services.maps)
+    implementation(libs.androidx.material3)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -85,4 +86,10 @@ dependencies {
     // Firebase UI Library
     implementation("com.firebaseui:firebase-ui-auth:8.0.2")
     implementation("com.firebaseui:firebase-ui-database:8.0.2")
+
+    // Material 3 Expressive
+    implementation("androidx.compose.material3:material3:1.5.0-alpha04")
+
+    // Extended Material Icons (separate library)
+    implementation("androidx.compose.material:material-icons-extended:1.7.5")
 }

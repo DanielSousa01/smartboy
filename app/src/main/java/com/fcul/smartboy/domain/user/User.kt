@@ -1,4 +1,4 @@
-package com.fcul.smartboy.ui.wallet.model
+package com.fcul.smartboy.domain.user
 
 data class User(
     val id: Long,

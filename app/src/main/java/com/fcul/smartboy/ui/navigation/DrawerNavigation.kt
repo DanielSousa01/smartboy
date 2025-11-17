@@ -1,5 +1,6 @@
 package com.fcul.smartboy.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -9,11 +10,13 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.ui.navigation.drawer.left.LeftDrawer
+import kotlinx.coroutines.launch
 
 @Composable
 fun DrawerNavigation(
@@ -23,6 +26,20 @@ fun DrawerNavigation(
     rightDrawerContent: @Composable () -> Unit,
     content: @Composable () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+
+    if (leftDrawerState.isOpen) {
+        BackHandler {
+            scope.launch { leftDrawerState.close() }
+        }
+    }
+
+    if (rightDrawerState.isOpen) {
+        BackHandler {
+            scope.launch { rightDrawerState.close() }
+        }
+    }
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ModalNavigationDrawer(
             drawerContent = {
@@ -39,7 +56,7 @@ fun DrawerNavigation(
                 }
             },
             drawerState = rightDrawerState,
-            gesturesEnabled = true
+            gesturesEnabled = false
         ) {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 ModalNavigationDrawer(
@@ -55,7 +72,7 @@ fun DrawerNavigation(
                         }
                     },
                     drawerState = leftDrawerState,
-                    gesturesEnabled = true
+                    gesturesEnabled = false
                 ) {
                     content()
                 }

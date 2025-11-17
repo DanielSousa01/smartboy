@@ -1,33 +1,33 @@
 package com.fcul.smartboy.ui.navigation
 
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
+import com.fcul.smartboy.domain.navigation.Screen
+import com.fcul.smartboy.domain.navigation.bottomBarScreens
 
 @Composable
 fun BottomTab(
-    currentDestination: Screens,
-    onDestinationChange: (Screens) -> Unit,
-    content: @Composable () -> Unit
+    currentDestination: Screen,
+    onDestinationChange: (Screen) -> Unit
 ) {
-    NavigationSuiteScaffold(
-        navigationSuiteItems = {
-            bottomBarScreens.forEach {
-                item(
-                    icon = {
-                        Icon(
-                            it.icon,
-                            contentDescription = it.label
-                        )
-                    },
-                    label = { Text(it.label) },
-                    selected = it == currentDestination,
-                    onClick = { onDestinationChange(it) }
-                )
-            }
-        },
-    ) {
-        content()
+    NavigationBar {
+        bottomBarScreens.forEach { screen ->
+            NavigationBarItem(
+                icon = {
+                    Icon(
+                        screen.icon,
+                        contentDescription = screen.label
+                    )
+                },
+                label = { Text(screen.label) },
+                selected = screen == currentDestination,
+                onClick = { onDestinationChange(screen) }
+            )
+        }
     }
 }
