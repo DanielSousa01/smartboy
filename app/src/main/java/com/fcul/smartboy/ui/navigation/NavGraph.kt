@@ -2,7 +2,10 @@ package com.fcul.smartboy.ui.navigation
 
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,8 +24,6 @@ import com.fcul.smartboy.ui.wallet.WalletScreen
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    mapViewmodel: MapViewmodel,
-    inventoryViewmodel: InventoryViewmodel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -31,18 +32,30 @@ fun NavGraph(
         modifier = modifier
     ) {
         composable(Screen.Map.route) {
+            val viewModel: MapViewmodel = hiltViewModel()
+            val currentLocation by viewModel.currentLocation.collectAsState()
+            val radSpots by viewModel.radSpots.collectAsState()
+            val radiationAlert by viewModel.radiationAlert.collectAsState()
+
             MapScreen(
-                onSetPoint = mapViewmodel::setPoint,
-                onClearPoint = mapViewmodel::clearPoint
+                currentLocation = currentLocation,
+                radiationSpots = radSpots,
+                radiationAlert = radiationAlert,
+                onEnteringRadPoint = viewModel::onEnteringRadiationZone,
+                onDismissAlert = viewModel::dismissRadiationAlert,
+                onSetPoint = viewModel::setPoint,
+                onCreateRadPoint = viewModel::createRadPoint,
+                onLocationUpdate = viewModel::updateCurrentLocation
             )
         }
         composable(Screen.Chat.route) { ChatScreen() }
         composable(Screen.Inventory.route) {
+            val viewModel: InventoryViewmodel = hiltViewModel()
             InventoryScreen(
-                itemsState = inventoryViewmodel.items,
-                onReload = inventoryViewmodel::reloadAmmo,
-                onRemove = inventoryViewmodel::removeItem,
-                onQuantityChange = inventoryViewmodel::changeQuantity,
+                itemsState = viewModel.items,
+                onReload = viewModel::reloadAmmo,
+                onRemove = viewModel::removeItem,
+                onQuantityChange = viewModel::changeQuantity,
             )
         }
         composable(Screen.Cart.route) { CartScreen() }

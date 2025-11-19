@@ -12,7 +12,7 @@ class TransactionRepository(
     private val user: FirebaseUser,
     private val db: FirebaseDatabase,
     private val storage: FirebaseStorage
-) : CRUD<Transaction> {
+) : CRUD<Transaction, Long> {
     override suspend fun create(document: Transaction): Long {
         val id = document.id
         val ref = db.getReference(Path.TRANSACTIONS.path).child(user.uid).child(id.toString())

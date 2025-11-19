@@ -3,7 +3,7 @@ package com.fcul.smartboy.repository
 import com.fcul.smartboy.domain.route.MapRoute
 import com.fcul.smartboy.repository.base.CRUD
 
-class MapRouteRepository : CRUD<MapRoute> {
+class MapRouteRepository : CRUD<MapRoute, Long> {
     override suspend fun create(document: MapRoute): Long {
         // Implementation for creating a MapRoute entry
         TODO("Not yet implemented")

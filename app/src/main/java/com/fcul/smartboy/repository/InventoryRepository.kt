@@ -13,7 +13,7 @@ class InventoryRepository(
     private val user: FirebaseUser,
     private val db: FirebaseDatabase,
     private val storage: FirebaseStorage
-) : CRUD<Item> {
+) : CRUD<Item, Long> {
     override suspend fun create(document: Item): Long {
         val id = document.id
         val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path)
