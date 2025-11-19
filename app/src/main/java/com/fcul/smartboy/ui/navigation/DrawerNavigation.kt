@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.fcul.smartboy.ui.navigation.drawer.left.LeftDrawer
 import kotlinx.coroutines.launch
 
 @Composable
@@ -56,7 +55,7 @@ fun DrawerNavigation(
                 }
             },
             drawerState = rightDrawerState,
-            gesturesEnabled = false
+            gesturesEnabled = rightDrawerState.isOpen
         ) {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 ModalNavigationDrawer(
@@ -72,7 +71,7 @@ fun DrawerNavigation(
                         }
                     },
                     drawerState = leftDrawerState,
-                    gesturesEnabled = false
+                    gesturesEnabled = leftDrawerState.isOpen
                 ) {
                     content()
                 }
