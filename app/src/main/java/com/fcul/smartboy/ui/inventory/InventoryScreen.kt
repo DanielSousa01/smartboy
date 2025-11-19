@@ -87,6 +87,8 @@ fun InventoryScreen(
                         ItemEntry(
                             item = invItem,
                             onReload = onReload,
+                            onQuantityChange = onQuantityChange,
+                            onRemove = onRemove
                         )
                     }
                 } else {
@@ -164,7 +166,9 @@ fun InventoryScreen(
 @Composable
 private fun ItemEntry(
     item: Item,
-    onReload: (Long) -> Unit = {},
+    onReload: (Long) -> Unit,
+    onQuantityChange: (Long, Int) -> Unit,
+    onRemove: (Long) -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -215,6 +219,22 @@ private fun ItemEntry(
                     }
                 }
             }
+
+            if (item is Item.Aid) {
+                Column {
+                    Button(
+                        onClick = {
+                            if (item.quantity - 1 == 0)
+                                onRemove(item.id)
+                            else
+                                onQuantityChange(item.id, item.quantity - 1)
+                        }
+                    ) {
+                        Text("Use")
+                    }
+                }
+            }
+
             Column(horizontalAlignment = Alignment.End) {
                 if (item is Item.Weapon && item.ammoId != null && item.ammoMax != null)
                     Text(
