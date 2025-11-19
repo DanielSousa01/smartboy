@@ -17,27 +17,15 @@ class InventoryViewmodel : ViewModel() {
         _items.update { it + item }
     }
 
-    fun removeItem(item: Item) {
-        _items.update { it - item }
+    fun removeItem(item: Long) {
+        _items.update { list -> list.filter { it.id != item } }
     }
 
-    fun increaseQuantity(itemId: Long, quantity: Int) {
+    fun changeQuantity(itemId: Long, quantity: Int) {
         val item = _items.value.find { it.id == itemId }
         if (item != null) {
-            val newItem = item.copyItem(quantity = item.quantity + quantity)
+            val newItem = item.copyItem(quantity = quantity)
             _items.update { list -> list.map { if (it.id == itemId) newItem else it } }
-        }
-    }
-
-    fun decreaseQuantity(itemId: Long, quantity: Int) {
-        val item = _items.value.find { it.id == itemId }
-        if (item != null) {
-            if (item.quantity <= quantity) {
-                _items.update { list -> list.filter { it.id != itemId } }
-            } else {
-                val newItem = item.copyItem(quantity = item.quantity - quantity)
-                _items.update { list -> list.map { if (it.id == itemId) newItem else it } }
-            }
         }
     }
 
@@ -61,7 +49,8 @@ class InventoryViewmodel : ViewModel() {
                             .map { if (it.id == itemId) newWeapon else it }
                     }
                 } else {
-                    val newAmmo = ammo.copyItem(quantity = ammo.quantity - (weapon.ammoMax - weapon.ammoLoaded))
+                    val newAmmo =
+                        ammo.copyItem(quantity = ammo.quantity - (weapon.ammoMax - weapon.ammoLoaded))
                     val newWeapon = weapon.copyItem(ammoLoaded = weapon.ammoMax)
 
                     _items.update { list ->

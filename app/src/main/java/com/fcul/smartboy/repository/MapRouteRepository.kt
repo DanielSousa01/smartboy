@@ -9,7 +9,7 @@ class MapRouteRepository : CRUD<MapRoute> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun read(id: Long): MapRoute? {
+    override suspend fun read(id: Long): MapRoute {
         // Implementation for reading a MapRoute entry
         TODO("Not yet implemented")
     }

@@ -41,6 +41,8 @@ fun NavGraph(
             InventoryScreen(
                 itemsState = inventoryViewmodel.items,
                 onReload = inventoryViewmodel::reloadAmmo,
+                onRemove = inventoryViewmodel::removeItem,
+                onQuantityChange = inventoryViewmodel::changeQuantity,
             )
         }
         composable(Screen.Cart.route) { CartScreen() }

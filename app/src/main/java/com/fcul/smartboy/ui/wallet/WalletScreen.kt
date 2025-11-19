@@ -21,9 +21,11 @@ import java.util.Date
 fun WalletScreen(
     transactions: List<Transaction> = sampleTransactions()
 ) {
-    Column(Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Text("Transactions")
 
         Column(

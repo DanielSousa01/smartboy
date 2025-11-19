@@ -58,7 +58,7 @@ sealed class Item {
             ammoName: String? = this.ammoName,
             ammoMax: Int? = this.ammoMax,
             ammoLoaded: Int? = this.ammoLoaded
-        ) : Item {
+        ): Item {
             return this.copy(
                 id = id,
                 name = name,
