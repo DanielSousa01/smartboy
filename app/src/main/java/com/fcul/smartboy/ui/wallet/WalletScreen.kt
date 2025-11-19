@@ -16,14 +16,14 @@ import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.domain.transaction.Transaction
 import com.fcul.smartboy.domain.user.User
 import java.util.Date
-import kotlin.compareTo
-import kotlin.toString
 
 @Composable
 fun WalletScreen(
     transactions: List<Transaction> = sampleTransactions()
 ) {
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
         Text("Transactions")
 
         Column(

@@ -16,7 +16,8 @@ class InventoryRepository(
 ) : CRUD<Item> {
     override suspend fun create(document: Item): Long {
         val id = document.id
-        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path).child(id.toString())
+        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path)
+            .child(id.toString())
         // val uploadTask = storage.reference.child("${Path.INVENTORY.path}/${user.uid}/${document.id}").putFile(document.imageUri)
         // uploadTask.awaitTask()
 
@@ -25,13 +26,15 @@ class InventoryRepository(
     }
 
     override suspend fun read(id: Long): Item? {
-        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path).child(id.toString())
+        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path)
+            .child(id.toString())
         val snapshot: DataSnapshot = ref.get().awaitTask()
         return snapshot.getValue(Item::class.java)
     }
 
     override suspend fun update(id: Long, data: Any): Boolean {
-        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path).child(id.toString())
+        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path)
+            .child(id.toString())
 
         when (data) {
             is Map<*, *> -> {
@@ -39,16 +42,19 @@ class InventoryRepository(
                 val map = data.entries.associate { it.key.toString() to it.value }
                 ref.updateChildren(map).awaitTask()
             }
+
             is Item -> {
                 ref.setValue(data).awaitTask()
             }
+
             else -> throw IllegalArgumentException("Unsupported data type for update: ${data::class}")
         }
         return true
     }
 
     override suspend fun delete(id: Long): Boolean {
-        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path).child(id.toString())
+        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path)
+            .child(id.toString())
 
         ref.removeValue().awaitTask()
         return true

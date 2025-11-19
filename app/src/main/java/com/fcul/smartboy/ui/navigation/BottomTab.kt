@@ -1,11 +1,9 @@
 package com.fcul.smartboy.ui.navigation
 
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import com.fcul.smartboy.domain.navigation.Screen
 import com.fcul.smartboy.domain.navigation.bottomBarScreens

@@ -33,6 +33,7 @@ sealed class Screen(
             Wallet,
             Settings
         )
+
         fun fromRoute(route: String?): Screen? =
             allScreens.firstOrNull { it.route == route }
     }

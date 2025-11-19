@@ -38,9 +38,11 @@ class RadiationRepository(
                 val map = data.entries.associate { it.key.toString() to it.value }
                 ref.updateChildren(map).awaitTask()
             }
+
             is RadiationData -> {
                 ref.setValue(data).awaitTask()
             }
+
             else -> throw IllegalArgumentException("Unsupported data type for update: ${data::class}")
         }
         return true

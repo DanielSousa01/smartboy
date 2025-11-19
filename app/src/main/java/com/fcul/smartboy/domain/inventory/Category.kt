@@ -2,9 +2,10 @@ package com.fcul.smartboy.domain.inventory
 
 enum class Category(val displayName: String) {
     WEAPONS("Weapons"),
+    AMMO("Ammo"),
     APPAREL("Apparel"),
     AID("Aid"),
-    MICK("Mick"),
+    MISC("Misc"),
     JUNK("Junk")
 }
 
