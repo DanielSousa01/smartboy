@@ -17,17 +17,22 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun InventoryScreen(
-    items: List<Item> = sampleItems(),
+    itemsState: StateFlow<List<Item>>,
+    onReload: (Long) -> Unit = {}
 ) {
+    val items by itemsState.collectAsState()
 
     val itemsByCategory: Map<Category, List<Item>> = items.groupBy { it.category }
 
@@ -50,7 +55,10 @@ fun InventoryScreen(
 
             if (categoryItems.isNotEmpty()) {
                 items(categoryItems) { invItem ->
-                    ItemEntry(invItem)
+                    ItemEntry(
+                        item = invItem,
+                        onReload = onReload
+                    )
                 }
             } else {
                 item {
@@ -70,7 +78,10 @@ fun InventoryScreen(
 }
 
 @Composable
-private fun ItemEntry(item: Item) {
+private fun ItemEntry(
+    item: Item,
+    onReload: (Long) -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -108,7 +119,9 @@ private fun ItemEntry(item: Item) {
                 }
                 Column {
                     Button(
-                        onClick = { item.ammoLoaded = item.ammoLoaded?.plus(item.ammoMax ?: 0) }
+                        onClick = {
+                            onReload(item.id)
+                        }
                     ) {
                         Text(
                             text = "Reload",
@@ -134,34 +147,5 @@ private fun ItemEntry(item: Item) {
 
         }
     }
-}
-
-
-private fun sampleItems(): List<Item> {
-    return listOf(
-        Item.Weapon(id = 1, name = "Sword", quantity = 1, category = Category.WEAPONS),
-        Item.Weapon(
-            id = 2,
-            name = "Bow",
-            quantity = 2,
-            category = Category.WEAPONS,
-            ammoId = 6,
-            ammoName = "Arrow",
-            ammoMax = 1,
-            ammoLoaded = 0
-        ),
-        Item.Aid(id = 3, name = "Bandage", quantity = 5, category = Category.AID),
-        Item.Aid(id = 4, name = "Health Potion", quantity = 3, category = Category.AID),
-        Item.Weapon(id = 5, name = "Shield", quantity = 1, category = Category.WEAPONS),
-        Item.Ammo(id = 6, name = "Arrow", quantity = 10, category = Category.AMMO),
-
-        )
-}
-
-
-@Preview(showBackground = true)
-@Composable
-private fun InventoryScreenPreview() {
-    InventoryScreen()
 }
 

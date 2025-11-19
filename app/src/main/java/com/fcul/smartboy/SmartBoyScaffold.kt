@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.fcul.smartboy.domain.navigation.Screen
+import com.fcul.smartboy.ui.inventory.InventoryViewmodel
+import com.fcul.smartboy.ui.map.MapViewmodel
 import com.fcul.smartboy.ui.navigation.BottomTab
 import com.fcul.smartboy.ui.navigation.DrawerNavigation
 import com.fcul.smartboy.ui.navigation.NavGraph
@@ -25,6 +27,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SmartBoyScaffold(
     navController: NavHostController,
+    mapViewmodel: MapViewmodel,
+    inventoryViewmodel: InventoryViewmodel,
     user: FirebaseUser?
 ) {
     val rightDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -89,6 +93,8 @@ fun SmartBoyScaffold(
         ) { padding ->
             NavGraph(
                 navController = navController,
+                mapViewmodel = mapViewmodel,
+                inventoryViewmodel = inventoryViewmodel,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
