@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -26,12 +27,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
 @Composable
 fun LeftDrawer(
-    userName: String = "Guest",
+    userName: String,
     userPicture: String? = null,
     onProfileClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -50,11 +52,10 @@ fun LeftDrawer(
             DrawerTop(
                 userName = userName,
                 userPicture = userPicture,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
             )
 
             DrawerBody(
-                modifier = Modifier.weight(1f)
             )
 
             DrawerFooter(
@@ -114,11 +115,31 @@ fun DrawerTop(
 fun DrawerBody(
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
+    Surface(
+        modifier = modifier.fillMaxWidth()
     ) {
-        Text("asd")
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Absolute.Left,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(32.dp))
+                    .padding(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Paid,
+                    contentDescription = "Transaction Icon",
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                Text("")
+            }
+        }
     }
 }
 

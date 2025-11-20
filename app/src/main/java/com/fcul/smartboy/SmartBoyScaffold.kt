@@ -25,7 +25,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SmartBoyScaffold(
     navController: NavHostController,
-    user: FirebaseUser?
+    user: FirebaseUser?,
+    onSignOut: () -> Unit
 ) {
     val rightDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val leftDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -38,8 +39,6 @@ fun SmartBoyScaffold(
     // Determine if bars should be shown based on route
     val showBars = currentRoute != Screen.Settings.route
 
-    Log.d("SmartBoyScaffold", "Current route: $currentRoute, showBars: $showBars")
-
     DrawerNavigation(
         rightDrawerState = rightDrawerState,
         leftDrawerState = leftDrawerState,
@@ -47,15 +46,21 @@ fun SmartBoyScaffold(
             LeftDrawer(
                 userName = user?.displayName ?: user?.email ?: "Guest",
                 userPicture = user?.photoUrl?.toString(),
-                onProfileClick = { /* handle profile */ },
+                onProfileClick = {
+                    scope.launch { leftDrawerState.close() }
+                    navController.navigate(Screen.Profile.route) {
+                        launchSingleTop = true
+                    }
+                },
                 onSettingsClick = {
                     scope.launch { leftDrawerState.close() }
-                    Log.d("Navigation", "Navigating to Settings")
                     navController.navigate(Screen.Settings.route) {
                         launchSingleTop = true
                     }
                 },
-                onLogoutClick = { /* handle logout */ }
+                onLogoutClick = {
+                    scope.launch { onSignOut() }
+                }
             )
         },
         rightDrawerContent = {}

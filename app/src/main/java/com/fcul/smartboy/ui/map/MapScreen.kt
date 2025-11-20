@@ -1,17 +1,15 @@
 package com.fcul.smartboy.ui.map
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Looper
 import android.util.Log
-import android.view.SurfaceView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -36,8 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import com.fcul.smartboy.domain.route.RadiationData
 import com.fcul.smartboy.ui.map.components.AddRadPointDialog
 import com.google.android.gms.location.LocationCallback
@@ -46,12 +42,16 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CircleOptions
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.maps.android.compose.Circle
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -67,92 +67,56 @@ fun MapScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    var googleMap by remember { mutableStateOf<GoogleMap?>(null) }
-    var isMenuOpen by remember { mutableStateOf(false) }
-    var currentCameraPosition by remember { mutableStateOf(currentLocation) }
     var showAddRadDialog by remember { mutableStateOf(false) }
     var selectedRadLocation by remember { mutableStateOf<LatLng?>(null) }
+    var isMenuOpen by remember { mutableStateOf(false) }
 
-    val mapView = remember {
-        MapView(context).apply {
-            post {
-                val surface = getChildAt(0) as? SurfaceView
-                surface?.setZOrderOnTop(false)
-                surface?.setZOrderMediaOverlay(false)
-            }
-        }
+    var activeAlert by remember { mutableStateOf<RadiationData?>(null) }
+
+    // Camera state for Compose GoogleMap
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(currentLocation ?: LatLng(0.0, 0.0), 15f)
     }
 
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-    val locationCallback = remember {
-        object : LocationCallback() {
+
+    DisposableEffect(Unit) {
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            3000L // 3 seconds
+        ).apply {
+            setMinUpdateIntervalMillis(1500L)
+            setWaitForAccurateLocation(false)
+        }.build()
+
+        val locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let { location ->
-                    val newLoc = LatLng(location.latitude, location.longitude)
-                    onLocationUpdate(newLoc)
+                result.lastLocation?.let { loc ->
+                    val newLoc = LatLng(loc.latitude, loc.longitude)
+                    onLocationUpdate(newLoc) // called even if the user hasn't moved
                 }
             }
         }
-    }
 
-    DisposableEffect(Unit) {
-        mapView.onCreate(null)
-        mapView.onResume()
-        onDispose {
-            mapView.onPause()
-            mapView.onDestroy()
-        }
-    }
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
 
-    // Start location updates when map is ready
-    @SuppressLint("MissingPermission")
-    LaunchedEffect(googleMap) {
-        if (googleMap == null) return@LaunchedEffect
-
-        // Check if we have location permission
-        val hasPermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (hasPermission) {
-            val locationRequest = LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                3000L // 3 seconds interval
-            ).apply {
-                setMinUpdateIntervalMillis(1500L)
-                setWaitForAccurateLocation(false)
-            }.build()
-
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                context.mainLooper
-            )
-        } else {
-            Log.e("MapScreen", "❌ Location permission NOT granted")
-        }
-    }
-
-    // Stop location updates when composable is disposed
-    DisposableEffect(Unit) {
         onDispose {
             fusedLocationClient.removeLocationUpdates(locationCallback)
         }
     }
 
+    // Animate camera to user location whenever it updates
     LaunchedEffect(currentLocation) {
-        val gMap = googleMap
-        if (currentLocation != null && gMap != null) {
-            gMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15f))
+        currentLocation?.let {
+            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 15f))
+            onLocationUpdate(it)
         }
     }
 
-    // Check if user enters a radiation zone
+    // Check if user enters any radiation zone
     LaunchedEffect(currentLocation, radiationSpots) {
         val userLoc = currentLocation ?: return@LaunchedEffect
-
         radiationSpots.forEach { radSpot ->
             val results = FloatArray(1)
             Location.distanceBetween(
@@ -162,128 +126,69 @@ fun MapScreen(
                 radSpot.location.longitude,
                 results
             )
-            val distanceInMeters = results[0]
-
-            if (distanceInMeters <= radSpot.radius) {
-                Log.d(
-                    "MapScreen",
-                    "⚠️ User entered radiation zone! Distance: ${distanceInMeters}m, Radius: ${radSpot.radius}m"
-                )
+            if (results[0] <= radSpot.radius) {
                 onEnteringRadPoint(radSpot)
             }
         }
     }
 
-    // Render radiation spots on the map
-    LaunchedEffect(radiationSpots, googleMap) {
-        val gMap = googleMap ?: run {
-            return@LaunchedEffect
-        }
-
-        if (radiationSpots.isEmpty()) {
-            return@LaunchedEffect
-        }
-
-        gMap.clear()
-
-        // Add markers and circles for each radiation spot
-        radiationSpots.forEachIndexed { index, radData ->
-            try {
-                val circleCenter = radData.location
-                val circleRadius = radData.radius
-
-                gMap.addCircle(
-                    CircleOptions()
-                        .center(circleCenter)
-                        .radius(circleRadius)
-                        .strokeColor(
-                            android.graphics.Color.argb(
-                                204,
-                                255,
-                                107,
-                                0
-                            )
-                        ) // 0.8 alpha orange
-                        .fillColor(
-                            android.graphics.Color.argb(
-                                51,
-                                255,
-                                107,
-                                0
-                            )
-                        )    // 0.2 alpha orange
-                        .strokeWidth(3f)
-                        .visible(true)
-                        .clickable(true)
-                )
-
-                gMap.addMarker(
-                    MarkerOptions()
-                        .position(radData.location)
-                        .title("⚠️ Radiation Zone")
-                        .snippet("Level: ${radData.radiationLevelInSv} Sv\nRadius: ${radData.radius}m")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
-                )
-            } catch (e: Exception) {
-                Log.e("MapScreen", "❌ Error rendering radiation spot at ${radData.location}", e)
-            }
-        }
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
-        AndroidView(
-            factory = { mapView },
+        GoogleMap(
             modifier = Modifier.fillMaxSize(),
-            update = { mv ->
-                mv.getMapAsync { gMap ->
-                    googleMap = gMap
-
-                    try {
-                        @SuppressLint("MissingPermission")
-                        gMap.isMyLocationEnabled = true
-
-                        currentLocation?.let {
-                            gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 15f))
-                        }
-                    } catch (e: SecurityException) {
-                        Log.e("MapScreen", "❌ Location permission not granted", e)
-                    }
-
-                    gMap.setOnCameraMoveListener {
-                        currentCameraPosition = gMap.cameraPosition.target
-                    }
-
-                    gMap.setOnMapClickListener { latLng ->
-                        gMap.addMarker(MarkerOptions().position(latLng).title("Selected Point"))
-                        onSetPoint(latLng)
-                    }
-                }
+            cameraPositionState = cameraPositionState,
+            uiSettings = MapUiSettings(
+                zoomControlsEnabled = false,
+                myLocationButtonEnabled = true
+            ),
+            properties = MapProperties(isMyLocationEnabled = true),
+            onMapClick = { latLng ->
+                selectedRadLocation = latLng
+                onSetPoint(latLng)
             }
-        )
+        ) {
+            // Stable circles and markers
+            val markers = remember(radiationSpots) {
+                radiationSpots.map { rad -> rad to MarkerState(rad.location) }
+            }
 
-        // Debug overlay showing radiation spots count
+            markers.forEach { (rad, state) ->
+                Circle(
+                    center = rad.location,
+                    radius = rad.radius.toDouble(),
+                    strokeColor = Color(0xCCFF6B00),
+                    fillColor = Color(0x33FF6B00),
+                    strokeWidth = 3f
+                )
+                Marker(
+                    state = state,
+                    title = "⚠️ Radiation Zone",
+                    snippet = "Level: ${rad.radiationLevelInSv} Sv\nRadius: ${rad.radius} m",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+                )
+            }
+
+            // Marker for selected RAD
+            selectedRadLocation?.let {
+                Marker(state = MarkerState(it), title = "RAD Point")
+            }
+        }
+
+        // Debug overlay
         Surface(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(16.dp),
             color = Color.Black.copy(alpha = 0.7f),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(8.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(8.dp)
-            ) {
+            Column(modifier = Modifier.padding(8.dp)) {
                 Text(
                     text = "📍 Radiation Spots: ${radiationSpots.size}",
                     color = Color.White
                 )
                 currentLocation?.let {
                     Text(
-                        text = "📌 Location: ${
-                            String.format(
-                                "%.4f",
-                                it.latitude
-                            )
-                        }, ${String.format("%.4f", it.longitude)}",
+                        text = "📌 Location: ${"%.4f".format(it.latitude)}, ${"%.4f".format(it.longitude)}",
                         color = Color.White,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -299,9 +204,7 @@ fun MapScreen(
             FloatingActionButtonMenu(
                 expanded = isMenuOpen,
                 button = {
-                    FloatingActionButton(
-                        onClick = { isMenuOpen = !isMenuOpen }
-                    ) {
+                    FloatingActionButton(onClick = { isMenuOpen = !isMenuOpen }) {
                         Icon(Icons.Default.Add, contentDescription = "Menu")
                     }
                 }
@@ -310,35 +213,34 @@ fun MapScreen(
                     icon = { Icon(Icons.Default.Add, contentDescription = "Add RAD") },
                     text = { Text("Create RAD") },
                     onClick = {
-                        val targetPos = currentCameraPosition
-                        if (targetPos != null) {
-                            selectedRadLocation = targetPos
-                            showAddRadDialog = true
-                            googleMap?.addMarker(
-                                MarkerOptions().position(targetPos).title("RAD Point")
-                            )
-                        }
-                        isMenuOpen = false
+                        val targetPos = cameraPositionState.position.target
+                        selectedRadLocation = targetPos
+                        showAddRadDialog = true
                     }
                 )
             }
         }
     }
 
-    // Show Toast when radiation alert is triggered
-    /*
-    LaunchedEffect(radiationAlert) {
-        radiationAlert?.let { radData ->
-            Toast.makeText(
-                context,
-                "⚠️ WARNING: Entered radiation zone! Level: ${radData.radiationLevelInSv} Sv",
-                Toast.LENGTH_LONG
-            ).show()
-        }
+    activeAlert?.let { alert ->
+        AlertDialog(
+            onDismissRequest = { activeAlert = null },
+            title = { Text("⚠️ Radiation Alert") },
+            text = {
+                Text(
+                    "You entered a radiation zone!\n" +
+                            "Level: ${alert.radiationLevelInSv} Sv\n" +
+                            "Radius: ${alert.radius} m"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { activeAlert = null }) {
+                    Text("OK")
+                }
+            }
+        )
     }
-    */
 
-    // Show dialog when user wants to add a RAD point
     if (showAddRadDialog && selectedRadLocation != null) {
         AddRadPointDialog(
             location = selectedRadLocation!!,
@@ -354,7 +256,6 @@ fun MapScreen(
         )
     }
 
-    // Show radiation warning dialog
     if (radiationAlert != null) {
         AlertDialog(
             onDismissRequest = onDismissAlert,

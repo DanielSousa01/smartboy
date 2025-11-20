@@ -9,13 +9,13 @@ import kotlinx.coroutines.flow.asStateFlow
 
 
 class MainViewmodel(
-    auth: FirebaseAuth
+    private val auth: FirebaseAuth
 ) : ViewModel() {
-    private var _user: MutableStateFlow<FirebaseUser?> = MutableStateFlow(null)
+    private val _user = MutableStateFlow(auth.currentUser)
     val user: StateFlow<FirebaseUser?> = _user.asStateFlow()
 
-    init {
-        val authUser = auth.currentUser ?: throw IllegalStateException("User must be logged in")
-        _user.value = authUser
+    fun signOut() {
+        auth.signOut()
+        _user.value = null
     }
 }

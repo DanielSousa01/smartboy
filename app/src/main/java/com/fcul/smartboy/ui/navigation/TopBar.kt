@@ -1,9 +1,15 @@
 package com.fcul.smartboy.ui.navigation
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -17,6 +23,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -36,9 +43,12 @@ fun TopBar(
             titleContentColor = MaterialTheme.colorScheme.primary,
         ),
         title = {
-            Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Column(
-                    modifier = modifier.weight(1f),
                     horizontalAlignment = Alignment.Start
                 ) {
                     IconButton(
@@ -50,25 +60,20 @@ fun TopBar(
                         )
                     }
                 }
-                Column(
-                    modifier = modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("SmartBoy")
-                }
-                Column(
-                    modifier = modifier.weight(1f),
-                    horizontalAlignment = Alignment.End
-                ) {
-//                  TODO: improve this part
+                Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("10000")
-                        IconButton(
-                            onClick = { onDestinationChange() }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onDestinationChange() }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
+                            Text("1000")
+                            Spacer(Modifier.width(8.dp))
                             Icon(
                                 painter = painterResource(id = R.drawable.capicon),
-                                contentDescription = "Menu",
+                                contentDescription = null,
                                 modifier = Modifier.size(24.dp),
                                 tint = Color.Unspecified
                             )
@@ -81,6 +86,7 @@ fun TopBar(
                                 contentDescription = "Menu"
                             )
                         }
+                        Spacer(modifier = Modifier.size(8.dp))
                     }
                 }
             }

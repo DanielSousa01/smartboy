@@ -15,6 +15,7 @@ fun SmartBoyApp(vm: MainViewmodel) {
 
     SmartBoyScaffold(
         navController = navController,
-        user = user
+        user = user,
+        onSignOut = vm::signOut
     )
 }
