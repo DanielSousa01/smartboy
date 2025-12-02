@@ -1,10 +1,8 @@
 package com.fcul.smartboy.repository
 
-import com.fcul.smartboy.domain.route.RadiationData
 import com.fcul.smartboy.domain.user.Profile
 import com.fcul.smartboy.repository.base.CRUD
 import com.fcul.smartboy.repository.base.Path
-import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 

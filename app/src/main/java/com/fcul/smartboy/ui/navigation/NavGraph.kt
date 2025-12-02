@@ -1,6 +1,5 @@
 package com.fcul.smartboy.ui.navigation
 
-import android.util.Log
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState

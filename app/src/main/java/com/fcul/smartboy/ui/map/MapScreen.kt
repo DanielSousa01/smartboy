@@ -2,7 +2,6 @@ package com.fcul.smartboy.ui.map
 
 import android.location.Location
 import android.os.Looper
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -99,7 +98,11 @@ fun MapScreen(
             }
         }
 
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper()
+        )
 
         onDispose {
             fusedLocationClient.removeLocationUpdates(locationCallback)
