@@ -147,9 +147,6 @@
             \item \textbf{Usability:} There is a fundamental trade off between configuration complexity (which can enhance precision and expand measurable parameters) and patient comfort or feasibility. Multi sensor systems may be impractical for autonomous home use or routine clinic workflows.
         \end{itemize}
     \end{itemize}
-% maybe add to conclusion
-    The path forward is clear: the field must resolve the methodological inconsistencies highlighted by \cite{Brognara2019GaitPD}, leverage the analytical sensitivity demonstrated by \cite{Sotirakis2023MotorProgressionPD}, and harness the accessibility of consumer devices validated by \cite{Schifino2025SmartwatchTremorPD}. Only by integrating these three pillars standardization, advanced analytics, and accessibility can wearable technologies genuinely transform clinical practice.
-
 
 \section{Alzheimer's Disease and Dementia Monitoring}
 
@@ -170,61 +167,61 @@
     One promising approach to overcome these challenges was the development and use of an online test called the \textit{TAS Test} \cite{hand-gesture-tas} project, which allowed individuals to assess their congnitive function from the comfort of their homes. This test provided a convenient and accessible means for patients to monitor their cognitive abilities without the need for frequent clinical visits. However, the analysis of these videos often required both manual and automated methods, which could be time-consuming and resource-intensive, and presented challenges in ensuring accuracy and consistency.
 
     \begin{figure}[H]
-      \centering
-      \begin{subfigure}[b]{0.23\textwidth}
-          \centering
-          \includegraphics[width=\textwidth]{images/tas/gesture_1.png}
-          \caption{Gesture 1 of the TAS Test interface.}
-          \label{fig:tas-gesture1}
-      \end{subfigure}
-      \hfill
-      \begin{subfigure}[b]{0.23\textwidth}
-          \centering
-          \includegraphics[width=\textwidth]{images/tas/gesture_2.png}
-          \caption{Gesture 2 of the TAS Test interface.}
-          \label{fig:tas-gesture2}
-      \end{subfigure}
-      \caption{Examples of hand gestures in the TAS Test interface where users perform hand gestures to assess cognitive function \cite{hand-gesture-tas}.}
-      \label{fig:tas-test}
+        \centering
+        \begin{subfigure}[b]{0.23\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/tas/gesture_1.png}
+            \caption{Gesture 1 of the TAS Test interface.}
+            \label{fig:tas-gesture1}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[b]{0.23\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/tas/gesture_2.png}
+            \caption{Gesture 2 of the TAS Test interface.}
+            \label{fig:tas-gesture2}
+        \end{subfigure}
+        \caption{Examples of hand gestures in the TAS Test interface where users perform hand gestures to assess cognitive function \cite{hand-gesture-tas}.}
+        \label{fig:tas-test}
     \end{figure}
 
     This is apparent when dealing with motion blur, as participants were required to rapidly move their hands during the test, leading to blurred video frames, on standard cameras with low frame rate, that complicated the analysis process. Another issue that arose was the indistinguishability of similar gesture patterns, which could lead to misinterpretation of results. Additionally, variations in lighting conditions during video recording further complicated the analysis, as inconsistent lighting could affect the visibility of hand movements and gestures. This mix of factors highlighted the need for more robust and reliable methods for analyzing cognitive function through remote assessments. 
     
     \begin{figure}[H]
-      \centering
-      \begin{subfigure}[b]{0.23\textwidth}
-          \centering
-          \includegraphics[width=\textwidth]{images/tas/clear.png}
-          \caption{Clear gesture with blur calculation.}
-          \label{fig:tas-clear}
-      \end{subfigure}
-      \hfill
-      \begin{subfigure}[b]{0.23\textwidth}
-          \centering
-          \includegraphics[width=\textwidth]{images/tas/blur.png}
-          \caption{Gesture 2 of the TAS Test interface.}
-          \label{fig:tas-blur}
-      \end{subfigure}
-      \caption{Examples of clear and blurred gestures and their \textit{fuzzy} score. Higher values are clearer, while lower are blurrier \cite{hand-gesture-tas}.}
-      \label{fig:tas-blurriness}
+        \centering
+        \begin{subfigure}[b]{0.23\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/tas/clear.png}
+            \caption{Clear gesture with blur calculation.}
+            \label{fig:tas-clear}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[b]{0.23\textwidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/tas/blur.png}
+            \caption{Gesture 2 of the TAS Test interface.}
+            \label{fig:tas-blur}
+        \end{subfigure}
+        \caption{Examples of clear and blurred gestures and their \textit{fuzzy} score. Higher values are clearer, while lower are blurrier \cite{hand-gesture-tas}.}
+        \label{fig:tas-blurriness}
     \end{figure}
     
     Even with their in-house developed AI model (RGRNet), and with an accuracy boost of 10\% over other models, there were still limitations in the system's ability to accurately interpret the test results under varying conditions.
 
     \begin{figure}[H]
-      \centering
-      \includegraphics[width=0.45\textwidth]{images/tas/hand_movement_tasks.png}
-      \caption{Snapshots from tested sequential hand movement tasks \cite{hand-gesture-tas}.}
-      \label{fig:hand-movement-tasks}
+        \centering
+        \includegraphics[width=0.45\textwidth]{images/tas/hand_movement_tasks.png}
+        \caption{Snapshots from tested sequential hand movement tasks \cite{hand-motor-function}.}
+        \label{fig:hand-movement-tasks}
     \end{figure}
 
-    Other papers have explored the use of digital biomarkers for monitoring Alzheimer's disease and dementia. By collecting data from wearable devices, researchers have been able to track changes in cognitive function and daily activities. Machine learning algorithms have been employed to analyze these datasets, enabling the identification of patterns that may indicate cognitive decline.
+    Other papers have explored the use of digital biomarkers for monitoring Alzheimer's disease and dementia, like \cite{hand-motor-function}. By creating a set of hand movement tasks, they were able to collect data on motor function that could be analyzed to identify patterns associated with cognitive decline. The use of machine learning algorithms allowed for the identification of subtle changes in motor function that may not be easily detectable through traditional clinical assessments.
 
     Based on the reviewed literature, it is evident that digital biomarkers derived from wearable hold significant promise for monitoring Alzheimer's disease and dementia. The integration of these technologies into clinical practice can facilitate early detection, continuous monitoring, and personalized treatment strategies. By leveraging machine learning algorithms to analyze complex datasets, clinicians can gain deeper insights into disease progression and patient behavior.
 
     Similar to Parkinson's disease, the use of wearable sensors to monitor motor symptoms, such as gait disturbances and tremors, can provide valuable information for managing Alzheimer's disease. Additionally, they can track cognitive function by monitoring certain daily activities and sleep patterns, which are often affected in dementia patients.
 
-    As seen in 'Sensing Fine-Grained Hand Activity with Smartwatches' \cite{sensing-fine-grained-2019}, fine-grained movement data captured by smartwatches can be utilized to assess hand activity patterns, which may correlate with cognitive decline in Alzheimer's disease. The application of machine learning techniques to analyze this data can enhance the accuracy of digital biomarkers, enabling clinicians to identify subtle changes in motor and cognitive functions.
+    As seen in \cite{sensing-fine-grained-2019}, fine-grained movement data captured by smartwatches can be utilized to assess hand activity patterns, which may correlate with cognitive decline in Alzheimer's disease. The application of machine learning techniques to analyze this data can enhance the accuracy of digital biomarkers, enabling clinicians to identify subtle changes in motor and cognitive functions.
 
     More so, the continuous monitoring capabilities of wearable sensors can help identify early signs of cognitive impairment, allowing for timely interventions that may slow disease progression. This is particularly crucial in Alzheimer's disease, where early diagnosis and treatment can significantly improve patient outcomes.
 
@@ -234,8 +231,37 @@
 
 \subsection{Limitations}
 
+    Unfortunately, despite the promising potential of wearable sensors and digital biomarkers for monitoring Alzheimer's disease and dementia, several limitations must be acknowledged.
+
+    \begin{itemize}
+        \item \textbf{Data Quality and Variability:} The quality of data collected from wearable devices can be influenced by various factors, including device placement, user compliance, and environmental conditions. Variability in data quality may affect the reliability of digital biomarkers and their interpretation.
+
+        \item \textbf{Algorithm Generalizability:} Machine learning algorithms developed for specific populations or datasets may not generalize well to diverse patient groups. This limitation highlights the need for extensive validation across different demographics and clinical settings.
+
+        \item \textbf{Privacy and Ethical Concerns:} The collection and analysis of personal health data raise significant privacy and ethical issues. Ensuring data security and obtaining informed consent are critical considerations when implementing wearable technologies in clinical practice.
+
+        \item \textbf{Integration into Clinical Workflows:} The successful adoption of wearable sensors and digital biomarkers requires seamless integration into existing clinical workflows. This includes addressing challenges related to data management, clinician training, and patient engagement.
+
+        \item \textbf{Longitudinal Studies:} Many studies on digital biomarkers for Alzheimer's disease and dementia are cross-sectional in nature. Longitudinal studies are needed to assess the long-term utility of these biomarkers in tracking disease progression and treatment response.
+    \end{itemize}
+
+\section{Usage of LLMs}
+
+    In the process of writing this paper, Large Language Models (LLMs) were utilized to assist with various aspects of content refinement. Specifically, LLMs were employed to ensuring clarity and coherence in the presentation of complex ideas. Additionally, they were used to suggest improvements in sentence structure and vocabulary, enhancing the overall readability of the manuscript.
+
+    It is important to note that while LLMs provided valuable support in the writing process, all generated content was carefully reviewed and edited by the authors to ensure accuracy and alignment with the intended message. The use of LLMs was limited to refining text; all factual information, data interpretation, and conclusions were derived from the authors' expertise and analysis of relevant literature.
+
 \section{Conclusion}
-Summarize your findings.
+    The path forward is clear: the field must resolve the methodological inconsistencies highlighted by \cite{Brognara2019GaitPD}, leverage the analytical sensitivity demonstrated by \cite{Sotirakis2023MotorProgressionPD}, and harness the accessibility of consumer devices validated by \cite{Schifino2025SmartwatchTremorPD}. Only by integrating these three pillars standardization, advanced analytics, and accessibility can wearable technologies genuinely transform clinical practice.
+
+    Similar to pattern recognition via machine learning algorithms enhancing the ability to analyze complex datasets in Parkinson's disease monitoring, the application of these techniques in Alzheimer's disease and dementia monitoring holds significant promise. By leveraging wearable sensors to capture fine-grained movement data, clinicians can gain deeper insights into cognitive decline and daily activity patterns. The integration of advanced machine learning algorithms can facilitate the identification of digital biomarkers that inform clinical decision-making, enabling early detection and personalized treatment strategies. This holistic approach has the potential to revolutionize patient care, leading to improved outcomes and quality of life for individuals affected by these neurodegenerative conditions.
+
+\section{Contributions}
+    While all authors contributed to the research and writing of this paper, the primary contributions can be summarized as follows:
+    \begin{itemize}
+        \item \textbf{Daniel Sousa:} Led the analysis on papers focused on Parkinson's disease monitoring, including literature review and synthesis of key studies.
+        \item \textbf{Daniel Carvalho:} Focused on analysis of papers about Alzheimer's disease and dementia monitoring, contributing to the analysis of wearable sensor.
+    \end{itemize}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{sample-base}
