@@ -44,6 +44,57 @@
 
 \section{Parkinson's Disease Monitoring}
 
+    Parkinson's disease (PD) is a progressive neurodegenerative disorder characterized by motor symptoms such as tremors, rigidity, bradykinesia, and postural instability due to the loss of dopaminergic neurons. Monitoring these symptoms is crucial for effective disease management and treatment optimization. Traditional clinical assessments often rely on subjective evaluations, which can lead to variability in diagnosis and treatment decisions. In recent years, digital biomarkers derived from wearable have emerged as a promising solution for continuous and objective monitoring of PD symptoms.
+
+    The main used clinical tools to evaluate Parkinson's disease motor symptoms are the Unified Parkinson's Disease Rating Scale (MDS-UPDRS) and the Hoehn and Yahr scale. These assessments are usually done during clinical visits but this can be inaccurate due to their subjective nature and infrequent monitoring.  This relies on the clinician’s experience and intuition rather than reflecting the patient’s daily functioning, leading to potential mismanagement of the disease.
+
+    Given the limitations of conventional clinical scales, there is a clear need for monitoring tools that are objective, quantitative, and capable of continuous operation. Wearable sensors offer a promising solution since they are non invasive, low cost, and portable devices. These characteristics enable motor assessments to be performed not only in clinical settings but also remotely in patients' homes, capturing authentically, real world data that better reflect daily functioning. By providing high resolution, longitudinal measurements, wearables can increase sensitivity to subtle symptom changes, support more personalized treatment decisions, and reduce patient burden by minimizing clinic visits.
+
+\subsection{Methods / Sensor Modalities}
+
+    The use of wearable sensors for monitoring Parkinson's disease covers a range of diverse set of sensors, were each sensor have its own operational principles, advantages, and limitations. Comprehending these modalities is essential for selecting the most appropriate tools for specific monitoring needs, beeing this walking, equilibrium, tremor detection, or other motor symptoms.
+
+    \textbf{Inertial Measurement Units (IMUs):} IMUs are among the most commonly used sensors for PD monitoring. Typically, an IMU integrates a triaxial accelerometer, a triaxial gyroscope, and, in some cases, a triaxial magnetometer. These components are often based on microelectromechanical systems (MEMS), resulting in devices that are low cost, compact, and user friendly. IMUs can be worn on various body parts, such as the wrists, ankles, or trunk, to capture movement patterns associated with PD symptoms like tremors, bradykinesia, and gait abnormalities. The adoption of MEMS-based IMUs has revolutionized functional movement analysis, making precise motion tracking widely accessible in both clinical and research settings.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.7\columnwidth]{imu_example.png}
+        \caption{Internal components of a typical IMU sensor, showing the microcontroller, memory, integrated IMU chip, power switch, and micro-USB port for data transmission and charging.}
+        \label{fig:imu-hardware}
+    \end{figure}
+
+    The main functions of each sensor in an IMU are as follows:
+    \begin{itemize}
+        \item \textbf{Accelerometer:} Measures linear acceleration along three axes (X, Y, Z). Besides that, can also mesure dinamic acceleration (movement) and static acceleration (gravity). It can detect changes in velocity and orientation, making it useful for identifying tremors and bradykinesia.
+        \item \textbf{Gyroscope:} Measures angular velocity around three axes (know as roll, pitch, and yaw). It is particularly effective for capturing rotational movements, which are important for assessing balance and postural stability.
+        \item \textbf{Magnetometer:} Measures magnetic fields, which can be used to determine orientation relative to the Earth's magnetic field. This is useful for correcting drift in gyroscope data and improving overall motion tracking accuracy.
+    \end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\columnwidth]{most_used_sensor_placement.png}
+        \caption{Common sensor placement locations for IMU-based Parkinson's disease monitoring, showing the percentage of articles using each body location. The lower back is the most frequently used location (56\%), followed by both ankles (42\%), both feet (30\%), chest (25\%), and both wrists (25\%).}
+        \label{fig:sensor-placement}
+    \end{figure}
+
+    As illustrated in Figure~\ref{fig:sensor-placement}, sensor placement varies according to target symptoms and clinical objectives. The lower back emerges as the most prevalent location (56\% of studies) due to its effectiveness in capturing comprehensive gait parameters and overall body movement dynamics. This placement provides a centralized perspective on locomotion patterns and postural control. Ankle and foot placements (42\% and 30\% respectively) are particularly valuable for assessing stride patterns, detecting freezing of gait episodes, and quantifying step variability critical indicators of disease progression. Chest-mounted sensors (25\%) offer insights into postural stability and trunk movements, which are essential for evaluating balance disorders. Wrist worn devices (25\%) excel at detecting upper limb tremor and bradykinesia, benefiting from their proximity to the distal extremities where motor symptoms are often most pronounced. The choice of placement location significantly influences both the quality and type of data collected, making it essential to align sensor positioning strategically with specific clinical monitoring goals and the particular motor symptoms of interest.
+
+    \textbf{Smartwatches:} Smartwatches represent a particularly accessible and convenient sensor modality that has gained significant traction in health monitoring. Compared to specialized medical equipment, these devices are low cost, widely available consumer products equipped with triaxial accelerometers and gyroscopes. Their familiarity and intuitive interfaces make them practical options for widespread adoption among patients and caregivers. These devices have the potential to expand access to objective motor assessments, both in clinical settings and for remote home monitoring. They are particularly promising for evaluating upper limb tremor and fine motor control. Raw data extraction is facilitated through specific applications, enabling in depth analysis of movement signals. By continuously collecting data on motor symptoms throughout the day, smartwatches provide valuable insights into symptom fluctuations, medication response patterns, and overall treatment efficacy.
+
+\subsection{Key Studies}
+
+    The application of wearable sensors in Parkinson's disease monitoring has been extensively validated through multiple research studies. A critical analysis of representative works illustrates the evolution of the field and the potential of this technology, exploring a narrative progression: from the identification of fundamental methodological challenges, through the development of advanced analytical solutions, to the validation of accessible tools for widespread clinical implementation. This progression demonstrates how the field has matured from proof-of-concept studies to clinically viable monitoring systems that can be deployed in real world situations.
+
+    \begin{enumerate}
+        \item \textbf{Gait Evaluation with Inertial Sensors (Brognara et al. 2019) \cite{Brognara2019GaitPD}:} 
+        \begin{itemize}
+            \item \textbf{Study Objectives:} This systematic review synthesized empirical evidence from the peer reviewed literature published between 2008 and 2018 regarding the use of wearable inertial sensors for the quantitative assessment of spatiotemporal gait parameters in Parkinson's disease patients. The review examined studies conducted in controlled clinical environments to evaluate the reliability, validity, and clinical utility of inertial measurement units for capturing disease specific gait abnormalities.
+        \end{itemize}
+    \end{enumerate}
+    
+\subsection{Critique and Limitations}
+
+
 \section{Alzheimer's Disease and Dementia Monitoring}
 
     Dementia, particularly Alzheimer's disease, is regarded as one of the most challenging neurodegenerative disorders to monitor and manage, being the leading cause of death in neurodegenerative diseases \cite{dementia}. To address this, clinicians often assess functional abilities through various tests and observations. However, these assessments can be subjective and may not capture the full spectrum of cognitive decline experienced by patients. 
