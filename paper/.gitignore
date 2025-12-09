@@ -1,0 +1,76 @@
+# =========================
+# LaTeX - Ficheiros auxiliares
+# =========================
+*.aux
+*.bbl
+*.blg
+*.brf
+*.fls
+*.fdb_latexmk
+*.log
+*.out
+*.toc
+*.lot
+*.lof
+*.idx
+*.ind
+*.ilg
+*.synctex.gz
+*.synctex.gz(busy)
+*.nav
+*.snm
+*.vrb
+*.run.xml
+
+# =========================
+# Bibliografia (biber / bibtex)
+# =========================
+*.bcf
+*.blg
+*.bbl
+
+# =========================
+# Latexmk
+# =========================
+latexmk
+
+# =========================
+# PDFs gerados (opcional)
+# Descomenta se NÃO quiseres versionar PDFs
+# =========================
+# *.pdf
+
+# =========================
+# Editores
+# =========================
+# VS Code
+.vscode/
+*.code-workspace
+
+# TeXstudio / TeXworks
+*.txss
+*.texbak
+*.backup
+
+# =========================
+# Sistemas Operativos
+# =========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =========================
+# Outros
+# =========================
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.autosave
