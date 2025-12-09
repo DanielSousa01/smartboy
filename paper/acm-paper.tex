@@ -1,6 +1,8 @@
 \documentclass[sigconf]{acmart}
 
-\title{Digital Biomarkers for Parkinson’s Disease and Dementia: Motor and Cognitive Monitoring with Wearable and Ambient Sensors}
+\usepackage{subcaption}
+
+\title{Digital Biomarkers for Parkinson’s Disease and Dementia: Motor and Cognitive Monitoring with Wearable Sensors}
 \author{Daniel Carvalho, Daniel Sousa}
 \affiliation{
   \institution{Faculdade de Ciências, Universidade de Lisboa}
@@ -32,33 +34,98 @@
 
 \section{Related Work}
 
-    Digital biomarkers have emerged as a promising avenue for monitoring and managing neurodegenerative diseases. These biomarkers, derived from data collected through wearable and ambient sensors, offer a non-invasive means to track disease progression and assess treatment efficacy.
+    Digital biomarkers have emerged as a promising avenue for monitoring and managing neurodegenerative diseases. These biomarkers, derived from data collected through wearable sensors, offer a non-invasive means to track disease progression and assess treatment efficacy.
 
-    The continuous monitoring of motor and cognitive functions is particularly relevant for conditions such as Parkinson's disease and dementia, where early detection and intervention can significantly impact patient outcomes. Wearable sensors, such as accelerometers and gyroscopes, have been utilized to capture motor symptoms, including tremors, bradykinesia, and gait abnormalities. Ambient sensors, on the other hand, provide insights into cognitive function by monitoring daily activities and behavioral patterns.
+    The continuous monitoring of motor and cognitive functions is particularly relevant for conditions such as Parkinson's disease and dementia, where early detection and intervention can significantly impact patient outcomes. Wearable sensors, such as accelerometers and gyroscopes, have been utilized to capture motor symptoms, including tremors, bradykinesia, and gait abnormalities. They also provide insights on individual activities based on hand pattern recognition. Cognitive functions can be assessed through various digital tasks and assessments administered via mobile applications or wearable devices.
 
     Several studies have demonstrated the utility of digital biomarkers in clinical settings. For instance, research has shown that data from wearable sensors can accurately predict functional abilities in individuals with Alzheimer's disease, particularly in early-onset AD cases. Similarly, digital biomarkers have been employed to monitor the progression of Parkinson's disease, enabling clinicians to tailor treatment plans based on real-time data. Pattern recognition via machine learning algorithms has further enhanced the ability to analyze complex datasets, facilitating the identification of subtle changes in motor and cognitive functions, which may not be easily detectable through traditional clinical assessments, as the lack of continuous monitoring can lead to missed opportunities for early intervention.
 
-    Due to the analysis nature of this paper, we build upon the existing body of work by exploring advanced machine learning techniques to improve the accuracy and reliability of digital biomarkers for Parkinson's disease and dementia. Our approach integrates data from both wearable and ambient sensors, providing a comprehensive view of patient health and enabling more effective monitoring and management of these neurodegenerative conditions.
+    Due to the analysis nature of this paper, we build upon the existing body of work by exploring advanced machine learning techniques to improve the accuracy and reliability of digital biomarkers for Parkinson's disease and dementia. Our approach integrates data from wearable sensors, providing a comprehensive view of patient health and enabling more effective monitoring and management of these neurodegenerative conditions.
 
 \section{Parkinson's Disease Monitoring}
 
 \section{Alzheimer's Disease and Dementia Monitoring}
 
-    Dementia, particularly Alzheimer's disease, is regarded as one of the most challenging neurodegenerative disorders to monitor and manage. To address this, clinicians often assess functional abilities through various tests and observations. However, these assessments can be subjective and may not capture the full spectrum of cognitive decline experienced by patients. Traditionally, these evaluations require patients to to travel to clinical settings, which can be burdensome and may not reflect their everyday functioning. Disruptive global events, such as the COVID-19 pandemic, have further highlighted the limitations of in-person assessments, underscoring the need for remote monitoring solutions.
+    Dementia, particularly Alzheimer's disease, is regarded as one of the most challenging neurodegenerative disorders to monitor and manage, being the leading cause of death in neurodegenerative diseases \cite{dementia}. To address this, clinicians often assess functional abilities through various tests and observations. However, these assessments can be subjective and may not capture the full spectrum of cognitive decline experienced by patients. 
+    
+    As dementia often starts with subtle cognitive changes, such as memory lapses and difficulty concentrating, early detection is crucial for effective management. Patterns of behaviour, daily routines, and social interactions that an individual engages in can provide valuable insights into their cognitive health, be it through the presence or absence of certain activities.
+    
+    Traditionally, these evaluations require patients to to travel to clinical settings, which can be burdensome and may not reflect their everyday functioning, as they could, at the time of the checkup, not display any obvious or alarming symptom. Disruptive global events, such as the COVID-19 pandemic, have further highlighted the limitations of in-person assessments, underscoring the need for remote monitoring solutions.
 
-    One promising approach to overcome these challenges was the use of an online test called the "TAS Test" project, which allowed individuals to assess their congnitive function from the comfort of their homes. This test provided a convenient and accessible means for patients to monitor their cognitive abilities without the need for frequent clinical visits. However, the analysis of these videos often required both manual and automated methods, which could be time-consuming and resource-intensive, and presented challenges in ensuring accuracy and consistency.
+\subsection{Methods}
 
-    This is apparent when dealing with motion blur, as participants were required to rapidly move their hands during the test, leading to blurred video frames, on standard cameras with low frame rate, that complicated the analysis process. Another issue that arose was the distinguishability of similar gesture patterns, which could lead to misinterpretation of results. Additionally, variations in lighting conditions during video recording further complicated the analysis, as inconsistent lighting could affect the visibility of hand movements and gestures. This mix of factors highlighted the need for more robust and reliable methods for analyzing cognitive function through remote assessments. Even with their in-house developed AI model (RGRNet), and with an accuracy boost of 10\% over other models, there were still limitations in the system's ability to accurately interpret the test results under varying conditions.
+    As a result, there has been a growing interest in leveraging digital solutions to monitor or test cognitive function remotely. Some solutions opted for online cognitive tests that patients can complete from home, while others have explored the use of wearable sensors to collect data on daily activities and cognitive function.
 
-    Other papers have explored the use of digital biomarkers for monitoring Alzheimer's disease and dementia. By collecting data from wearable devices and ambient sensors, researchers have been able to track changes in cognitive function and daily activities. Machine learning algorithms have been employed to analyze these datasets, enabling the identification of patterns that may indicate cognitive decline.
+    By combining affordability and accessability of wearable devices with ease of usage, researchers have been able to gather comprehensive datasets that provide insights into cognitive decline. Machine learning algorithms have been employed to analyze these datasets, enabling the identification of digital biomarkers that can inform clinical decision-making.
 
-    Based on the reviewed literature, it is evident that digital biomarkers derived from wearable and ambient sensors hold significant promise for monitoring Alzheimer's disease and dementia. The integration of these technologies into clinical practice can facilitate early detection, continuous monitoring, and personalized treatment strategies. By leveraging machine learning algorithms to analyze complex datasets, clinicians can gain deeper insights into disease progression and patient behavior.
+\subsection{Key Studies}
 
-    Similar to Parkinson's disease, the use of wearable sensors to monitor motor symptoms, such as gait disturbances and tremors, can provide valuable information for managing Alzheimer's disease. Additionally, ambient sensors can track cognitive function by monitoring daily activities, social interactions, and sleep patterns, which are often affected in dementia patients.
+    One promising approach to overcome these challenges was the development and use of an online test called the \textit{TAS Test} \cite{hand-gesture-tas} project, which allowed individuals to assess their congnitive function from the comfort of their homes. This test provided a convenient and accessible means for patients to monitor their cognitive abilities without the need for frequent clinical visits. However, the analysis of these videos often required both manual and automated methods, which could be time-consuming and resource-intensive, and presented challenges in ensuring accuracy and consistency.
 
-    As seen in paper \cite{sensing-fine-grained-2019}, fine-grained movement data captured by smartwatches can be utilized to assess hand activity patterns, which may correlate with cognitive decline in Alzheimer's disease. The application of machine learning techniques to analyze this data can enhance the accuracy of digital biomarkers, enabling clinicians to identify subtle changes in motor and cognitive functions.
+    \begin{figure}[H]
+      \centering
+      \begin{subfigure}[b]{0.23\textwidth}
+          \centering
+          \includegraphics[width=\textwidth]{tas/gesture_1.png}
+          \caption{Gesture 1 of the TAS Test interface.}
+          \label{fig:tas-gesture1}
+      \end{subfigure}
+      \hfill
+      \begin{subfigure}[b]{0.23\textwidth}
+          \centering
+          \includegraphics[width=\textwidth]{tas/gesture_2.png}
+          \caption{Gesture 2 of the TAS Test interface.}
+          \label{fig:tas-gesture2}
+      \end{subfigure}
+      \caption{Examples of hand gestures in the TAS Test interface where users perform hand gestures to assess cognitive function \cite{hand-gesture-tas}.}
+      \label{fig:tas-test}
+    \end{figure}
 
-    More so, the continuous monitoring capabilities of wearable and ambient sensors can help identify early signs of cognitive impairment, allowing for timely interventions that may slow disease progression. This is particularly crucial in Alzheimer's disease, where early diagnosis and treatment can significantly improve patient outcomes.
+    This is apparent when dealing with motion blur, as participants were required to rapidly move their hands during the test, leading to blurred video frames, on standard cameras with low frame rate, that complicated the analysis process. Another issue that arose was the indistinguishability of similar gesture patterns, which could lead to misinterpretation of results. Additionally, variations in lighting conditions during video recording further complicated the analysis, as inconsistent lighting could affect the visibility of hand movements and gestures. This mix of factors highlighted the need for more robust and reliable methods for analyzing cognitive function through remote assessments. 
+    
+    \begin{figure}[H]
+      \centering
+      \begin{subfigure}[b]{0.23\textwidth}
+          \centering
+          \includegraphics[width=\textwidth]{tas/clear.png}
+          \caption{Clear gesture with blur calculation.}
+          \label{fig:tas-clear}
+      \end{subfigure}
+      \hfill
+      \begin{subfigure}[b]{0.23\textwidth}
+          \centering
+          \includegraphics[width=\textwidth]{tas/blur.png}
+          \caption{Gesture 2 of the TAS Test interface.}
+          \label{fig:tas-blur}
+      \end{subfigure}
+      \caption{Examples of clear and blurred gestures and their \textit{fuzzy} score. Higher values are clearer, while lower are blurrier \cite{hand-gesture-tas}.}
+      \label{fig:tas-blurriness}
+    \end{figure}
+    
+    Even with their in-house developed AI model (RGRNet), and with an accuracy boost of 10\% over other models, there were still limitations in the system's ability to accurately interpret the test results under varying conditions.
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.45\textwidth]{tas/hand_movement_tasks.png}
+      \caption{Snapshots from tested sequential hand movement tasks \cite{hand-gesture-tas}.}
+      \label{fig:hand-movement-tasks}
+    \end{figure}
+
+    Other papers have explored the use of digital biomarkers for monitoring Alzheimer's disease and dementia. By collecting data from wearable devices, researchers have been able to track changes in cognitive function and daily activities. Machine learning algorithms have been employed to analyze these datasets, enabling the identification of patterns that may indicate cognitive decline.
+
+    Based on the reviewed literature, it is evident that digital biomarkers derived from wearable hold significant promise for monitoring Alzheimer's disease and dementia. The integration of these technologies into clinical practice can facilitate early detection, continuous monitoring, and personalized treatment strategies. By leveraging machine learning algorithms to analyze complex datasets, clinicians can gain deeper insights into disease progression and patient behavior.
+
+    Similar to Parkinson's disease, the use of wearable sensors to monitor motor symptoms, such as gait disturbances and tremors, can provide valuable information for managing Alzheimer's disease. Additionally, they can track cognitive function by monitoring certain daily activities and sleep patterns, which are often affected in dementia patients.
+
+    As seen in 'Sensing Fine-Grained Hand Activity with Smartwatches' \cite{sensing-fine-grained-2019}, fine-grained movement data captured by smartwatches can be utilized to assess hand activity patterns, which may correlate with cognitive decline in Alzheimer's disease. The application of machine learning techniques to analyze this data can enhance the accuracy of digital biomarkers, enabling clinicians to identify subtle changes in motor and cognitive functions.
+
+    More so, the continuous monitoring capabilities of wearable sensors can help identify early signs of cognitive impairment, allowing for timely interventions that may slow disease progression. This is particularly crucial in Alzheimer's disease, where early diagnosis and treatment can significantly improve patient outcomes.
+
+    Not only do these technologies offer a non-invasive means of monitoring, but they also provide a more comprehensive view of patient health by capturing data in real-world settings. This holistic approach can lead to more personalized care plans that address the unique needs of each patient.
+
+    With the use of advanced machine learning techniques, it is possible to analyze complex datasets collected from wearable sensors, facilitating the identification of digital biomarkers that can inform clinical decision-making. This integration of technology into the management of Alzheimer's disease and dementia has the potential to revolutionize patient care, leading to improved outcomes and quality of life.
+
+\subsection{Limitations}
 
 \section{Conclusion}
 Summarize your findings.
