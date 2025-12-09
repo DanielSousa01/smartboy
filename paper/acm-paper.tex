@@ -122,6 +122,35 @@
     
 \subsection{Critique and Limitations}
 
+    Despite the promise of wearable sensor technology, its widespread adoption for Parkinson's disease monitoring still faces substantial barriers. A critical evaluation of these limitations is essential to guide future research and ensure that proposed solutions are robust, reliable, and clinically meaningful.
+
+    \begin{itemize}
+        \item \textbf{Lack of Standardization:} Methodological heterogeneity remains one of the greatest obstacles to comparability and reproducibility across studies \cite{Brognara2019GaitPD}. Variability appears at multiple levels:
+        \begin{itemize}
+            \item \textbf{Sensor Configuration:} There is no consensus on the optimal number of sensors or their anatomical placement. Studies range from single lumbar units to multi-sensor arrays spanning limbs, trunk, and head.
+
+            \item \textbf{Parameters and Protocols:} A wide array of spatiotemporal gait parameters and test protocols (e.g., walking distance, inclusion of turns) complicates direct comparison of results.
+        \end{itemize}
+        
+        \item \textbf{Data Analysis Challenges:}
+        \begin{itemize}
+            \item \textbf{High Dimensionality:} Wearables generate large, high frequency datasets; extracting clinically relevant information demands advanced feature reduction and analysis techniques, often via machine learning.
+            
+            \item \textbf{Metric Validation:} Many novel digital metrics lack systematic validation against gold standards (e.g., optical motion capture). Heterogeneous sensor configurations further complicate cross study ML model comparisons because different feature sets emerge from different setups.
+        \end{itemize}
+        
+        \item \textbf{Clinical and Practical Limitations:}
+        \begin{itemize}
+            \item \textbf{Generalizability of Results:} Many studies, including \cite{Schifino2025SmartwatchTremorPD}, focus on mild, on medication groups, leaving uncertainty about performance in more advanced or off medication states where symptoms are more variable.
+            
+            \item \textbf{Device Variability:} Sensor characteristics (e.g., sensitivity, noise) differ across brands and models of consumer devices, threatening reproducibility when equipment changes.
+            
+            \item \textbf{Usability:} There is a fundamental trade off between configuration complexity (which can enhance precision and expand measurable parameters) and patient comfort or feasibility. Multi sensor systems may be impractical for autonomous home use or routine clinic workflows.
+        \end{itemize}
+    \end{itemize}
+% maybe add to conclusion
+    The path forward is clear: the field must resolve the methodological inconsistencies highlighted by \cite{Brognara2019GaitPD}, leverage the analytical sensitivity demonstrated by \cite{Sotirakis2023MotorProgressionPD}, and harness the accessibility of consumer devices validated by \cite{Schifino2025SmartwatchTremorPD}. Only by integrating these three pillars standardization, advanced analytics, and accessibility can wearable technologies genuinely transform clinical practice.
+
 
 \section{Alzheimer's Disease and Dementia Monitoring}
 
