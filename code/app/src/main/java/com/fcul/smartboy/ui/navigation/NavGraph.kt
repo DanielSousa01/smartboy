@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,10 +19,12 @@ import com.fcul.smartboy.ui.map.MapViewmodel
 import com.fcul.smartboy.ui.profile.ProfileScreen
 import com.fcul.smartboy.ui.settings.SettingsScreen
 import com.fcul.smartboy.ui.wallet.WalletScreen
+import com.google.firebase.auth.FirebaseUser
 
 @ExperimentalMaterial3ExpressiveApi
 @Composable
 fun NavGraph(
+    user: FirebaseUser?,
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
@@ -53,6 +55,7 @@ fun NavGraph(
             val viewModel: InventoryViewmodel = hiltViewModel()
             InventoryScreen(
                 itemsState = viewModel.items,
+                isLoadingState = viewModel.isLoading,
                 onReload = viewModel::reloadAmmo,
                 onRemove = viewModel::removeItem,
                 onQuantityChange = viewModel::changeQuantity,

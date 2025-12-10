@@ -1,62 +1,80 @@
 package com.fcul.smartboy.repository
 
+import android.util.Log
 import com.fcul.smartboy.domain.inventory.Item
+import com.fcul.smartboy.domain.inventory.ItemEntity
 import com.fcul.smartboy.repository.base.CRUD
 import com.fcul.smartboy.repository.base.CRUD.Companion.awaitTask
 import com.fcul.smartboy.repository.base.Path
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.firestore.FirebaseFirestore
+import javax.inject.Inject
 
-class InventoryRepository(
-    private val user: FirebaseUser,
-    private val db: FirebaseDatabase,
-    private val storage: FirebaseStorage
+class InventoryRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
 ) : CRUD<Item, Long> {
-    override suspend fun create(document: Item): Long {
-        val id = document.id
-        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path)
-            .child(id.toString())
-        // val uploadTask = storage.reference.child("${Path.INVENTORY.path}/${user.uid}/${document.id}").putFile(document.imageUri)
-        // uploadTask.awaitTask()
+    private val user: FirebaseUser?
+        get() = auth.currentUser
 
-        ref.setValue(document).awaitTask()
+    private val col get() = firestore.collection(Path.USERS.path)
+
+    override suspend fun create(document: Item): Long {
+        val user = user ?: return -1
+        val id = document.id
+
+        val docRef = col.document(user.uid)
+            .collection(Path.INVENTORY.path)
+            .document(id.toString())
+
+
+        val entity = document.toEntity()
+
+        docRef.set(entity).awaitTask()
+
+        Log.d("InventoryRepository", "Item adicionado com ID: $id")
         return id
     }
 
+    suspend fun getInventory(): List<Item> {
+        val user = user ?: return emptyList()
+
+        val inventorySnapshot = col.document(user.uid)
+            .collection(Path.INVENTORY.path).get().awaitTask()
+
+        return inventorySnapshot.documents.mapNotNull { doc ->
+            doc.toObject(ItemEntity::class.java)?.toItem()
+        }
+    }
+
     override suspend fun read(id: Long): Item? {
-        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path)
-            .child(id.toString())
-        val snapshot: DataSnapshot = ref.get().awaitTask()
-        return snapshot.getValue(Item::class.java)
+        TODO("Not yet implemented")
     }
 
     override suspend fun update(id: Long, data: Any): Boolean {
-        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path)
-            .child(id.toString())
+        val user = user ?: return false
+        val item = data as Item
 
-        when (data) {
-            is Map<*, *> -> {
-                @Suppress("UNCHECKED_CAST")
-                val map = data.entries.associate { it.key.toString() to it.value }
-                ref.updateChildren(map).awaitTask()
-            }
+        val docRef = col.document(user.uid)
+            .collection(Path.INVENTORY.path)
+            .document(id.toString())
 
-            is Item -> {
-                ref.setValue(data).awaitTask()
-            }
+        val entity = item.toEntity()
 
-            else -> throw IllegalArgumentException("Unsupported data type for update: ${data::class}")
-        }
+        docRef.set(entity).awaitTask()
         return true
     }
 
     override suspend fun delete(id: Long): Boolean {
-        val ref = db.getReference(Path.USERS.path).child(user.uid).child(Path.INVENTORY.path)
-            .child(id.toString())
+        val user = user ?: return false
 
-        ref.removeValue().awaitTask()
+        val docRef = col.document(user.uid)
+            .collection(Path.INVENTORY.path)
+            .document(id.toString())
+
+        docRef.delete().awaitTask()
+        Log.d("Inventory", "Item removido com ID: $id")
         return true
     }
 }

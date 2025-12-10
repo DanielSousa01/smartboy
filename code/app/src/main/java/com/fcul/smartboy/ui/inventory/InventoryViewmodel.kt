@@ -2,16 +2,48 @@ package com.fcul.smartboy.ui.inventory
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
+import com.fcul.smartboy.repository.InventoryRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
-class InventoryViewmodel : ViewModel() {
-    private val _items = MutableStateFlow<List<Item>>(sampleItems())
+@HiltViewModel
+class InventoryViewmodel @Inject constructor(
+    private val inventoryRepository: InventoryRepository
+) : ViewModel() {
+    private val _items = MutableStateFlow<List<Item>>(emptyList())
+    private val _isLoading = MutableStateFlow(false)
+
     val items: StateFlow<List<Item>> = _items.asStateFlow()
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    init {
+        populateDatabase()
+        loadInventory()
+    }
+
+    private fun loadInventory() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val items = inventoryRepository.getInventory()
+
+                _items.value = items
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 
     fun addItem(item: Item) {
         _items.update { it + item }
@@ -19,6 +51,11 @@ class InventoryViewmodel : ViewModel() {
 
     fun removeItem(item: Long) {
         _items.update { list -> list.filter { it.id != item } }
+        viewModelScope.launch {
+            Log.d("Inventory", "Removing item with ID: $item")
+            inventoryRepository.delete(item)
+            Log.d("Inventory", "Item removed with ID: $item")
+        }
     }
 
     fun changeQuantity(itemId: Long, quantity: Int) {
@@ -26,6 +63,9 @@ class InventoryViewmodel : ViewModel() {
         if (item != null) {
             val newItem = item.copyItem(quantity = quantity)
             _items.update { list -> list.map { if (it.id == itemId) newItem else it } }
+            viewModelScope.launch {
+                inventoryRepository.update(itemId, newItem)
+            }
         }
     }
 
@@ -43,11 +83,14 @@ class InventoryViewmodel : ViewModel() {
             if (ammo is Item.Ammo) {
                 if (ammo.quantity <= weapon.ammoMax - weapon.ammoLoaded) {
                     val newWeapon = weapon.copyItem(ammoLoaded = weapon.ammoLoaded + ammo.quantity)
-
+                    removeItem(ammo.id)
                     _items.update { list ->
-                        list.filter { it.id != ammo.id }
-                            .map { if (it.id == itemId) newWeapon else it }
+                        list.map { if (it.id == itemId) newWeapon else it }
                     }
+                    viewModelScope.launch {
+                        inventoryRepository.update(itemId, newWeapon)
+                    }
+
                 } else {
                     val newAmmo =
                         ammo.copyItem(quantity = ammo.quantity - (weapon.ammoMax - weapon.ammoLoaded))
@@ -65,6 +108,20 @@ class InventoryViewmodel : ViewModel() {
                 }
             }
 
+        }
+    }
+
+    fun populateDatabase() {
+        viewModelScope.launch {
+            val samples = sampleItems()
+
+            samples.forEach { item ->
+                try {
+                    inventoryRepository.create(item)
+                } catch (e: Exception) {
+                    Log.e("InventorySeeder", "Erro ao adicionar ${item.name}: ${e.message}")
+                }
+            }
         }
     }
 }
@@ -89,3 +146,5 @@ private fun sampleItems(): List<Item> {
 
         )
 }
+
+

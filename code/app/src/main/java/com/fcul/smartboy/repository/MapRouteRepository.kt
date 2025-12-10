@@ -2,8 +2,9 @@ package com.fcul.smartboy.repository
 
 import com.fcul.smartboy.domain.route.MapRoute
 import com.fcul.smartboy.repository.base.CRUD
+import javax.inject.Inject
 
-class MapRouteRepository : CRUD<MapRoute, Long> {
+class MapRouteRepository @Inject constructor() : CRUD<MapRoute, Long> {
     override suspend fun create(document: MapRoute): Long {
         // Implementation for creating a MapRoute entry
         TODO("Not yet implemented")

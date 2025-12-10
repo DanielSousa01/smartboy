@@ -92,6 +92,7 @@ fun SmartBoyScaffold(
             }
         ) { padding ->
             NavGraph(
+                user = user,
                 navController = navController,
                 modifier = Modifier
                     .fillMaxSize()

@@ -52,12 +52,14 @@ import kotlinx.coroutines.flow.StateFlow
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun InventoryScreen(
+    isLoadingState: StateFlow<Boolean>,
     itemsState: StateFlow<List<Item>>,
     onReload: (Long) -> Unit,
     onRemove: (Long) -> Unit,
     onQuantityChange: (Long, Int) -> Unit,
 ) {
     val items by itemsState.collectAsState()
+    val isLoading by isLoadingState.collectAsState()
     var isMenuOpen by remember { mutableStateOf(false) }
     var isRemoveMenuOpen by remember { mutableStateOf(false) }
     var isItemQuantityMenuOpen by remember { mutableStateOf(false) }
