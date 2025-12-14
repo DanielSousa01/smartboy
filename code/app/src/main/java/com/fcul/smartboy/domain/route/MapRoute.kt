@@ -6,5 +6,6 @@ data class MapRoute(
     val startCoordinates: LatLng,
     val endCoordinates: LatLng,
     val distanceInKm: Double,
+    val routeCheckpoints: List<LatLng>,
     val estimatedTimeInMinutes: Int
 )

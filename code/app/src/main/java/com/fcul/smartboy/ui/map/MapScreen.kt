@@ -50,6 +50,7 @@ import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -58,11 +59,19 @@ fun MapScreen(
     currentLocation: LatLng?,
     radiationSpots: List<RadiationData>,
     radiationAlert: RadiationData?,
+    isRouteActive: Boolean,
+    routeCheckpoints: List<LatLng>,
+    pendingCheckpoints: List<LatLng>,
+    routePolyline: List<LatLng>,
     onEnteringRadPoint: (RadiationData) -> Unit,
     onDismissAlert: () -> Unit,
     onSetPoint: (LatLng) -> Unit,
     onCreateRadPoint: (LatLng, Double, Double) -> Unit,
     onLocationUpdate: (LatLng) -> Unit,
+    onStartRoute: () -> Unit,
+    onAddPendingCheckpoint: () -> Unit,
+    onAddCheckpoint: () -> Unit,
+    onEndRoute: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -174,6 +183,31 @@ fun MapScreen(
             selectedRadLocation?.let {
                 Marker(state = MarkerState(it), title = "RAD Point")
             }
+
+            // Show pending checkpoints if not active, else show active route checkpoints
+            val checkpointsToShow = if (isRouteActive) routeCheckpoints else pendingCheckpoints
+            checkpointsToShow.forEachIndexed { index, checkpoint ->
+                Marker(
+                    state = MarkerState(checkpoint),
+                    title = if (isRouteActive) "Route Checkpoint ${index + 1}" else "Pending Checkpoint ${index + 1}",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                )
+            }
+            if (checkpointsToShow.size >= 2) {
+                Polyline(
+                    points = checkpointsToShow,
+                    color = Color.Blue,
+                    width = 8f
+                )
+            }
+            // Draw Directions API polyline if present
+            if (routePolyline.isNotEmpty()) {
+                Polyline(
+                    points = routePolyline,
+                    color = Color.Red,
+                    width = 10f
+                )
+            }
         }
 
         // Debug overlay
@@ -189,11 +223,19 @@ fun MapScreen(
                     text = "📍 Radiation Spots: ${radiationSpots.size}",
                     color = Color.White
                 )
-                currentLocation?.let {
+                Text(
+                    text = "🚩 Route: ${if (isRouteActive) "Active" else "Inactive"}",
+                    color = if (isRouteActive) Color.Green else Color.Gray
+                )
+                if (isRouteActive) {
                     Text(
-                        text = "📌 Location: ${"%.4f".format(it.latitude)}, ${"%.4f".format(it.longitude)}",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodySmall
+                        text = "📌 Checkpoints: ${routeCheckpoints.size}",
+                        color = Color.White
+                    )
+                } else {
+                    Text(
+                        text = "🕒 Pending Checkpoints: ${pendingCheckpoints.size}",
+                        color = Color.White
                     )
                 }
             }
@@ -219,8 +261,46 @@ fun MapScreen(
                         val targetPos = cameraPositionState.position.target
                         selectedRadLocation = targetPos
                         showAddRadDialog = true
+                        isMenuOpen = false
                     }
                 )
+                if (!isRouteActive) {
+                    FloatingActionButtonMenuItem(
+                        icon = { Text("📍") },
+                        text = { Text("Add Checkpoint") },
+                        onClick = {
+                            onAddPendingCheckpoint()
+                            isMenuOpen = false
+                        }
+                    )
+                    if (pendingCheckpoints.size >= 2) {
+                        FloatingActionButtonMenuItem(
+                            icon = { Text("🚀") },
+                            text = { Text("Start Route") },
+                            onClick = {
+                                onStartRoute()
+                                isMenuOpen = false
+                            },
+                        )
+                    }
+                } else {
+                    FloatingActionButtonMenuItem(
+                        icon = { Text("📍") },
+                        text = { Text("Add Checkpoint") },
+                        onClick = {
+                            onAddCheckpoint()
+                            isMenuOpen = false
+                        }
+                    )
+                    FloatingActionButtonMenuItem(
+                        icon = { Text("🏁") },
+                        text = { Text("End Route") },
+                        onClick = {
+                            onEndRoute()
+                            isMenuOpen = false
+                        }
+                    )
+                }
             }
         }
     }

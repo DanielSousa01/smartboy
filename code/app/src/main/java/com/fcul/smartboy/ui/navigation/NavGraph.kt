@@ -38,16 +38,28 @@ fun NavGraph(
             val currentLocation by viewModel.currentLocation.collectAsState()
             val radSpots by viewModel.radSpots.collectAsState()
             val radiationAlert by viewModel.radiationAlert.collectAsState()
+            val isRouteActive by viewModel.isRouteActive.collectAsState()
+            val routeCheckpoints by viewModel.routeCheckpoints.collectAsState()
+            val pendingCheckpoints by viewModel.pendingCheckpoints.collectAsState()
+            val routePolyline by viewModel.routePolyline.collectAsState()
 
             MapScreen(
                 currentLocation = currentLocation,
                 radiationSpots = radSpots,
                 radiationAlert = radiationAlert,
+                isRouteActive = isRouteActive,
+                routeCheckpoints = routeCheckpoints,
+                pendingCheckpoints = pendingCheckpoints,
+                routePolyline = routePolyline,
                 onEnteringRadPoint = viewModel::onEnteringRadiationZone,
                 onDismissAlert = viewModel::dismissRadiationAlert,
                 onSetPoint = viewModel::setPoint,
                 onCreateRadPoint = viewModel::createRadPoint,
-                onLocationUpdate = viewModel::updateCurrentLocation
+                onLocationUpdate = viewModel::updateCurrentLocation,
+                onStartRoute = viewModel::startRoute,
+                onAddPendingCheckpoint = viewModel::addPendingCheckpoint,
+                onAddCheckpoint = viewModel::addCheckpointToActiveRoute,
+                onEndRoute = viewModel::endRoute,
             )
         }
         composable(Screen.Chat.route) { ChatScreen() }

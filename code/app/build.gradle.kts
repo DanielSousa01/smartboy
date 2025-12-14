@@ -13,6 +13,7 @@ android {
     compileSdk {
         version = release(36)
     }
+    android.buildFeatures.buildConfig = true
 
     defaultConfig {
         applicationId = "com.fcul.smartboy"
@@ -22,6 +23,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "MAPS_API_KEY",
+            "\"${project.findProperty("MAPS_API_KEY") ?: ""}\""
+        )
     }
 
     buildTypes {
@@ -100,5 +107,9 @@ dependencies {
     implementation(libs.hilt.navigation)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    // Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
 
 }

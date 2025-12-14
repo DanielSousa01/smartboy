@@ -18,10 +18,18 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
 
+
     @Provides
     @Singleton
-    fun provideMapRouteRepository(): MapRouteRepository {
-        return MapRouteRepository()
+    fun provideMapRouteRepository(
+        auth: FirebaseAuth,
+        database: FirebaseDatabase,
+        firestore: FirebaseFirestore,
+        storage: FirebaseStorage
+    ): MapRouteRepository {
+        val user = auth.currentUser
+            ?: throw IllegalStateException("User must be logged in to access MapRouteRepository")
+        return MapRouteRepository(user, database, firestore, storage)
     }
 
     @Provides

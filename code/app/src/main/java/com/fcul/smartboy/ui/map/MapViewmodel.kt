@@ -3,14 +3,23 @@ package com.fcul.smartboy.ui.map
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fcul.smartboy.BuildConfig
 import com.fcul.smartboy.domain.route.RadiationData
 import com.fcul.smartboy.repository.MapRouteRepository
 import com.fcul.smartboy.repository.radiation.RadiationRepository
 import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import javax.inject.Inject
 
 @HiltViewModel
@@ -39,8 +48,22 @@ class MapViewmodel @Inject constructor(
     private val _radiationAlert = MutableStateFlow<RadiationData?>(null)
     val radiationAlert: StateFlow<RadiationData?> = _radiationAlert
 
+    private val _isRouteActive = MutableStateFlow(false)
+    val isRouteActive: StateFlow<Boolean> = _isRouteActive
+
+    private val _routeCheckpoints = MutableStateFlow<List<LatLng>>(emptyList())
+    val routeCheckpoints: StateFlow<List<LatLng>> = _routeCheckpoints
+
+    private val _pendingCheckpoints = MutableStateFlow<List<LatLng>>(emptyList())
+    val pendingCheckpoints: StateFlow<List<LatLng>> = _pendingCheckpoints
+
+    private val _routePolyline = MutableStateFlow<List<LatLng>>(emptyList())
+    val routePolyline: StateFlow<List<LatLng>> = _routePolyline
+
     private val enteredZones = mutableSetOf<String>()
 
+    private var currentRouteId: String? = null
+    private var routeStartTime: Long = 0L
 
     fun updateCurrentLocation(location: LatLng) {
         _currentLocation.value = location
@@ -64,6 +87,102 @@ class MapViewmodel @Inject constructor(
         }
     }
 
+    fun addPendingCheckpoint() {
+        val selected = _selectedPoint.value
+        if (selected == null) {
+            _error.value = "No point selected to add as checkpoint."
+            return
+        }
+        _pendingCheckpoints.value += selected
+        fetchRouteForPendingCheckpoints()
+    }
+
+    fun removePendingCheckpoint(index: Int) {
+        _pendingCheckpoints.value = _pendingCheckpoints.value.toMutableList().apply { removeAt(index) }
+    }
+
+    fun clearPendingCheckpoints() {
+        _pendingCheckpoints.value = emptyList()
+    }
+
+    fun addCheckpointToActiveRoute() {
+        if (!_isRouteActive.value || currentRouteId == null) {
+            _error.value = "Start a route first before adding checkpoints"
+            return
+        }
+        val selected = _selectedPoint.value
+        if (selected == null) {
+            _error.value = "No point selected to add as checkpoint."
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val updatedCheckpoints = _routeCheckpoints.value + selected
+                mapRouteRepository.addCheckpointToActiveRoute(
+                    routeId = currentRouteId!!,
+                    checkpoints = _routeCheckpoints.value,
+                    location = selected
+                )
+                _routeCheckpoints.value = updatedCheckpoints
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = e.message
+            }
+        }
+    }
+
+    fun startRoute() {
+        viewModelScope.launch {
+            try {
+                Log.i("MapViewmodel", "Starting route with checkpoints: ${_pendingCheckpoints.value}")
+                if (_pendingCheckpoints.value.size < 2) {
+                    _error.value = "At least 2 checkpoints are required to start a route."
+                    Log.e("MapViewmodel", "❌ Not enough checkpoints to start route.")
+                    return@launch
+                }
+                val routeId = System.currentTimeMillis().toString()
+                currentRouteId = routeId
+                routeStartTime = System.currentTimeMillis()
+                Log.i("MapViewmodel", "Generated route ID: $routeId at $routeStartTime")
+                mapRouteRepository.startRouteWithCheckpoints(
+                    routeId = routeId,
+                    routeStartTime = routeStartTime,
+                    checkpoints = _pendingCheckpoints.value
+                )
+                Log.i("MapViewmodel", "🚀 Route started with ID: $routeId")
+                _isRouteActive.value = true
+                _routeCheckpoints.value = _pendingCheckpoints.value
+                Log.i("MapViewmodel", "Checkpoints: ${_routeCheckpoints.value}")
+                clearPendingCheckpoints()
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = e.message
+            }
+        }
+    }
+
+    fun endRoute() {
+        viewModelScope.launch {
+            try {
+                if (currentRouteId == null) {
+                    _error.value = "No active route to end."
+                    return@launch
+                }
+                mapRouteRepository.endRoute(
+                    routeId = currentRouteId!!,
+                    checkpoints = _routeCheckpoints.value,
+                    routeStartTime = routeStartTime
+                )
+                _isRouteActive.value = false
+                _routeCheckpoints.value = emptyList()
+                currentRouteId = null
+                routeStartTime = 0L
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = e.message
+            }
+        }
+    }
 
     fun createRadPoint(location: LatLng, radiationLevel: Double, radius: Double) {
         viewModelScope.launch {
@@ -110,5 +229,88 @@ class MapViewmodel @Inject constructor(
         val zoneId = radData.id ?: return
         enteredZones.remove(zoneId)
         Log.i("MapViewmodel", "✅ User left radiation zone: $zoneId")
+    }
+
+    /**
+     * Decodes a Google encoded polyline string to a list of LatLng
+     */
+    private fun decodePolyline(encoded: String): List<LatLng> {
+        val poly = ArrayList<LatLng>()
+        var index = 0
+        val len = encoded.length
+        var lat = 0
+        var lng = 0
+        while (index < len) {
+            var b: Int
+            var shift = 0
+            var result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or ((b and 0x1f) shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlat = if ((result and 1) != 0) (result shr 1).inv() else (result shr 1)
+            lat += dlat
+            shift = 0
+            result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or ((b and 0x1f) shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlng = if ((result and 1) != 0) (result shr 1).inv() else (result shr 1)
+            lng += dlng
+            poly.add(LatLng(lat / 1E5, lng / 1E5))
+        }
+        return poly
+    }
+
+    /**
+     * Fetches a road-following route from Google Directions API and updates _routePolyline
+     */
+    fun fetchRoutePolyline(origin: LatLng, destination: LatLng) {
+        viewModelScope.launch {
+            try {
+                val apiKey = BuildConfig.MAPS_API_KEY
+                val url = "https://maps.googleapis.com/maps/api/directions/json?" +
+                        "origin=${origin.latitude},${origin.longitude}" +
+                        "&destination=${destination.latitude},${destination.longitude}" +
+                        "&key=$apiKey"
+                val client = OkHttpClient()
+                val request = Request.Builder().url(url).build()
+                val body = withContext(Dispatchers.IO) {
+                    client.newCall(request).execute().body?.string() ?: throw Exception("No response body")
+                }
+                val json = Json.parseToJsonElement(body).jsonObject
+                val routes = json["routes"]?.jsonArray
+                if (routes != null && routes.isNotEmpty()) {
+                    val overviewPolyline = routes[0].jsonObject["overview_polyline"]?.jsonObject
+                    val points = overviewPolyline?.get("points")?.jsonPrimitive?.content
+                    if (points != null) {
+                        val decoded = decodePolyline(points)
+                        _routePolyline.value = decoded
+                        _error.value = null
+                        return@launch
+                    }
+                }
+                _error.value = "No route found"
+                _routePolyline.value = emptyList()
+            } catch (e: Exception) {
+                _error.value = "Failed to fetch route: ${e.message}"
+                _routePolyline.value = emptyList()
+            }
+        }
+    }
+
+    /**
+     * Call this when you want to fetch a route between the first two pending checkpoints
+     */
+    fun fetchRouteForPendingCheckpoints() {
+        val points = _pendingCheckpoints.value
+        if (points.size >= 2) {
+            fetchRoutePolyline(points.first(), points.last())
+        } else {
+            _error.value = "Need at least 2 checkpoints to fetch route."
+        }
     }
 }
