@@ -59,7 +59,6 @@ fun InventoryScreen(
     onQuantityChange: (Long, Int) -> Unit,
 ) {
     val items by itemsState.collectAsState()
-    val isLoading by isLoadingState.collectAsState()
     var isMenuOpen by remember { mutableStateOf(false) }
     var isRemoveMenuOpen by remember { mutableStateOf(false) }
     var isItemQuantityMenuOpen by remember { mutableStateOf(false) }

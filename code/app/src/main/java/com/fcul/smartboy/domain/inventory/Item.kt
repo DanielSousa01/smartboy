@@ -183,10 +183,10 @@ sealed class Item {
             name = this.name,
             quantity = this.quantity,
             category = this.category.name,
-            ammoId = if (this is Item.Weapon) this.ammoId else null,
-            ammoName = if (this is Item.Weapon) this.ammoName else null,
-            ammoMax = if (this is Item.Weapon) this.ammoMax else null,
-            ammoLoaded = if (this is Item.Weapon) this.ammoLoaded else null
+            ammoId = if (this is Weapon) this.ammoId else null,
+            ammoName = if (this is Weapon) this.ammoName else null,
+            ammoMax = if (this is Weapon) this.ammoMax else null,
+            ammoLoaded = if (this is Weapon) this.ammoLoaded else null
         )
     }
 }

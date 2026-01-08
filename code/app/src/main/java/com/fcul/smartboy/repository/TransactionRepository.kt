@@ -1,56 +1,72 @@
 package com.fcul.smartboy.repository
 
 import com.fcul.smartboy.domain.transaction.Transaction
+import com.fcul.smartboy.domain.transaction.TransactionEntity
 import com.fcul.smartboy.repository.base.CRUD
 import com.fcul.smartboy.repository.base.CRUD.Companion.awaitTask
 import com.fcul.smartboy.repository.base.Path
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.firestore.FirebaseFirestore
 
 class TransactionRepository(
-    private val user: FirebaseUser,
-    private val db: FirebaseDatabase,
-    private val storage: FirebaseStorage
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore
 ) : CRUD<Transaction, Long> {
-    override suspend fun create(document: Transaction): Long {
-        val id = document.id
-        val ref = db.getReference(Path.TRANSACTIONS.path).child(user.uid).child(id.toString())
 
-        ref.setValue(document).awaitTask()
-        return id
+    private val user: FirebaseUser?
+        get() = auth.currentUser
+
+    private val col get() = firestore.collection(Path.USERS.path)
+
+    suspend fun getTransactions(): List<Transaction> {
+        val user = user ?: return emptyList()
+
+        val transactionsSnapshot = col.document(user.uid)
+            .collection(Path.TRANSACTIONS.path).get().awaitTask()
+
+        return transactionsSnapshot.documents.mapNotNull { doc ->
+            doc.toObject(TransactionEntity::class.java)?.toTransaction()
+        }
+    }
+
+    override suspend fun create(document: Transaction): Long {
+        val user = user ?: return -1
+        val destinationUserId = document.userDestination.id
+
+
+        val transactionId = document.id
+
+        val sourceDocRef = col.document(user.uid)
+            .collection(Path.TRANSACTIONS.path)
+
+        val sourceTransactionEntity = document.copy(amount = -document.amount).toEntity()
+        sourceDocRef.document(transactionId.toString())
+            .set(sourceTransactionEntity).awaitTask()
+
+        val destinationTransactionEntity = document.toEntity()
+        val destinationDocRef = col.document(destinationUserId)
+            .collection(Path.TRANSACTIONS.path)
+        destinationDocRef.document(transactionId.toString())
+            .set(document.toEntity()).awaitTask()
+
+
+
+
+        return transactionId
     }
 
     override suspend fun read(id: Long): Transaction? {
-        val ref = db.getReference(Path.TRANSACTIONS.path).child(user.uid).child(id.toString())
-        val snapshot = ref.get().awaitTask()
-
-        return snapshot.getValue(Transaction::class.java)
+        TODO("Not yet implemented")
     }
 
     override suspend fun update(id: Long, data: Any): Boolean {
-        val ref = db.getReference(Path.TRANSACTIONS.path).child(user.uid).child(id.toString())
-
-        when (data) {
-            is Map<*, *> -> {
-                @Suppress("UNCHECKED_CAST")
-                val map = data.entries.associate { it.key.toString() to it.value }
-                ref.updateChildren(map).awaitTask()
-            }
-
-            is Transaction -> {
-                ref.setValue(data).awaitTask()
-            }
-
-            else -> throw IllegalArgumentException("Unsupported data type for update: ${data::class}")
-        }
-        return true
+        TODO("Not yet implemented")
     }
 
     override suspend fun delete(id: Long): Boolean {
-        val ref = db.getReference(Path.TRANSACTIONS.path).child(user.uid).child(id.toString())
-
-        ref.removeValue().awaitTask()
-        return true
+        TODO("Not yet implemented")
     }
+
+
 }

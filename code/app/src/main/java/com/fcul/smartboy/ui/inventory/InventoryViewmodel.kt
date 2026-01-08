@@ -7,13 +7,12 @@ import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.repository.InventoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import javax.inject.Inject
 
 @HiltViewModel
 class InventoryViewmodel @Inject constructor(

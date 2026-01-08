@@ -1,6 +1,5 @@
 package com.fcul.smartboy.repository
 
-import android.util.Log
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.domain.inventory.ItemEntity
 import com.fcul.smartboy.repository.base.CRUD
@@ -20,6 +19,17 @@ class InventoryRepository @Inject constructor(
 
     private val col get() = firestore.collection(Path.USERS.path)
 
+    suspend fun getInventory(): List<Item> {
+        val user = user ?: return emptyList()
+
+        val inventorySnapshot = col.document(user.uid)
+            .collection(Path.INVENTORY.path).get().awaitTask()
+
+        return inventorySnapshot.documents.mapNotNull { doc ->
+            doc.toObject(ItemEntity::class.java)?.toItem()
+        }
+    }
+
     override suspend fun create(document: Item): Long {
         val user = user ?: return -1
         val id = document.id
@@ -33,23 +43,17 @@ class InventoryRepository @Inject constructor(
 
         docRef.set(entity).awaitTask()
 
-        Log.d("InventoryRepository", "Item adicionado com ID: $id")
         return id
     }
 
-    suspend fun getInventory(): List<Item> {
-        val user = user ?: return emptyList()
-
-        val inventorySnapshot = col.document(user.uid)
-            .collection(Path.INVENTORY.path).get().awaitTask()
-
-        return inventorySnapshot.documents.mapNotNull { doc ->
-            doc.toObject(ItemEntity::class.java)?.toItem()
-        }
-    }
-
     override suspend fun read(id: Long): Item? {
-        TODO("Not yet implemented")
+        val user = user ?: return null
+
+        val docRef = col.document(user.uid)
+            .collection(Path.INVENTORY.path)
+
+        return docRef.document(id.toString()).get().awaitTask()
+            .toObject(ItemEntity::class.java)?.toItem()
     }
 
     override suspend fun update(id: Long, data: Any): Boolean {
@@ -74,7 +78,6 @@ class InventoryRepository @Inject constructor(
             .document(id.toString())
 
         docRef.delete().awaitTask()
-        Log.d("Inventory", "Item removido com ID: $id")
         return true
     }
 }

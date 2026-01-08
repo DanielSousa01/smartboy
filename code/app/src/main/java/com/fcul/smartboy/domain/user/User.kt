@@ -1,6 +1,6 @@
 package com.fcul.smartboy.domain.user
 
 data class User(
-    val id: Long,
+    val id: String,
     val name: String
 )

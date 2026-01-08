@@ -8,4 +8,11 @@ data class Transaction(
     val date: Date,
     val amount: Float,
     val userDestination: User
-)
+) {
+    fun toEntity(): TransactionEntity = TransactionEntity(
+        id = id,
+        date = date,
+        amount = amount,
+        userDestination = userDestination.id
+    )
+}

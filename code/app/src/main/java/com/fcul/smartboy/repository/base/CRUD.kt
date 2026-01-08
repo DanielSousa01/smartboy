@@ -1,6 +1,5 @@
 package com.fcul.smartboy.repository.base
 
-import com.fcul.smartboy.domain.inventory.Item
 import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
