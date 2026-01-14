@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.domain.transaction.Transaction
 import com.fcul.smartboy.domain.user.User
 import java.util.Date
+import java.util.UUID
 
 @Composable
 fun WalletScreen(
@@ -80,31 +81,31 @@ private fun sampleTransactions(): List<Transaction> {
         Transaction(
             id = 1,
             amount = -250f,
-            userDestination = User(id = 1, name = "Merchant Raul"),
+            userDestination = User(id = UUID.randomUUID().toString(), name = "Merchant Raul"),
             date = Date(now - 3 * 60 * 60 * 1000)
         ),
         Transaction(
             id = 2,
             amount = 1200f,
-            userDestination = User(id = 1, name = "Explorer's Guild"),
+            userDestination = User(id = UUID.randomUUID().toString(), name = "Explorer's Guild"),
             date = Date(now - 1 * 24 * 60 * 60 * 1000)
         ),
         Transaction(
             id = 3,
             amount = -75f,
-            userDestination = User(id = 1, name = "Ana"),
+            userDestination = User(id = UUID.randomUUID().toString(), name = "Ana"),
             date = Date(now - 2 * 24 * 60 * 60 * 1000)
         ),
         Transaction(
             id = 4,
             amount = 300f,
-            userDestination = User(id = 1, name = "Auction House"),
+            userDestination = User(id = UUID.randomUUID().toString(), name = "Auction House"),
             date = Date(now - 5 * 24 * 60 * 60 * 1000)
         ),
         Transaction(
             id = 5,
             amount = -999f,
-            userDestination = User(id = 1, name = "Scrap Shop"),
+            userDestination = User(id = UUID.randomUUID().toString(), name = "Scrap Shop"),
             date = Date(now - 7 * 24 * 60 * 60 * 1000)
         )
     )

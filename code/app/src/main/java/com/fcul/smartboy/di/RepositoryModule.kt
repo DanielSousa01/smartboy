@@ -4,7 +4,9 @@ import com.fcul.smartboy.repository.InventoryRepository
 import com.fcul.smartboy.repository.MapRouteRepository
 import com.fcul.smartboy.repository.radiation.RadiationRepository
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
