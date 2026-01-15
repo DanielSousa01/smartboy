@@ -2,7 +2,6 @@ package com.fcul.smartboy
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,7 +9,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.fcul.smartboy.domain.user.Profile
 import com.fcul.smartboy.repository.ProfileRepository
@@ -30,32 +28,27 @@ class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var profileRepository: ProfileRepository
 
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            startStepCounterService()
-        }
-    }
-
-    private val requestLocationPermissionsLauncher = registerForActivityResult(
+    private val requestPermissionsLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        when {
-            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
-                // Fine location access granted
-            }
-            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
-                // Coarse location access granted
-            }
-            else -> {
-                // No location access granted
-            }
+        val isGranted = permissions.entries.all { it.value }
+        if (isGranted) {
+            startStepCounterService()
+        } else {
+            // Handle permission denied
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestPermissionsLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACTIVITY_RECOGNITION
+            )
+        )
+
         auth = Firebase.auth
         profileRepository = ProfileRepository(
             firestore = Firebase.firestore
@@ -75,12 +68,6 @@ class MainActivity : ComponentActivity() {
             if (profile == null) {
                 profileRepository.create(Profile(userId = user.uid))
             }
-
-            // Request location permissions first
-            checkAndRequestLocationPermissions()
-
-            // Start step counter service
-            checkAndRequestActivityRecognitionPermission()
 
             val vm = MainViewmodel(auth = auth)
 
@@ -102,45 +89,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-        }
-    }
-
-    private fun checkAndRequestLocationPermissions() {
-        val fineLocationGranted = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val coarseLocationGranted = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (!fineLocationGranted || !coarseLocationGranted) {
-            requestLocationPermissionsLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        }
-    }
-
-    private fun checkAndRequestActivityRecognitionPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            when {
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACTIVITY_RECOGNITION
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    startStepCounterService()
-                }
-                else -> {
-                    requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-                }
-            }
-        } else {
-            startStepCounterService()
         }
     }
 

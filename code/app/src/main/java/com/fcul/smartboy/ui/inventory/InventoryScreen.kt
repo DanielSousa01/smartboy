@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -47,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
+import com.fcul.smartboy.ui.inventory.components.ItemCard
 import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -85,7 +85,7 @@ fun InventoryScreen(
 
                 if (categoryItems.isNotEmpty()) {
                     items(categoryItems) { invItem ->
-                        ItemEntry(
+                        ItemCard(
                             item = invItem,
                             onReload = onReload,
                             onQuantityChange = onQuantityChange,
@@ -164,95 +164,6 @@ fun InventoryScreen(
     }
 }
 
-@Composable
-private fun ItemEntry(
-    item: Item,
-    onReload: (Long) -> Unit,
-    onQuantityChange: (Long, Int) -> Unit,
-    onRemove: (Long) -> Unit,
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-            }
-            if (item is Item.Weapon && item.ammoId != null) {
-                Column {
-                    if (item.ammoName != null) {
-                        Text(
-                            text = "Ammo Name:",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                        Text(
-                            text = item.ammoName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                    }
-                }
-                Column {
-                    Button(
-                        onClick = {
-                            onReload(item.id)
-                        }
-                    ) {
-                        Text(
-                            text = "Reload",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                    }
-                }
-            }
-
-            if (item is Item.Aid) {
-                Column {
-                    Button(
-                        onClick = {
-                            if (item.quantity - 1 == 0)
-                                onRemove(item.id)
-                            else
-                                onQuantityChange(item.id, item.quantity - 1)
-                        }
-                    ) {
-                        Text("Use")
-                    }
-                }
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                if (item is Item.Weapon && item.ammoId != null && item.ammoMax != null)
-                    Text(
-                        text = "Ammo: ${item.ammoLoaded}/${item.ammoMax}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-                Text(
-                    text = "Quantity: ${item.quantity}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-            }
-
-        }
-    }
-}
 
 @Composable
 private fun RemoveItemMenu(

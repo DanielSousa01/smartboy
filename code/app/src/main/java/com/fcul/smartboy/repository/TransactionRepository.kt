@@ -44,7 +44,7 @@ class TransactionRepository(
         sourceDocRef.document(transactionId.toString())
             .set(sourceTransactionEntity).awaitTask()
 
-        val destinationTransactionEntity = document.toEntity()
+        document.toEntity()
         val destinationDocRef = col.document(destinationUserId)
             .collection(Path.TRANSACTIONS.path)
         destinationDocRef.document(transactionId.toString())
@@ -56,7 +56,7 @@ class TransactionRepository(
         return transactionId
     }
 
-    override suspend fun read(id: Long): Transaction? {
+    override suspend fun read(id: Long): Transaction {
         TODO("Not yet implemented")
     }
 

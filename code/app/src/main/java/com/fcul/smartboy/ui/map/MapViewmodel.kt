@@ -109,7 +109,8 @@ class MapViewmodel @Inject constructor(
     }
 
     fun removePendingCheckpoint(index: Int) {
-        _pendingCheckpoints.value = _pendingCheckpoints.value.toMutableList().apply { removeAt(index) }
+        _pendingCheckpoints.value =
+            _pendingCheckpoints.value.toMutableList().apply { removeAt(index) }
     }
 
     fun clearPendingCheckpoints() {
@@ -145,7 +146,10 @@ class MapViewmodel @Inject constructor(
     fun startRoute() {
         viewModelScope.launch {
             try {
-                Log.i("MapViewmodel", "Starting route with checkpoints: ${_pendingCheckpoints.value}")
+                Log.i(
+                    "MapViewmodel",
+                    "Starting route with checkpoints: ${_pendingCheckpoints.value}"
+                )
                 if (_pendingCheckpoints.value.size < 2) {
                     _error.value = "At least 2 checkpoints are required to start a route."
                     Log.e("MapViewmodel", "❌ Not enough checkpoints to start route.")
@@ -255,7 +259,10 @@ class MapViewmodel @Inject constructor(
                     reached.add(index)
                     _reachedCheckpoints.value = reached
                     _checkpointAlert.value = "Checkpoint ${index + 1} reached! ✓"
-                    Log.i("MapViewmodel", "✅ Checkpoint $index reached at distance: $distance meters")
+                    Log.i(
+                        "MapViewmodel",
+                        "✅ Checkpoint $index reached at distance: $distance meters"
+                    )
                 }
             }
         }
@@ -321,7 +328,8 @@ class MapViewmodel @Inject constructor(
                 val client = OkHttpClient()
                 val request = Request.Builder().url(url).build()
                 val body = withContext(Dispatchers.IO) {
-                    client.newCall(request).execute().body?.string() ?: throw Exception("No response body")
+                    client.newCall(request).execute().body?.string()
+                        ?: throw Exception("No response body")
                 }
                 val json = Json.parseToJsonElement(body).jsonObject
                 val routes = json["routes"]?.jsonArray

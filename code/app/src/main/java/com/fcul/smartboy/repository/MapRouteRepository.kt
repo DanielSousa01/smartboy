@@ -38,7 +38,11 @@ class MapRouteRepository(
 
     // ============= Checkpoint Management (Firestore) =============
 
-    suspend fun createCheckpoint(location: LatLng, name: String? = null, notes: String? = null): String {
+    suspend fun createCheckpoint(
+        location: LatLng,
+        name: String? = null,
+        notes: String? = null
+    ): String {
         val checkpoint = Checkpoint(
             userId = user.uid,
             location = location,
@@ -99,7 +103,11 @@ class MapRouteRepository(
         Log.d(TAG, "Active route started: $routeId")
     }
 
-    suspend fun startRouteWithCheckpoints(routeId: String, routeStartTime: Long, checkpoints: List<LatLng>) {
+    suspend fun startRouteWithCheckpoints(
+        routeId: String,
+        routeStartTime: Long,
+        checkpoints: List<LatLng>
+    ) {
         val activeRoute = ActiveRoute(
             id = routeId,
             userId = user.uid,
@@ -113,12 +121,20 @@ class MapRouteRepository(
         Log.d(TAG, "Active route started with checkpoints: $routeId")
     }
 
-    suspend fun addCheckpointToActiveRoute(routeId: String, checkpoints: List<LatLng>, location: LatLng) {
+    suspend fun addCheckpointToActiveRoute(
+        routeId: String,
+        checkpoints: List<LatLng>,
+        location: LatLng
+    ) {
         val updatedCheckpoints = checkpoints + location
         updateActiveRoute(routeId, updatedCheckpoints, location)
     }
 
-    suspend fun updateActiveRoute(routeId: String, checkpoints: List<LatLng>, currentLocation: LatLng) {
+    suspend fun updateActiveRoute(
+        routeId: String,
+        checkpoints: List<LatLng>,
+        currentLocation: LatLng
+    ) {
         val totalDistance = calculateTotalDistance(checkpoints)
         val updates = mapOf(
             "lastUpdateTime" to System.currentTimeMillis(),
@@ -155,7 +171,10 @@ class MapRouteRepository(
         Log.d(TAG, "Route ended and saved: $routeId")
     }
 
-    fun observeNearbyActiveRoutes(centerLocation: LatLng, radiusKm: Double = 10.0): Flow<List<ActiveRoute>> = callbackFlow {
+    fun observeNearbyActiveRoutes(
+        centerLocation: LatLng,
+        radiusKm: Double = 10.0
+    ): Flow<List<ActiveRoute>> = callbackFlow {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val routes = snapshot.children.mapNotNull { childSnapshot ->
@@ -167,10 +186,10 @@ class MapRouteRepository(
                     }
                 }.filter { route ->
                     route.isActive &&
-                    route.userId != user.uid &&
-                    route.currentLocation?.let {
-                        calculateDistance(centerLocation, it) <= radiusKm
-                    } ?: false
+                            route.userId != user.uid &&
+                            route.currentLocation?.let {
+                                calculateDistance(centerLocation, it) <= radiusKm
+                            } ?: false
                 }
 
                 trySend(routes)
@@ -251,6 +270,7 @@ class MapRouteRepository(
                 @Suppress("UNCHECKED_CAST")
                 routesCol.document(doc.id).update(data as Map<String, Any>).await()
             }
+
             else -> return false
         }
 

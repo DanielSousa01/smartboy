@@ -52,7 +52,12 @@ class ChatRepository(
         return "${ids[0]}_${ids[1]}"
     }
 
-    suspend fun sendMessage(recipientId: String, recipientName: String, text: String, imageUrl: String? = null): String {
+    suspend fun sendMessage(
+        recipientId: String,
+        recipientName: String,
+        text: String,
+        imageUrl: String? = null
+    ): String {
         val currentUser = auth.currentUser ?: throw IllegalStateException("User must be logged in")
         val messageId = UUID.randomUUID().toString()
         val conversationId = getConversationId(currentUser.uid, recipientId)
