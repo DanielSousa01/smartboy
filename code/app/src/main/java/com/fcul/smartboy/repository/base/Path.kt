@@ -7,5 +7,6 @@ enum class Path(val path: String) {
     ACTIVE_ROUTES("active_routes"),
     TRANSACTIONS("transactions"),
     RADIATION_DATA("radiation_data"),
-    USERS("users")
+    USERS("users"),
+    MESSAGES("messages")
 }

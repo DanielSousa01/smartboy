@@ -1,7 +1,9 @@
 package com.fcul.smartboy.di
 
+import com.fcul.smartboy.repository.ChatRepository
 import com.fcul.smartboy.repository.InventoryRepository
 import com.fcul.smartboy.repository.MapRouteRepository
+import com.fcul.smartboy.repository.ProfileRepository
 import com.fcul.smartboy.repository.radiation.RadiationRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
@@ -49,6 +51,25 @@ object RepositoryModule {
             auth,
             firestore
         )
+    }
+
+    @Provides
+    @Singleton
+    fun provideChatRepository(
+        auth: FirebaseAuth,
+        database: FirebaseDatabase,
+        firestore: FirebaseFirestore,
+        storage: FirebaseStorage
+    ): ChatRepository {
+        return ChatRepository(auth, database, firestore, storage)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProfileRepository(
+        firestore: FirebaseFirestore
+    ): ProfileRepository {
+        return ProfileRepository(firestore)
     }
 }
 

@@ -63,8 +63,11 @@ fun MapScreen(
     routeCheckpoints: List<LatLng>,
     pendingCheckpoints: List<LatLng>,
     routePolyline: List<LatLng>,
+    reachedCheckpoints: Set<Int>,
+    checkpointAlert: String?,
     onEnteringRadPoint: (RadiationData) -> Unit,
     onDismissAlert: () -> Unit,
+    onDismissCheckpointAlert: () -> Unit,
     onSetPoint: (LatLng) -> Unit,
     onCreateRadPoint: (LatLng, Double, Double) -> Unit,
     onLocationUpdate: (LatLng) -> Unit,
@@ -187,10 +190,22 @@ fun MapScreen(
             // Show pending checkpoints if not active, else show active route checkpoints
             val checkpointsToShow = if (isRouteActive) routeCheckpoints else pendingCheckpoints
             checkpointsToShow.forEachIndexed { index, checkpoint ->
+                val isReached = isRouteActive && reachedCheckpoints.contains(index)
+                val markerColor = when {
+                    isReached -> BitmapDescriptorFactory.HUE_GREEN
+                    isRouteActive -> BitmapDescriptorFactory.HUE_BLUE
+                    else -> BitmapDescriptorFactory.HUE_AZURE
+                }
+                val title = when {
+                    isReached -> "✓ Checkpoint ${index + 1} (Reached)"
+                    isRouteActive -> "Checkpoint ${index + 1}"
+                    else -> "Pending Checkpoint ${index + 1}"
+                }
+
                 Marker(
                     state = MarkerState(checkpoint),
-                    title = if (isRouteActive) "Route Checkpoint ${index + 1}" else "Pending Checkpoint ${index + 1}",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                    title = title,
+                    icon = BitmapDescriptorFactory.defaultMarker(markerColor)
                 )
             }
             if (checkpointsToShow.size >= 2) {
@@ -360,6 +375,22 @@ fun MapScreen(
             },
             confirmButton = {
                 TextButton(onClick = onDismissAlert) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    if (checkpointAlert != null) {
+        AlertDialog(
+            onDismissRequest = onDismissCheckpointAlert,
+            icon = { Text("✅", style = MaterialTheme.typography.displayMedium) },
+            title = { Text("Checkpoint Reached!") },
+            text = {
+                Text(checkpointAlert)
+            },
+            confirmButton = {
+                TextButton(onClick = onDismissCheckpointAlert) {
                     Text("OK")
                 }
             }

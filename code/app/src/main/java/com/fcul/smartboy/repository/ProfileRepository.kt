@@ -40,6 +40,21 @@ class ProfileRepository(
         return true
     }
 
+    suspend fun updateSteps(userId: String, steps: Long): Boolean {
+        col.document(userId).update("steps", steps).await()
+        return true
+    }
+
+    suspend fun incrementSteps(userId: String, increment: Long): Boolean {
+        val profile = read(userId)
+        if (profile != null) {
+            val newSteps = profile.steps + increment
+            updateSteps(userId, newSteps)
+            return true
+        }
+        return false
+    }
+
     private fun toMap(d: Profile): Map<String, Any?> = mapOf(
         "userId" to d.userId,
         "steps" to d.steps,

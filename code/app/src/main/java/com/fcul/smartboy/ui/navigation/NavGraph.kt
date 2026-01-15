@@ -42,6 +42,8 @@ fun NavGraph(
             val routeCheckpoints by viewModel.routeCheckpoints.collectAsState()
             val pendingCheckpoints by viewModel.pendingCheckpoints.collectAsState()
             val routePolyline by viewModel.routePolyline.collectAsState()
+            val reachedCheckpoints by viewModel.reachedCheckpoints.collectAsState()
+            val checkpointAlert by viewModel.checkpointAlert.collectAsState()
 
             MapScreen(
                 currentLocation = currentLocation,
@@ -51,8 +53,11 @@ fun NavGraph(
                 routeCheckpoints = routeCheckpoints,
                 pendingCheckpoints = pendingCheckpoints,
                 routePolyline = routePolyline,
+                reachedCheckpoints = reachedCheckpoints,
+                checkpointAlert = checkpointAlert,
                 onEnteringRadPoint = viewModel::onEnteringRadiationZone,
                 onDismissAlert = viewModel::dismissRadiationAlert,
+                onDismissCheckpointAlert = viewModel::dismissCheckpointAlert,
                 onSetPoint = viewModel::setPoint,
                 onCreateRadPoint = viewModel::createRadPoint,
                 onLocationUpdate = viewModel::updateCurrentLocation,
@@ -75,7 +80,9 @@ fun NavGraph(
         }
         composable(Screen.Cart.route) { CartScreen() }
         composable(Screen.Wallet.route) { WalletScreen() }
-        composable(Screen.Profile.route) { ProfileScreen() }
+        composable(Screen.Profile.route) {
+            ProfileScreen()
+        }
         composable(Screen.Settings.route) {
             SettingsScreen(onBackClick = { navController.popBackStack() })
         }

@@ -60,14 +60,25 @@ class MapViewmodel @Inject constructor(
     private val _routePolyline = MutableStateFlow<List<LatLng>>(emptyList())
     val routePolyline: StateFlow<List<LatLng>> = _routePolyline
 
+    private val _reachedCheckpoints = MutableStateFlow<Set<Int>>(emptySet())
+    val reachedCheckpoints: StateFlow<Set<Int>> = _reachedCheckpoints
+
+    private val _checkpointAlert = MutableStateFlow<String?>(null)
+    val checkpointAlert: StateFlow<String?> = _checkpointAlert
+
     private val enteredZones = mutableSetOf<String>()
 
     private var currentRouteId: String? = null
     private var routeStartTime: Long = 0L
 
+    companion object {
+        private const val CHECKPOINT_PROXIMITY_RADIUS = 50.0 // meters
+    }
+
     fun updateCurrentLocation(location: LatLng) {
         _currentLocation.value = location
         loadRadSpots()
+        checkCheckpointProximity(location)
     }
 
     private fun loadRadSpots(radiusMeters: Double = 5000.0) {
@@ -152,6 +163,7 @@ class MapViewmodel @Inject constructor(
                 Log.i("MapViewmodel", "🚀 Route started with ID: $routeId")
                 _isRouteActive.value = true
                 _routeCheckpoints.value = _pendingCheckpoints.value
+                _reachedCheckpoints.value = emptySet()
                 Log.i("MapViewmodel", "Checkpoints: ${_routeCheckpoints.value}")
                 clearPendingCheckpoints()
                 _error.value = null
@@ -175,6 +187,7 @@ class MapViewmodel @Inject constructor(
                 )
                 _isRouteActive.value = false
                 _routeCheckpoints.value = emptyList()
+                _reachedCheckpoints.value = emptySet()
                 currentRouteId = null
                 routeStartTime = 0L
                 _error.value = null
@@ -225,15 +238,47 @@ class MapViewmodel @Inject constructor(
         _radiationAlert.value = null
     }
 
+    fun dismissCheckpointAlert() {
+        _checkpointAlert.value = null
+    }
+
+    private fun checkCheckpointProximity(currentLocation: LatLng) {
+        if (!_isRouteActive.value) return
+
+        val checkpoints = _routeCheckpoints.value
+        val reached = _reachedCheckpoints.value.toMutableSet()
+
+        checkpoints.forEachIndexed { index, checkpoint ->
+            if (!reached.contains(index)) {
+                val distance = calculateDistance(currentLocation, checkpoint)
+                if (distance <= CHECKPOINT_PROXIMITY_RADIUS) {
+                    reached.add(index)
+                    _reachedCheckpoints.value = reached
+                    _checkpointAlert.value = "Checkpoint ${index + 1} reached! ✓"
+                    Log.i("MapViewmodel", "✅ Checkpoint $index reached at distance: $distance meters")
+                }
+            }
+        }
+    }
+
+    private fun calculateDistance(point1: LatLng, point2: LatLng): Double {
+        val results = FloatArray(1)
+        android.location.Location.distanceBetween(
+            point1.latitude,
+            point1.longitude,
+            point2.latitude,
+            point2.longitude,
+            results
+        )
+        return results[0].toDouble()
+    }
+
     fun onLeavingRadiationZone(radData: RadiationData) {
         val zoneId = radData.id ?: return
         enteredZones.remove(zoneId)
         Log.i("MapViewmodel", "✅ User left radiation zone: $zoneId")
     }
 
-    /**
-     * Decodes a Google encoded polyline string to a list of LatLng
-     */
     private fun decodePolyline(encoded: String): List<LatLng> {
         val poly = ArrayList<LatLng>()
         var index = 0
@@ -265,9 +310,6 @@ class MapViewmodel @Inject constructor(
         return poly
     }
 
-    /**
-     * Fetches a road-following route from Google Directions API and updates _routePolyline
-     */
     fun fetchRoutePolyline(origin: LatLng, destination: LatLng) {
         viewModelScope.launch {
             try {
@@ -302,9 +344,6 @@ class MapViewmodel @Inject constructor(
         }
     }
 
-    /**
-     * Call this when you want to fetch a route between the first two pending checkpoints
-     */
     fun fetchRouteForPendingCheckpoints() {
         val points = _pendingCheckpoints.value
         if (points.size >= 2) {
@@ -314,3 +353,4 @@ class MapViewmodel @Inject constructor(
         }
     }
 }
+

@@ -38,9 +38,6 @@ class MapRouteRepository(
 
     // ============= Checkpoint Management (Firestore) =============
 
-    /**
-     * Save a checkpoint to Firestore for future use
-     */
     suspend fun createCheckpoint(location: LatLng, name: String? = null, notes: String? = null): String {
         val checkpoint = Checkpoint(
             userId = user.uid,
@@ -58,9 +55,6 @@ class MapRouteRepository(
         return docRef.id
     }
 
-    /**
-     * Get all saved checkpoints for the current user
-     */
     suspend fun getCheckpoints(): List<LatLng> {
         val snapshot = checkpointsCol
             .whereEqualTo("userId", user.uid)
@@ -72,9 +66,6 @@ class MapRouteRepository(
         }
     }
 
-    /**
-     * Get all saved checkpoints with full data
-     */
     suspend fun getCheckpointsWithDetails(): List<Checkpoint> {
         val snapshot = checkpointsCol
             .whereEqualTo("userId", user.uid)
@@ -87,9 +78,6 @@ class MapRouteRepository(
         }
     }
 
-    /**
-     * Delete a saved checkpoint
-     */
     suspend fun deleteCheckpoint(checkpointId: String): Boolean {
         checkpointsCol.document(checkpointId).delete().await()
         Log.d(TAG, "Checkpoint deleted: $checkpointId")
@@ -98,9 +86,6 @@ class MapRouteRepository(
 
     // ============= Active Route Management (Realtime Database) =============
 
-    /**
-     * Start a new active route and broadcast it in real-time
-     */
     suspend fun startRoute(routeId: String, routeStartTime: Long) {
         val activeRoute = ActiveRoute(
             id = routeId,
@@ -114,9 +99,6 @@ class MapRouteRepository(
         Log.d(TAG, "Active route started: $routeId")
     }
 
-    /**
-     * Start a new active route with predefined checkpoints
-     */
     suspend fun startRouteWithCheckpoints(routeId: String, routeStartTime: Long, checkpoints: List<LatLng>) {
         val activeRoute = ActiveRoute(
             id = routeId,
@@ -131,17 +113,11 @@ class MapRouteRepository(
         Log.d(TAG, "Active route started with checkpoints: $routeId")
     }
 
-    /**
-     * Add a checkpoint to the current active route
-     */
     suspend fun addCheckpointToActiveRoute(routeId: String, checkpoints: List<LatLng>, location: LatLng) {
         val updatedCheckpoints = checkpoints + location
         updateActiveRoute(routeId, updatedCheckpoints, location)
     }
 
-    /**
-     * Update the active route with new location
-     */
     suspend fun updateActiveRoute(routeId: String, checkpoints: List<LatLng>, currentLocation: LatLng) {
         val totalDistance = calculateTotalDistance(checkpoints)
         val updates = mapOf(
@@ -154,9 +130,6 @@ class MapRouteRepository(
         Log.d(TAG, "Active route updated with ${checkpoints.size} checkpoints")
     }
 
-    /**
-     * End the current active route and save to Firestore
-     */
     suspend fun endRoute(routeId: String, checkpoints: List<LatLng>, routeStartTime: Long) {
         if (routeId.isEmpty() || checkpoints.isEmpty()) {
             Log.w(TAG, "No active route to end")
@@ -182,9 +155,6 @@ class MapRouteRepository(
         Log.d(TAG, "Route ended and saved: $routeId")
     }
 
-    /**
-     * Observe nearby active routes in real-time
-     */
     fun observeNearbyActiveRoutes(centerLocation: LatLng, radiusKm: Double = 10.0): Flow<List<ActiveRoute>> = callbackFlow {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -196,9 +166,8 @@ class MapRouteRepository(
                         null
                     }
                 }.filter { route ->
-                    // Filter by active status and proximity
                     route.isActive &&
-                    route.userId != user.uid && // Don't show own route
+                    route.userId != user.uid &&
                     route.currentLocation?.let {
                         calculateDistance(centerLocation, it) <= radiusKm
                     } ?: false
@@ -222,9 +191,6 @@ class MapRouteRepository(
 
     // ============= Completed Routes (CRUD Implementation) =============
 
-    /**
-     * Save a completed route to Firestore
-     */
     override suspend fun create(document: MapRoute): Long {
         val timestamp = System.currentTimeMillis()
         val routeData = mapOf(
@@ -305,9 +271,6 @@ class MapRouteRepository(
         return true
     }
 
-    /**
-     * Get all completed routes for the current user
-     */
     suspend fun getAllRoutes(): List<MapRoute> {
         val snapshot = routesCol
             .whereEqualTo("userId", user.uid)
@@ -347,10 +310,6 @@ class MapRouteRepository(
         return totalDistance
     }
 
-    /**
-     * Calculate distance between two points using Haversine formula
-     * Returns distance in kilometers
-     */
     private fun calculateDistance(point1: LatLng, point2: LatLng): Double {
         val earthRadiusKm = 6371.0
 

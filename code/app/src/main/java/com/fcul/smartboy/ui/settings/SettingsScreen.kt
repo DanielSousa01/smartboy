@@ -33,9 +33,8 @@ fun SettingsScreen(
             )
         }
     ) { padding ->
-        // Settings content
         Column(modifier = modifier.padding(padding)) {
-            // Your settings UI
+
         }
     }
 }
