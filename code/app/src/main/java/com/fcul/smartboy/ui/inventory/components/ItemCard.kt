@@ -33,6 +33,7 @@ fun ItemCard(
     if (isItemDetailsOpen) {
         ItemDetails(
             item = item,
+            onReload = { onReload(item.id) },
             onDismiss = { isItemDetailsOpen = false },
             onRemove = {
                 onRemove(item.id)
@@ -67,46 +68,13 @@ fun ItemCard(
                 )
             }
             if (item is Item.Weapon && item.ammoId != null) {
-                Column {
+                Row {
                     if (item.ammoName != null) {
                         Text(
-                            text = "Ammo Name:",
+                            text = "Ammo Name : ${item.ammoName}",
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
-                        Text(
-                            text = item.ammoName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                    }
-                }
-                Column {
-                    Button(
-                        onClick = {
-                            onReload(item.id)
-                        }
-                    ) {
-                        Text(
-                            text = "Reload",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                    }
-                }
-            }
-
-            if (item is Item.Aid) {
-                Column {
-                    Button(
-                        onClick = {
-                            if (item.quantity - 1 == 0)
-                                onRemove(item.id)
-                            else
-                                onQuantityChange(item.id, item.quantity - 1)
-                        }
-                    ) {
-                        Text("Use")
                     }
                 }
             }
