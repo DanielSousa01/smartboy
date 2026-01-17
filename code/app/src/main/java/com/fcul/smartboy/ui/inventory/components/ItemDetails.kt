@@ -38,6 +38,7 @@ import com.fcul.smartboy.domain.inventory.Item
 @Composable
 fun ItemDetails(
     item: Item,
+    onUse: () -> Unit,
     onReload: () -> Unit,
     onDismiss: () -> Unit,
     onRemove: () -> Unit,
@@ -188,7 +189,19 @@ fun ItemDetails(
                 ) {
                     Text("Update")
                 }
-                Button(onClick = onRemove) {
+                if (item is Item.Weapon && item.ammoId != null && item.ammoLoaded != null || item is Item.Aid)
+                Button(
+                    onClick = {
+                        if (item is Item.Aid && item.quantity > 0) {
+                            quantity = item.quantity - 1
+                            if (quantity == 0)
+                                onDismiss()
+                        }
+                        onUse()
+                    },
+                    enabled = item is Item.Weapon && item.ammoId != null && item.ammoLoaded != null
+                            && item.ammoLoaded > 0 || item is Item.Aid && item.quantity > 0
+                ) {
                     Text("Use")
                 }
             }

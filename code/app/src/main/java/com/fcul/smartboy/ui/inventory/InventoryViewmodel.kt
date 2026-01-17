@@ -83,6 +83,26 @@ class InventoryViewmodel @Inject constructor(
         }
     }
 
+    fun unloadAmmo(itemId: Long) {
+        val weapon = _items.value.find { it.id == itemId }
+
+        if (weapon is Item.Weapon && weapon.ammoId != null
+            && weapon.ammoMax != null && weapon.ammoLoaded != null && weapon.ammoLoaded > 0
+        ) {
+            val newWeapon = weapon.copyItem(ammoLoaded = weapon.ammoLoaded - 1)
+
+            _items.update { list ->
+                list.map {
+                    if (it.id == itemId) newWeapon else it
+                }
+            }
+
+            viewModelScope.launch {
+                inventoryRepository.update(itemId, newWeapon)
+            }
+        }
+    }
+
     fun reloadAmmo(itemId: Long) {
         val weapon = _items.value.find { it.id == itemId }
 

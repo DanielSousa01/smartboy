@@ -24,15 +24,17 @@ import com.fcul.smartboy.domain.inventory.Item
 @Composable
 fun ItemCard(
     item: Item,
-    onReload: (Long) -> Unit,
     onQuantityChange: (Long, Int) -> Unit,
     onRemove: (Long) -> Unit,
+    onUse: (Long) -> Unit = {},
+    onReload: (Long) -> Unit = {},
 ) {
     var isItemDetailsOpen by remember { mutableStateOf(false) }
 
     if (isItemDetailsOpen) {
         ItemDetails(
             item = item,
+            onUse = { onUse(item.id) },
             onReload = { onReload(item.id) },
             onDismiss = { isItemDetailsOpen = false },
             onRemove = {

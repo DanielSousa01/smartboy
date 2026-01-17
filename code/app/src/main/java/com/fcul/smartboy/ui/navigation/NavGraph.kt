@@ -84,6 +84,7 @@ fun NavGraph(
             InventoryScreen(
                 itemsState = viewModel.items,
                 isLoadingState = viewModel.isLoading,
+                onUnload = viewModel::unloadAmmo,
                 onReload = viewModel::reloadAmmo,
                 onRemove = viewModel::removeItem,
                 onQuantityChange = viewModel::changeQuantity,

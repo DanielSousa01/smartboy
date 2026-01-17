@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 fun InventoryScreen(
     isLoadingState: StateFlow<Boolean>,
     itemsState: StateFlow<List<Item>>,
+    onUnload: (Long) -> Unit,
     onReload: (Long) -> Unit,
     onRemove: (Long) -> Unit,
     onQuantityChange: (Long, Int) -> Unit,
@@ -64,12 +65,35 @@ fun InventoryScreen(
 
                 if (categoryItems.isNotEmpty()) {
                     items(categoryItems) { invItem ->
-                        ItemCard(
-                            item = invItem,
-                            onReload = onReload,
-                            onQuantityChange = onQuantityChange,
-                            onRemove = onRemove
-                        )
+                        if (invItem is Item.Weapon && invItem.ammoId != null) {
+                            ItemCard(
+                                item = invItem,
+                                onUse = onUnload,
+                                onReload = onReload,
+                                onQuantityChange = onQuantityChange,
+                                onRemove = onRemove
+                            )
+                        } else if (invItem is Item.Aid) {
+                            ItemCard(
+                                item = invItem,
+                                onUse = {
+                                    val newQuantity = invItem.quantity - 1
+                                    if (newQuantity > 0)
+                                        onQuantityChange(invItem.id, invItem.quantity - 1)
+                                    else
+                                        onRemove(invItem.id)
+                                },
+                                onQuantityChange = onQuantityChange,
+                                onRemove = onRemove
+                            )
+                        } else {
+                            ItemCard(
+                                item = invItem,
+                                onQuantityChange = onQuantityChange,
+                                onRemove = onRemove
+                            )
+                        }
+
                     }
                 } else {
                     item {
