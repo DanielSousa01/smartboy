@@ -4,6 +4,9 @@ import com.fcul.smartboy.domain.user.Profile
 import com.fcul.smartboy.repository.base.CRUD
 import com.fcul.smartboy.repository.base.Path
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class ProfileRepository(
@@ -55,8 +58,65 @@ class ProfileRepository(
         return false
     }
 
+    suspend fun updateCaps(userId: String, caps: Int): Boolean {
+        col.document(userId).update("caps", caps).await()
+        return true
+    }
+
+    suspend fun addCaps(userId: String, amount: Int): Boolean {
+        val profile = read(userId)
+        if (profile != null) {
+            val newCaps = profile.caps + amount
+            updateCaps(userId, newCaps)
+            return true
+        }
+        return false
+    }
+
+    suspend fun deductCaps(userId: String, amount: Int): Boolean {
+        val profile = read(userId)
+        if (profile != null && profile.caps >= amount) {
+            val newCaps = profile.caps - amount
+            updateCaps(userId, newCaps)
+            return true
+        }
+        return false
+    }
+
+    suspend fun transferCaps(fromUserId: String, toUserId: String, amount: Int): Boolean {
+        val fromProfile = read(fromUserId)
+        if (fromProfile != null && fromProfile.caps >= amount) {
+            if (deductCaps(fromUserId, amount)) {
+                addCaps(toUserId, amount)
+                return true
+            }
+        }
+        return false
+    }
+
+    fun observeProfile(userId: String): Flow<Profile?> = callbackFlow {
+        val docRef = col.document(userId)
+
+        val listener = docRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+
+            val profile = if (snapshot?.exists() == true) {
+                fromMap(snapshot.data)
+            } else {
+                null
+            }
+            trySend(profile)
+        }
+
+        awaitClose { listener.remove() }
+    }
+
     private fun toMap(d: Profile): Map<String, Any?> = mapOf(
         "userId" to d.userId,
+        "caps" to d.caps,
         "steps" to d.steps,
         "distance" to d.distance,
         "radiation" to d.radiation
@@ -66,12 +126,14 @@ class ProfileRepository(
     private fun fromMap(data: Map<String, Any?>?): Profile? {
         if (data == null) return null
         val userId = data["userId"] as? String ?: return null
+        val caps = (data["caps"] as? Long)?.toInt() ?: 0
         val steps = (data["steps"] as? Long) ?: 0L
         val distance = (data["distance"] as? Double) ?: 0.0
         val radiation = (data["radiation"] as? Double) ?: 0.0
 
         return Profile(
             userId = userId,
+            caps = caps,
             steps = steps,
             distance = distance,
             radiation = radiation

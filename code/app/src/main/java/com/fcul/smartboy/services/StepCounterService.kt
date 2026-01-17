@@ -11,6 +11,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.fcul.smartboy.repository.ProfileRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -108,8 +109,7 @@ class StepCounterService : Service(), SensorEventListener {
                 profileRepository.incrementSteps(userId, increment)
                 lastSyncedSteps = sessionSteps
             } catch (e: Exception) {
-                // Log error silently
-                android.util.Log.e("StepCounterService", "Failed to sync steps", e)
+                Log.e("StepCounterService", "Failed to sync steps", e)
             }
         }
     }

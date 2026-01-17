@@ -176,7 +176,6 @@ fun ItemDetails(
                             onQuantityChange(it)
                             onDismiss()
                         } else {
-//                      Check if the context should come from the screen
                             Toast.makeText(
                                 context,
                                 "Quantity must be greater than 0",

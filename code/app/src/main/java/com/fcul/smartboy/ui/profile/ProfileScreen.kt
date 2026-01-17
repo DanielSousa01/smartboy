@@ -26,17 +26,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.fcul.smartboy.domain.user.Profile
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewmodel = hiltViewModel()
+    profile: Profile?,
+    currentUser: FirebaseUser?,
+    isLoading: Boolean = false,
+    error: String? = null,
+    onRefresh: () -> Unit
 ) {
-    val profile by viewModel.profile.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-
-    val currentUser = FirebaseAuth.getInstance().currentUser
 
     Column(
         modifier = Modifier
@@ -55,7 +56,7 @@ fun ProfileScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            IconButton(onClick = { viewModel.refresh() }) {
+            IconButton(onClick = { onRefresh() }) {
                 Icon(Icons.Default.Refresh, contentDescription = "Refresh")
             }
         }

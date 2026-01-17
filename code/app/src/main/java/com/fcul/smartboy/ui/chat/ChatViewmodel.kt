@@ -7,6 +7,8 @@ import com.fcul.smartboy.domain.chat.ChatUser
 import com.fcul.smartboy.domain.chat.Conversation
 import com.fcul.smartboy.domain.chat.Message
 import com.fcul.smartboy.repository.ChatRepository
+import com.fcul.smartboy.repository.ProfileRepository
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,11 +18,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewmodel @Inject constructor(
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val profileRepository: ProfileRepository,
+    private val auth: FirebaseAuth
 ) : ViewModel() {
-    private val _availableUsers = MutableStateFlow<List<ChatUser>>(emptyList())
-    val availableUsers: StateFlow<List<ChatUser>> = _availableUsers
-
     private val _selectedUser = MutableStateFlow<ChatUser?>(null)
     val selectedUser: StateFlow<ChatUser?> = _selectedUser
 
@@ -42,22 +43,19 @@ class ChatViewmodel @Inject constructor(
     private val _viewState = MutableStateFlow("conversations")
     val viewState: StateFlow<String> = _viewState
 
+    private val _userCaps = MutableStateFlow(0)
+    val userCaps: StateFlow<Int> = _userCaps
+
     init {
-        loadUsers()
         observeConversations()
+        observeUserProfile()
     }
 
-    fun loadUsers() {
+    private fun observeUserProfile() {
+        val userId = auth.currentUser?.uid ?: return
         viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                val users = chatRepository.getUsers()
-                _availableUsers.value = users
-                _error.value = null
-            } catch (e: Exception) {
-                _error.value = "Failed to load users: ${e.message}"
-            } finally {
-                _isLoading.value = false
+            profileRepository.observeProfile(userId).collect { profile ->
+                _userCaps.value = profile?.caps ?: 0
             }
         }
     }
@@ -68,23 +66,16 @@ class ChatViewmodel @Inject constructor(
         observeMessages(user.userId)
     }
 
-    fun backToUserList() {
+    fun backToConversations() {
         _selectedUser.value = null
         _viewState.value = "conversations"
         _messages.value = emptyList()
     }
 
-    fun showNewChatScreen() {
-        _viewState.value = "users"
-    }
-
-    fun backToConversations() {
-        _viewState.value = "conversations"
-    }
 
     fun openConversation(conversation: Conversation) {
         val otherUserId = conversation.participantIds.firstOrNull {
-            it != com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+            it != auth.currentUser?.uid
         } ?: return
 
         val otherUserName = conversation.participantNames[otherUserId] ?: "User"

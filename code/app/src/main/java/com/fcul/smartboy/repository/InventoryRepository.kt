@@ -8,6 +8,9 @@ import com.fcul.smartboy.repository.base.Path
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import javax.inject.Inject
 
 class InventoryRepository @Inject constructor(
@@ -28,6 +31,30 @@ class InventoryRepository @Inject constructor(
         return inventorySnapshot.documents.mapNotNull { doc ->
             doc.toObject(ItemEntity::class.java)?.toItem()
         }
+    }
+
+    fun observeInventory(): Flow<List<Item>> = callbackFlow {
+        val user = user ?: run {
+            close()
+            return@callbackFlow
+        }
+
+        val inventoryRef = col.document(user.uid).collection(Path.INVENTORY.path)
+
+        val listener = inventoryRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+
+            val items = snapshot?.documents?.mapNotNull { doc ->
+                doc.toObject(ItemEntity::class.java)?.toItem()
+            } ?: emptyList()
+
+            trySend(items)
+        }
+
+        awaitClose { listener.remove() }
     }
 
     override suspend fun create(document: Item): Long {

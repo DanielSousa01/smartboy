@@ -73,7 +73,6 @@ class ChatRepository(
             imageUrl = imageUrl
         )
 
-        // Save message under conversation path
         messagesRef.child(conversationId).child(messageId).setValue(toMap(message)).await()
         return messageId
     }
@@ -117,7 +116,6 @@ class ChatRepository(
                 snapshot.children.forEach { conversationSnapshot ->
                     val conversationId = conversationSnapshot.key ?: return@forEach
 
-                    // Check if current user is part of this conversation
                     if (conversationId.contains(currentUserId)) {
                         val messages = conversationSnapshot.children.mapNotNull { msgSnapshot ->
                             fromMap(msgSnapshot.value as? Map<*, *>)
@@ -139,7 +137,7 @@ class ChatRepository(
                                         ),
                                         lastMessage = msg.text.ifEmpty { "Image" },
                                         lastMessageTime = msg.timestamp,
-                                        unreadCount = 0 // TODO: implement unread tracking
+                                        unreadCount = 0
                                     )
                                 )
                             }

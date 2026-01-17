@@ -62,22 +62,6 @@ fun TopBar(
                 }
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { onDestinationChange() }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text("1000")
-                            Spacer(Modifier.width(8.dp))
-                            Icon(
-                                painter = painterResource(id = R.drawable.capicon),
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = Color.Unspecified
-                            )
-                        }
                         IconButton(
                             onClick = { onShoppingCartClick() }
                         ) {

@@ -28,6 +28,23 @@ class ProfileViewmodel @Inject constructor(
 
     init {
         loadProfile()
+        observeProfile()
+    }
+
+    private fun observeProfile() {
+        val userId = auth.currentUser?.uid ?: return
+
+        viewModelScope.launch {
+            profileRepository.observeProfile(userId).collect { profile ->
+                if (profile != null) {
+                    _profile.value = profile
+                } else {
+                    val newProfile = Profile(userId = userId, steps = 0, caps = 0)
+                    profileRepository.create(newProfile)
+                    _profile.value = newProfile
+                }
+            }
+        }
     }
 
     fun loadProfile() {

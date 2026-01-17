@@ -26,7 +26,22 @@ class InventoryViewmodel @Inject constructor(
 
     init {
         populateDatabase()
-        loadInventory()
+        observeInventory()
+    }
+
+    private fun observeInventory() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                inventoryRepository.observeInventory().collect { items ->
+                    _items.value = items
+                    _isLoading.value = false
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _isLoading.value = false
+            }
+        }
     }
 
     private fun loadInventory() {
