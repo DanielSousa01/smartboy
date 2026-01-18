@@ -6,11 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -19,8 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,11 +23,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.modifier.ModifierLocalReadScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.domain.inventory.Item
-
 
 
 @Composable
@@ -43,9 +36,21 @@ fun ItemDetails(
     onDismiss: () -> Unit,
     onRemove: () -> Unit,
     onQuantityChange: (Int) -> Unit,
+    onSell: (Int, Int) -> Unit,
 ) {
     val context = LocalContext.current
+    var isSellingMenuOpen by remember { mutableStateOf(false) }
     var quantity: Int? by remember { mutableStateOf(item.quantity) }
+
+    if (isSellingMenuOpen)
+        SellingItem(
+            item = item,
+            onDismiss = { isSellingMenuOpen = false },
+            onConfirm = { quantity, price ->
+                onSell(quantity, price)
+                isSellingMenuOpen = false
+            },
+        )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -66,6 +71,12 @@ fun ItemDetails(
                     )
                 }
 
+                Button(onClick = {
+                    isSellingMenuOpen = true
+                }) {
+                    Text("Sell")
+                }
+
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = "Close")
                 }
@@ -73,7 +84,9 @@ fun ItemDetails(
         },
         text = {
             Column(
-                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceEvenly
             ) {
@@ -82,11 +95,15 @@ fun ItemDetails(
                         Text(text = "Ammo : ${item.ammoName}")
 
                         Column(
-                            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
+                            modifier = Modifier
+                                .padding(vertical = 8.dp)
+                                .fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(
-                                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
+                                modifier = Modifier
+                                    .padding(vertical = 8.dp)
+                                    .fillMaxWidth(),
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Text(text = "${item.ammoLoaded} / ${item.ammoMax}")
@@ -107,51 +124,26 @@ fun ItemDetails(
                     ) {
                         Card {
                             Text(text = "Quantity: ")
-                            Row(
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            ) {
-                                IconButton(
-                                    onClick = {
-                                        quantity?.let {
-                                            quantity = if (it > 1) {
-                                                it - 1
-                                            } else {
-                                                1
-                                            }
-                                        }
-                                    },
-                                    enabled = quantity != null && quantity!! > 0
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Remove,
-                                        contentDescription = "Decrease Quantity"
-                                    )
-                                }
-                                TextField(
-                                    value = quantity?.toString() ?: "",
-                                    onValueChange = { newValue ->
-                                        quantity = newValue.toIntOrNull()
-                                    },
-                                    singleLine = true,
-                                    modifier = Modifier
-                                        .width(80.dp)
-                                        .padding(vertical = 4.dp),
-                                )
-                                IconButton(
-                                    onClick = {
-                                        quantity?.let {
-                                            quantity = it + 1
+                            IncrementalTextField(
+                                value = quantity?.toString() ?: "",
+                                onValueChange = { newValue ->
+                                    quantity = newValue.toIntOrNull()
+                                },
+                                onIncrement = {
+                                    quantity?.let {
+                                        quantity = it + 1
+                                    }
+                                },
+                                isIncrementEnabled = quantity != null,
+                                onDecrement = {
+                                    quantity?.let {
+                                        if (it > 1) {
+                                            quantity = it - 1
                                         }
                                     }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = "Increase Quantity"
-                                    )
-                                }
-                            }
+                                },
+                                isDecrementEnabled = quantity != null && quantity!! > 1,
+                            )
                         }
                     }
                 }
@@ -167,43 +159,43 @@ fun ItemDetails(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     )
-                    ) {
+                ) {
                     Text("Remove")
                 }
                 Button(
                     onClick = {
-                    quantity?.let {
-                        if (it > 0) {
-                            onQuantityChange(it)
-                            onDismiss()
-                        } else {
-                            Toast.makeText(
-                                context,
-                                "Quantity must be greater than 0",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                        quantity?.let {
+                            if (it > 0) {
+                                onQuantityChange(it)
+                                onDismiss()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Quantity must be greater than 0",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
-                    }
-                },
+                    },
                     enabled = quantity != null && item.quantity != quantity!! && quantity!! > 0
                 ) {
                     Text("Update")
                 }
                 if (item is Item.Weapon && item.ammoId != null && item.ammoLoaded != null || item is Item.Aid)
-                Button(
-                    onClick = {
-                        if (item is Item.Aid && item.quantity > 0) {
-                            quantity = item.quantity - 1
-                            if (quantity == 0)
-                                onDismiss()
-                        }
-                        onUse()
-                    },
-                    enabled = item is Item.Weapon && item.ammoId != null && item.ammoLoaded != null
-                            && item.ammoLoaded > 0 || item is Item.Aid && item.quantity > 0
-                ) {
-                    Text("Use")
-                }
+                    Button(
+                        onClick = {
+                            if (item is Item.Aid && item.quantity > 0) {
+                                quantity = item.quantity - 1
+                                if (quantity == 0)
+                                    onDismiss()
+                            }
+                            onUse()
+                        },
+                        enabled = item is Item.Weapon && item.ammoId != null && item.ammoLoaded != null
+                                && item.ammoLoaded > 0 || item is Item.Aid && item.quantity > 0
+                    ) {
+                        Text("Use")
+                    }
             }
         },
     )

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.repository.InventoryRepository
+import com.fcul.smartboy.repository.SellingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class InventoryViewmodel @Inject constructor(
-    private val inventoryRepository: InventoryRepository
+    private val inventoryRepository: InventoryRepository,
+    private val sellingRepository: SellingRepository
 ) : ViewModel() {
     private val _items = MutableStateFlow<List<Item>>(emptyList())
     private val _isLoading = MutableStateFlow(false)
@@ -142,6 +144,24 @@ class InventoryViewmodel @Inject constructor(
                 }
             }
 
+        }
+    }
+
+    fun sellItem(itemId: Long, quantity: Int, value: Int) {
+        val item = _items.value.find { it.id == itemId }
+
+        if (item != null) {
+            val newSellingItem = item.toSellingItem(quantity, value)
+
+            if (item.quantity - quantity <= 0) {
+                removeItem(itemId)
+            } else {
+                changeQuantity(itemId, item.quantity - quantity)
+            }
+
+            viewModelScope.launch {
+                sellingRepository.create(newSellingItem)
+            }
         }
     }
 

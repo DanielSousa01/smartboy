@@ -24,10 +24,12 @@ import com.fcul.smartboy.domain.inventory.Item
 @Composable
 fun ItemCard(
     item: Item,
+    sellingMode: Boolean,
     onQuantityChange: (Long, Int) -> Unit,
     onRemove: (Long) -> Unit,
     onUse: (Long) -> Unit = {},
     onReload: (Long) -> Unit = {},
+    onSell: (Long, Int, Int) -> Unit
 ) {
     var isItemDetailsOpen by remember { mutableStateOf(false) }
 
@@ -43,6 +45,10 @@ fun ItemCard(
             },
             onQuantityChange = { newQuantity ->
                 onQuantityChange(item.id, newQuantity)
+                isItemDetailsOpen = false
+            },
+            onSell = { price, quantity ->
+                onSell(item.id, price, quantity)
                 isItemDetailsOpen = false
             }
         )
@@ -68,6 +74,12 @@ fun ItemCard(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
+
+                if (sellingMode) {
+                    Button(onClick = { }) {
+                        Text("Sell")
+                    }
+                }
             }
             if (item is Item.Weapon && item.ammoId != null) {
                 Row {

@@ -88,6 +88,7 @@ fun NavGraph(
                 onReload = viewModel::reloadAmmo,
                 onRemove = viewModel::removeItem,
                 onQuantityChange = viewModel::changeQuantity,
+                onSell = viewModel::sellItem,
             )
         }
         composable(Screen.Cart.route) { CartScreen() }

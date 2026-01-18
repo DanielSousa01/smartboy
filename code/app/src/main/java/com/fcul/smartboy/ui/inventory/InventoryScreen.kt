@@ -40,15 +40,18 @@ fun InventoryScreen(
     onReload: (Long) -> Unit,
     onRemove: (Long) -> Unit,
     onQuantityChange: (Long, Int) -> Unit,
+    onSell: (Long, Int, Int) -> Unit
 ) {
     val items by itemsState.collectAsState()
     var isMenuOpen by remember { mutableStateOf(false) }
     val itemsByCategory: Map<Category, List<Item>> = items.groupBy { it.category }
+    var sellingMode by remember { mutableStateOf(false) }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(12.dp)
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
         ) {
             Category.entries.forEach { category ->
                 item {
@@ -68,14 +71,17 @@ fun InventoryScreen(
                         if (invItem is Item.Weapon && invItem.ammoId != null) {
                             ItemCard(
                                 item = invItem,
+                                sellingMode = sellingMode,
                                 onUse = onUnload,
                                 onReload = onReload,
                                 onQuantityChange = onQuantityChange,
-                                onRemove = onRemove
+                                onRemove = onRemove,
+                                onSell = onSell
                             )
                         } else if (invItem is Item.Aid) {
                             ItemCard(
                                 item = invItem,
+                                sellingMode = sellingMode,
                                 onUse = {
                                     val newQuantity = invItem.quantity - 1
                                     if (newQuantity > 0)
@@ -84,13 +90,16 @@ fun InventoryScreen(
                                         onRemove(invItem.id)
                                 },
                                 onQuantityChange = onQuantityChange,
-                                onRemove = onRemove
+                                onRemove = onRemove,
+                                onSell = onSell
                             )
                         } else {
                             ItemCard(
                                 item = invItem,
+                                sellingMode = sellingMode,
                                 onQuantityChange = onQuantityChange,
-                                onRemove = onRemove
+                                onRemove = onRemove,
+                                onSell = onSell
                             )
                         }
 
@@ -110,6 +119,7 @@ fun InventoryScreen(
                 }
             }
         }
+
 
         Box(
             modifier = Modifier

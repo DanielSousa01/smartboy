@@ -1,13 +1,15 @@
 package com.fcul.smartboy.domain.inventory
 
-sealed class Item {
+sealed class SellingItem {
     abstract val id: Long
     abstract val name: String
     abstract val quantity: Int
     abstract val category: Category
+    abstract val valuePerUnit: Int
 
     init {
         require(quantity >= 0) { "Quantity must be non-negative" }
+        require(valuePerUnit >= 0) { "Value must be non-negative"}
     }
 
     abstract fun copyItem(
@@ -15,18 +17,19 @@ sealed class Item {
         name: String = this.name,
         quantity: Int = this.quantity,
         category: Category = this.category,
-    ): Item
+    ): SellingItem
 
     data class Weapon(
         override val id: Long,
         override val name: String,
         override val quantity: Int,
         override val category: Category,
+        override val valuePerUnit: Int,
         val ammoId: Long? = null,
         val ammoName: String? = null,
         val ammoMax: Int? = null,
-        val ammoLoaded: Int? = null
-    ) : Item() {
+        val ammoLoaded: Int? = null,
+    ) : SellingItem() {
         init {
             if (ammoId != null) {
                 require(ammoName != null) { "ammoName must be provided when ammoId is not null" }
@@ -40,7 +43,7 @@ sealed class Item {
             name: String,
             quantity: Int,
             category: Category,
-        ): Item {
+        ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
@@ -58,7 +61,7 @@ sealed class Item {
             ammoName: String? = this.ammoName,
             ammoMax: Int? = this.ammoMax,
             ammoLoaded: Int? = this.ammoLoaded
-        ): Item {
+        ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
@@ -76,14 +79,15 @@ sealed class Item {
         override val id: Long,
         override val name: String,
         override val quantity: Int,
-        override val category: Category
-    ) : Item() {
+        override val category: Category,
+        override val valuePerUnit: Int,
+    ) : SellingItem() {
         override fun copyItem(
             id: Long,
             name: String,
             quantity: Int,
             category: Category
-        ): Item {
+        ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
@@ -97,14 +101,15 @@ sealed class Item {
         override val id: Long,
         override val name: String,
         override val quantity: Int,
-        override val category: Category
-    ) : Item() {
+        override val category: Category,
+        override val valuePerUnit: Int,
+    ) : SellingItem() {
         override fun copyItem(
             id: Long,
             name: String,
             quantity: Int,
             category: Category
-        ): Item {
+        ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
@@ -118,14 +123,15 @@ sealed class Item {
         override val id: Long,
         override val name: String,
         override val quantity: Int,
-        override val category: Category
-    ) : Item() {
+        override val category: Category,
+        override val valuePerUnit: Int,
+    ) : SellingItem() {
         override fun copyItem(
             id: Long,
             name: String,
             quantity: Int,
             category: Category
-        ): Item {
+        ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
@@ -139,14 +145,15 @@ sealed class Item {
         override val id: Long,
         override val name: String,
         override val quantity: Int,
-        override val category: Category
-    ) : Item() {
+        override val category: Category,
+        override val valuePerUnit: Int,
+    ) : SellingItem() {
         override fun copyItem(
             id: Long,
             name: String,
             quantity: Int,
             category: Category
-        ): Item {
+        ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
@@ -160,14 +167,15 @@ sealed class Item {
         override val id: Long,
         override val name: String,
         override val quantity: Int,
-        override val category: Category
-    ) : Item() {
+        override val category: Category,
+        override val valuePerUnit: Int,
+    ) : SellingItem() {
         override fun copyItem(
             id: Long,
             name: String,
             quantity: Int,
             category: Category
-        ): Item {
+        ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
@@ -177,8 +185,8 @@ sealed class Item {
         }
     }
 
-    fun toEntity(): ItemEntity {
-        return ItemEntity(
+    fun toEntity(): SellingItemEntity {
+        return SellingItemEntity(
             id = this.id,
             name = this.name,
             quantity = this.quantity,
@@ -186,74 +194,65 @@ sealed class Item {
             ammoId = if (this is Weapon) this.ammoId else null,
             ammoName = if (this is Weapon) this.ammoName else null,
             ammoMax = if (this is Weapon) this.ammoMax else null,
-            ammoLoaded = if (this is Weapon) this.ammoLoaded else null
+            ammoLoaded = if (this is Weapon) this.ammoLoaded else null,
+            valuePerUnit = this.valuePerUnit
         )
     }
 
-    fun toSellingItem(quantity: Int, value: Int): SellingItem {
+    fun toItem(): Item {
         return when (this) {
             is Weapon -> {
-                SellingItem.Weapon(
+                Item.Weapon(
                     id = this.id,
                     name = this.name,
-                    quantity = quantity,
+                    quantity = this.quantity,
                     category = this.category,
                     ammoId = this.ammoId,
                     ammoName = this.ammoName,
                     ammoMax = this.ammoMax,
-                    ammoLoaded = this.ammoLoaded,
-                    valuePerUnit = value
+                    ammoLoaded = this.ammoLoaded
                 )
             }
-
             is Ammo -> {
-                SellingItem.Ammo(
+                Item.Ammo(
                     id = this.id,
                     name = this.name,
-                    quantity = quantity,
-                    category = this.category,
-                    valuePerUnit = value
+                    quantity = this.quantity,
+                    category = this.category
                 )
             }
-
             is Apparel -> {
-                SellingItem.Apparel(
+                Item.Apparel(
                     id = this.id,
                     name = this.name,
-                    quantity = quantity,
-                    category = this.category,
-                    valuePerUnit = value
+                    quantity = this.quantity,
+                    category = this.category
                 )
             }
-
             is Aid -> {
-                SellingItem.Aid(
+                Item.Aid(
                     id = this.id,
                     name = this.name,
-                    quantity = quantity,
-                    category = this.category,
-                    valuePerUnit = value
+                    quantity = this.quantity,
+                    category = this.category
                 )
             }
-
             is Misc -> {
-                SellingItem.Misc(
+                Item.Misc(
                     id = this.id,
                     name = this.name,
-                    quantity = quantity,
-                    category = this.category,
-                    valuePerUnit = value
+                    quantity = this.quantity,
+                    category = this.category
                 )
             }
-
             is Junk -> {
-                SellingItem.Junk(
+                Item.Junk(
                     id = this.id,
                     name = this.name,
-                    quantity = quantity,
-                    category = this.category,
-                    valuePerUnit = value
+                    quantity = this.quantity,
+                    category = this.category
                 )
+
             }
         }
     }
