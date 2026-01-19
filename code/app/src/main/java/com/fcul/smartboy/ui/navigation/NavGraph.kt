@@ -36,38 +36,46 @@ fun NavGraph(
         startDestination = Screen.Map.route,
         modifier = modifier
     ) {
-        composable(Screen.Map.route) {
-            val viewModel: MapViewmodel = hiltViewModel()
+        composable(Screen.Map.route) { backStackEntry ->
+            // Scope ViewModel to the backStackEntry to prevent recreation
+            val viewModel: MapViewmodel = hiltViewModel(backStackEntry)
             val currentLocation by viewModel.currentLocation.collectAsState()
             val radSpots by viewModel.radSpots.collectAsState()
             val radiationAlert by viewModel.radiationAlert.collectAsState()
             val isRouteActive by viewModel.isRouteActive.collectAsState()
-            val routeCheckpoints by viewModel.routeCheckpoints.collectAsState()
             val pendingCheckpoints by viewModel.pendingCheckpoints.collectAsState()
             val routePolyline by viewModel.routePolyline.collectAsState()
-            val reachedCheckpoints by viewModel.reachedCheckpoints.collectAsState()
-            val checkpointAlert by viewModel.checkpointAlert.collectAsState()
+            val routeInfo by viewModel.routeInfo.collectAsState()
+            val traveledPath by viewModel.traveledPath.collectAsState()
+            val remainingRoute by viewModel.remainingRoute.collectAsState()
+            val selectedRadiationMarker by viewModel.selectedRadiationMarker.collectAsState()
+            val selectedCheckpointMarker by viewModel.selectedCheckpointMarker.collectAsState()
 
             MapScreen(
                 currentLocation = currentLocation,
                 radiationSpots = radSpots,
                 radiationAlert = radiationAlert,
                 isRouteActive = isRouteActive,
-                routeCheckpoints = routeCheckpoints,
                 pendingCheckpoints = pendingCheckpoints,
                 routePolyline = routePolyline,
-                reachedCheckpoints = reachedCheckpoints,
-                checkpointAlert = checkpointAlert,
+                routeInfo = routeInfo,
+                traveledPath = traveledPath,
+                remainingRoute = remainingRoute,
+                selectedRadiationMarker = selectedRadiationMarker,
+                selectedCheckpointMarker = selectedCheckpointMarker,
                 onEnteringRadPoint = viewModel::onEnteringRadiationZone,
                 onDismissAlert = viewModel::dismissRadiationAlert,
-                onDismissCheckpointAlert = viewModel::dismissCheckpointAlert,
                 onSetPoint = viewModel::setPoint,
                 onCreateRadPoint = viewModel::createRadPoint,
                 onLocationUpdate = viewModel::updateCurrentLocation,
+                onRadiationMarkerClick = viewModel::onRadiationMarkerClick,
+                onCheckpointMarkerClick = viewModel::onCheckpointMarkerClick,
+                onClearMarkerSelection = viewModel::clearMarkerSelection,
                 onStartRoute = viewModel::startRoute,
                 onAddPendingCheckpoint = viewModel::addPendingCheckpoint,
-                onAddCheckpoint = viewModel::addCheckpointToActiveRoute,
                 onEndRoute = viewModel::endRoute,
+                onClearPendingCheckpoints = viewModel::clearPendingCheckpoints,
+                onClearSelectedCheckpoint = viewModel::clearSelectedCheckpoint
             )
         }
         composable(Screen.Chat.route) {
@@ -102,10 +110,10 @@ fun NavGraph(
 
             ProfileScreen(
                 profile = profile,
-                currentUser = user,
-                isLoading = isLoading,
+                user = user,
                 error = error,
-                onRefresh = { viewmodel.loadProfile() }
+                isLoading = isLoading,
+                onRefresh = viewmodel::refresh
             )
         }
         composable(Screen.Settings.route) {

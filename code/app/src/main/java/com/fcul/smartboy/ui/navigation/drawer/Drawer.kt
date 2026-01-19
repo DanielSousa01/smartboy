@@ -1,4 +1,4 @@
-package com.fcul.smartboy.ui.navigation.drawer.left
+package com.fcul.smartboy.ui.navigation.drawer
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,9 +31,12 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
 @Composable
-fun LeftDrawer(
+fun Drawer(
     userName: String,
     userPicture: String? = null,
+    steps: Long = 0,
+    radiation: Double = 0.0,
+    caps: Int = 0,
     onProfileClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
@@ -55,6 +58,9 @@ fun LeftDrawer(
             )
 
             DrawerBody(
+                steps = steps,
+                radiation = radiation,
+                caps = caps
             )
 
             DrawerFooter(
@@ -68,9 +74,9 @@ fun LeftDrawer(
 @Composable
 fun DrawerTop(
     onProfileClick: () -> Unit,
-    modifier: Modifier = Modifier,
     userName: String? = null,
     userPicture: String? = null,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth()
@@ -112,6 +118,9 @@ fun DrawerTop(
 
 @Composable
 fun DrawerBody(
+    steps: Long,
+    radiation: Double,
+    caps: Int,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -121,22 +130,93 @@ fun DrawerBody(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Steps Display
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Absolute.Left,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(32.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .padding(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Paid,
-                    contentDescription = "Transaction Icon",
-                    modifier = Modifier.padding(end = 8.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "🚶",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = "Steps",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                Text(
+                    text = steps.toString(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
                 )
-                Text("")
+            }
+
+            // Radiation Display
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .padding(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "☢️",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = "Radiation",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                Text(
+                    text = "%.2f Sv".format(radiation),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            // Caps Display
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .padding(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Paid,
+                        contentDescription = "Caps Icon",
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = "Caps",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                Text(
+                    text = caps.toString(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
             }
         }
     }

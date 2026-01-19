@@ -1,58 +1,53 @@
 package com.fcul.smartboy.ui.map
 
+import android.location.Location.distanceBetween
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fcul.smartboy.BuildConfig
+import com.fcul.smartboy.data.api.RoutesRepository
+import com.fcul.smartboy.data.api.RoutesRepository.RouteResult
 import com.fcul.smartboy.domain.route.RadiationData
-import com.fcul.smartboy.repository.MapRouteRepository
+import com.fcul.smartboy.domain.route.RouteInfo
+import com.fcul.smartboy.repository.ProfileRepository
 import com.fcul.smartboy.repository.radiation.RadiationRepository
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseAuth
+import com.google.maps.android.PolyUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import javax.inject.Inject
+import kotlin.math.roundToLong
 
 @HiltViewModel
 class MapViewmodel @Inject constructor(
-    private val mapRouteRepository: MapRouteRepository,
-    private val radiationRepository: RadiationRepository
+    private val radiationRepository: RadiationRepository,
+    private val profileRepository: ProfileRepository,
+    private val routesRepository: RoutesRepository,
+    private val auth: FirebaseAuth
 ) : ViewModel() {
+    // User location tracking
     private val _currentLocation = MutableStateFlow<LatLng?>(null)
     val currentLocation: StateFlow<LatLng?> = _currentLocation
 
-    private val _selectedPoint = MutableStateFlow<LatLng?>(null)
-    val selectedPoint: StateFlow<LatLng?> = _selectedPoint
-
-    private val _checkpoints = MutableStateFlow<List<LatLng>>(emptyList())
-    val checkpoints: StateFlow<List<LatLng>> = _checkpoints
-
+    // Radiation spots
     private val _radSpots = MutableStateFlow<List<RadiationData>>(emptyList())
     val radSpots: StateFlow<List<RadiationData>> = _radSpots
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
 
     private val _radiationAlert = MutableStateFlow<RadiationData?>(null)
     val radiationAlert: StateFlow<RadiationData?> = _radiationAlert
 
-    private val _isRouteActive = MutableStateFlow(false)
-    val isRouteActive: StateFlow<Boolean> = _isRouteActive
+    // Route drawing
+    private val _selectedPoint = MutableStateFlow<LatLng?>(null)
 
-    private val _routeCheckpoints = MutableStateFlow<List<LatLng>>(emptyList())
-    val routeCheckpoints: StateFlow<List<LatLng>> = _routeCheckpoints
+    // Selected markers
+    private val _selectedRadiationMarker = MutableStateFlow<RadiationData?>(null)
+    val selectedRadiationMarker: StateFlow<RadiationData?> = _selectedRadiationMarker
+
+    private val _selectedCheckpointMarker = MutableStateFlow<LatLng?>(null)
+    val selectedCheckpointMarker: StateFlow<LatLng?> = _selectedCheckpointMarker
 
     private val _pendingCheckpoints = MutableStateFlow<List<LatLng>>(emptyList())
     val pendingCheckpoints: StateFlow<List<LatLng>> = _pendingCheckpoints
@@ -60,155 +55,278 @@ class MapViewmodel @Inject constructor(
     private val _routePolyline = MutableStateFlow<List<LatLng>>(emptyList())
     val routePolyline: StateFlow<List<LatLng>> = _routePolyline
 
-    private val _reachedCheckpoints = MutableStateFlow<Set<Int>>(emptySet())
-    val reachedCheckpoints: StateFlow<Set<Int>> = _reachedCheckpoints
+    private val _routeInfo = MutableStateFlow<RouteInfo?>(null)
+    val routeInfo: StateFlow<RouteInfo?> = _routeInfo
 
-    private val _checkpointAlert = MutableStateFlow<String?>(null)
-    val checkpointAlert: StateFlow<String?> = _checkpointAlert
+    // Progressive route drawing
+    private val _traveledPath = MutableStateFlow<List<LatLng>>(emptyList())
+    val traveledPath: StateFlow<List<LatLng>> = _traveledPath
+
+    private val _remainingRoute = MutableStateFlow<List<LatLng>>(emptyList())
+    val remainingRoute: StateFlow<List<LatLng>> = _remainingRoute
+
+    private val _isRouteActive = MutableStateFlow(false)
+    val isRouteActive: StateFlow<Boolean> = _isRouteActive
 
     private val enteredZones = mutableSetOf<String>()
-
-    private var currentRouteId: String? = null
-    private var routeStartTime: Long = 0L
+    private val activeRadiationZones = mutableMapOf<String, RadiationData>()
+    private var lastRadiationUpdate = System.currentTimeMillis()
+    private var lastRouteRecalculation = System.currentTimeMillis()
 
     companion object {
-        private const val CHECKPOINT_PROXIMITY_RADIUS = 50.0 // meters
+        private const val RADIATION_UPDATE_INTERVAL = 5000L
+        private const val RADIATION_MULTIPLIER = 0.1
+        private const val STEPS_DEDUCTION_PER_SV = 10L
+        private const val MAX_ROUTE_DEVIATION_METERS = 100.0 // Recalculate if user is >100m off route
+        private const val ROUTE_RECALC_COOLDOWN = 10000L // Wait 10s between recalculations
     }
 
+    // User location tracking
     fun updateCurrentLocation(location: LatLng) {
         _currentLocation.value = location
         loadRadSpots()
-        checkCheckpointProximity(location)
+        checkRadiationZones(location)
+        applyRadiationDamage()
+
+        // Update route drawing if route is active
+        if (_isRouteActive.value && _routePolyline.value.isNotEmpty()) {
+            updateRouteDrawing(location)
+        }
     }
 
     private fun loadRadSpots(radiusMeters: Double = 5000.0) {
         val loc = _currentLocation.value ?: return
-
         viewModelScope.launch {
-            _isLoading.value = true
             try {
                 val spots = radiationRepository.filter(loc, radiusMeters)
                 _radSpots.value = spots
-                _error.value = null
             } catch (e: Exception) {
-                _error.value = e.message
-            } finally {
-                _isLoading.value = false
+                Log.e("MapViewmodel", "Failed to load radiation spots: ${e.message}")
             }
         }
     }
 
+    private fun updateRouteDrawing(currentLocation: LatLng) {
+        val fullRoute = _routePolyline.value
+        if (fullRoute.isEmpty()) return
+
+        // Find the closest point on the route to the current location
+        var closestIndex = 0
+        var minDistance = Float.MAX_VALUE
+
+        fullRoute.forEachIndexed { index, point ->
+            val distance = calculateDistance(currentLocation, point).toFloat()
+            if (distance < minDistance) {
+                minDistance = distance
+                closestIndex = index
+            }
+        }
+
+        // Check if user has deviated too far from the route
+        if (minDistance > MAX_ROUTE_DEVIATION_METERS) {
+            val currentTime = System.currentTimeMillis()
+            val timeSinceLastRecalc = currentTime - lastRouteRecalculation
+
+            if (timeSinceLastRecalc >= ROUTE_RECALC_COOLDOWN) {
+                Log.w("MapViewmodel", "User deviated ${minDistance}m from route, recalculating...")
+                lastRouteRecalculation = currentTime
+                recalculateRouteFromCurrentLocation()
+                return
+            } else {
+                Log.d("MapViewmodel", "User off route but cooldown active (${timeSinceLastRecalc}ms < ${ROUTE_RECALC_COOLDOWN}ms)")
+            }
+        }
+
+        // If user is close to the route (within threshold), update the drawing
+        if (minDistance <= MAX_ROUTE_DEVIATION_METERS) {
+            // Traveled path: all points from start up to current position + current location
+            val traveled = fullRoute.take(closestIndex + 1).toMutableList()
+            traveled.add(currentLocation)
+            _traveledPath.value = traveled
+
+            // Remaining route: from current position to end
+            val remaining = mutableListOf(currentLocation)
+            remaining.addAll(fullRoute.drop(closestIndex + 1))
+            _remainingRoute.value = remaining
+
+            Log.d("MapViewmodel", "Route drawing: ${traveled.size} traveled, ${remaining.size} remaining (${minDistance}m from route)")
+        }
+    }
+
+    private fun recalculateRouteFromCurrentLocation() {
+        val currentLoc = _currentLocation.value ?: return
+        val checkpoints = _pendingCheckpoints.value
+        if (checkpoints.isEmpty()) return
+
+        // Find which checkpoints are still ahead
+        val closestCheckpointIndex = checkpoints.indexOfFirst { checkpoint ->
+            calculateDistance(currentLoc, checkpoint) < 50.0
+        }
+
+        val remainingCheckpoints = if (closestCheckpointIndex >= 0) {
+            // User is near a checkpoint, use remaining checkpoints from there
+            checkpoints.drop(closestCheckpointIndex)
+        } else {
+            // User is not near any checkpoint, recalculate to all checkpoints
+            checkpoints
+        }
+
+        if (remainingCheckpoints.isEmpty()) {
+            Log.i("MapViewmodel", "All checkpoints reached, ending route")
+            endRoute()
+            return
+        }
+
+        // Recalculate route from current location
+        Log.i("MapViewmodel", "Recalculating route from current location to ${remainingCheckpoints.size} checkpoints")
+        fetchRoutePolyline(
+            origin = currentLoc,
+            destination = remainingCheckpoints.last(),
+            waypoints = if (remainingCheckpoints.size > 2) {
+                remainingCheckpoints.subList(1, remainingCheckpoints.size - 1)
+            } else {
+                emptyList()
+            },
+            useCurrentLocationAsOrigin = true
+        )
+    }
+
+    private fun checkRadiationZones(location: LatLng) {
+        val spots = _radSpots.value
+        val currentZoneIds = mutableSetOf<String>()
+
+        spots.forEach { radSpot ->
+            val zoneId = radSpot.id ?: return@forEach
+            val distance = calculateDistance(location, radSpot.location)
+
+            if (distance <= radSpot.radius) {
+                currentZoneIds.add(zoneId)
+                if (!activeRadiationZones.containsKey(zoneId)) {
+                    // Just entered this zone
+                    activeRadiationZones[zoneId] = radSpot
+                    Log.w("MapViewmodel", "Entered radiation zone: $zoneId (${radSpot.radiationLevelInSv} Sv)")
+                }
+            }
+        }
+
+        // Remove zones user has left
+        val zonesToRemove = activeRadiationZones.keys.filter { it !in currentZoneIds }
+        zonesToRemove.forEach { zoneId ->
+            activeRadiationZones.remove(zoneId)
+            Log.i("MapViewmodel", "Left radiation zone: $zoneId")
+        }
+    }
+
+    private fun applyRadiationDamage() {
+        val currentTime = System.currentTimeMillis()
+        val timeSinceLastUpdate = currentTime - lastRadiationUpdate
+
+        if (timeSinceLastUpdate >= RADIATION_UPDATE_INTERVAL && activeRadiationZones.isNotEmpty()) {
+            val userId = auth.currentUser?.uid ?: return
+
+            // Calculate total radiation from all active zones
+            val totalRadiation = activeRadiationZones.values.sumOf {
+                it.radiationLevelInSv * RADIATION_MULTIPLIER
+            }
+
+            // Calculate steps to deduct (based on radiation level)
+            val stepsToDeduct = activeRadiationZones.values.sumOf {
+                (it.radiationLevelInSv * STEPS_DEDUCTION_PER_SV).roundToLong()
+            }
+
+            viewModelScope.launch {
+                try {
+                    // Add radiation to user profile
+                    profileRepository.addRadiation(userId, totalRadiation)
+
+                    // Deduct steps as penalty
+                    if (stepsToDeduct > 0) {
+                        profileRepository.deductSteps(userId, stepsToDeduct)
+                        Log.w("MapViewmodel", "Radiation damage: +${totalRadiation} Sv, -${stepsToDeduct} steps")
+                    }
+
+                    lastRadiationUpdate = currentTime
+                } catch (e: Exception) {
+                    Log.e("MapViewmodel", "Failed to apply radiation damage", e)
+                }
+            }
+        }
+    }
+
+    // Route management
     fun addPendingCheckpoint() {
         val selected = _selectedPoint.value
         if (selected == null) {
-            _error.value = "No point selected to add as checkpoint."
+            Log.w("MapViewmodel", "No point selected to add as checkpoint")
             return
         }
         _pendingCheckpoints.value += selected
-        fetchRouteForPendingCheckpoints()
-    }
-
-    fun removePendingCheckpoint(index: Int) {
-        _pendingCheckpoints.value =
-            _pendingCheckpoints.value.toMutableList().apply { removeAt(index) }
+        Log.i("MapViewmodel", "Checkpoint added, total: ${_pendingCheckpoints.value.size}")
     }
 
     fun clearPendingCheckpoints() {
         _pendingCheckpoints.value = emptyList()
+        _routePolyline.value = emptyList()
+        _routeInfo.value = null
     }
 
-    fun addCheckpointToActiveRoute() {
-        if (!_isRouteActive.value || currentRouteId == null) {
-            _error.value = "Start a route first before adding checkpoints"
-            return
-        }
-        val selected = _selectedPoint.value
-        if (selected == null) {
-            _error.value = "No point selected to add as checkpoint."
-            return
-        }
-        viewModelScope.launch {
-            try {
-                val updatedCheckpoints = _routeCheckpoints.value + selected
-                mapRouteRepository.addCheckpointToActiveRoute(
-                    routeId = currentRouteId!!,
-                    checkpoints = _routeCheckpoints.value,
-                    location = selected
-                )
-                _routeCheckpoints.value = updatedCheckpoints
-                _error.value = null
-            } catch (e: Exception) {
-                _error.value = e.message
-            }
+    fun clearSelectedCheckpoint() {
+        val selectedMarker = _selectedCheckpointMarker.value
+        if (selectedMarker != null) {
+            _pendingCheckpoints.value = _pendingCheckpoints.value.filter { it != selectedMarker }
+            _selectedCheckpointMarker.value = null
+            Log.d("MapViewmodel", "Removed checkpoint: $selectedMarker")
+        } else {
+            Log.w("MapViewmodel", "No checkpoint selected to remove")
         }
     }
 
     fun startRoute() {
-        viewModelScope.launch {
-            try {
-                Log.i(
-                    "MapViewmodel",
-                    "Starting route with checkpoints: ${_pendingCheckpoints.value}"
-                )
-                if (_pendingCheckpoints.value.size < 2) {
-                    _error.value = "At least 2 checkpoints are required to start a route."
-                    Log.e("MapViewmodel", "❌ Not enough checkpoints to start route.")
-                    return@launch
-                }
-                val routeId = System.currentTimeMillis().toString()
-                currentRouteId = routeId
-                routeStartTime = System.currentTimeMillis()
-                Log.i("MapViewmodel", "Generated route ID: $routeId at $routeStartTime")
-                mapRouteRepository.startRouteWithCheckpoints(
-                    routeId = routeId,
-                    routeStartTime = routeStartTime,
-                    checkpoints = _pendingCheckpoints.value
-                )
-                Log.i("MapViewmodel", "🚀 Route started with ID: $routeId")
-                _isRouteActive.value = true
-                _routeCheckpoints.value = _pendingCheckpoints.value
-                _reachedCheckpoints.value = emptySet()
-                Log.i("MapViewmodel", "Checkpoints: ${_routeCheckpoints.value}")
-                clearPendingCheckpoints()
-                _error.value = null
-            } catch (e: Exception) {
-                _error.value = e.message
-            }
+        if (_pendingCheckpoints.value.size < 2) {
+            Log.e("MapViewmodel", "Need at least 2 checkpoints to start route")
+            return
         }
+
+        Log.i("MapViewmodel", "Starting route with ${_pendingCheckpoints.value.size} checkpoints")
+        fetchRouteForPendingCheckpoints()
+
+        _isRouteActive.value = true
+        Log.i("MapViewmodel", "Route activated")
     }
 
     fun endRoute() {
-        viewModelScope.launch {
-            try {
-                if (currentRouteId == null) {
-                    _error.value = "No active route to end."
-                    return@launch
-                }
-                mapRouteRepository.endRoute(
-                    routeId = currentRouteId!!,
-                    checkpoints = _routeCheckpoints.value,
-                    routeStartTime = routeStartTime
-                )
-                _isRouteActive.value = false
-                _routeCheckpoints.value = emptyList()
-                _reachedCheckpoints.value = emptySet()
-                currentRouteId = null
-                routeStartTime = 0L
-                _error.value = null
-            } catch (e: Exception) {
-                _error.value = e.message
-            }
-        }
+        _isRouteActive.value = false
+        _traveledPath.value = emptyList()
+        _remainingRoute.value = emptyList()
+        clearPendingCheckpoints()
+        Log.i("MapViewmodel", "Route ended")
+    }
+
+    fun setPoint(location: LatLng) {
+        _selectedPoint.value = location
+    }
+
+    fun onRadiationMarkerClick(radiationData: RadiationData) {
+        _selectedRadiationMarker.value = radiationData
+        Log.d("MapViewmodel", "Radiation marker selected: ${radiationData.radiationLevelInSv} Sv at ${radiationData.location}")
+    }
+
+    fun onCheckpointMarkerClick(checkpoint: LatLng) {
+        _selectedCheckpointMarker.value = checkpoint
+        Log.d("MapViewmodel", "Checkpoint marker selected: $checkpoint")
+    }
+
+    fun clearMarkerSelection() {
+        _selectedRadiationMarker.value = null
+        _selectedCheckpointMarker.value = null
+        Log.d("MapViewmodel", "Marker selection cleared")
     }
 
     fun createRadPoint(location: LatLng, radiationLevel: Double, radius: Double) {
         viewModelScope.launch {
             try {
                 val radData = RadiationData(
-                    location = LatLng(
-                        location.latitude,
-                        location.longitude
-                    ),
+                    location = location,
                     radiationLevelInSv = radiationLevel,
                     radius = radius,
                     timestamp = System.currentTimeMillis()
@@ -216,20 +334,16 @@ class MapViewmodel @Inject constructor(
                 radiationRepository.create(radData)
                 loadRadSpots()
             } catch (e: Exception) {
-                _error.value = e.message
+                Log.e("MapViewmodel", "Failed to create radiation point: ${e.message}")
             }
         }
-    }
-
-    fun setPoint(location: LatLng) {
-        _selectedPoint.value = location
     }
 
     fun onEnteringRadiationZone(radData: RadiationData) {
         val zoneId = radData.id ?: return
 
         if (enteredZones.add(zoneId)) {
-            Log.w("MapViewmodel", "⚠️⚠️⚠️ USER ENTERED RADIATION ZONE ⚠️⚠️⚠️")
+            Log.w("MapViewmodel", "USER ENTERED RADIATION ZONE")
             Log.w("MapViewmodel", "Location: ${radData.location}")
             Log.w("MapViewmodel", "Radiation Level: ${radData.radiationLevelInSv} Sv")
             Log.w("MapViewmodel", "Radius: ${radData.radius}m")
@@ -242,35 +356,9 @@ class MapViewmodel @Inject constructor(
         _radiationAlert.value = null
     }
 
-    fun dismissCheckpointAlert() {
-        _checkpointAlert.value = null
-    }
-
-    private fun checkCheckpointProximity(currentLocation: LatLng) {
-        if (!_isRouteActive.value) return
-
-        val checkpoints = _routeCheckpoints.value
-        val reached = _reachedCheckpoints.value.toMutableSet()
-
-        checkpoints.forEachIndexed { index, checkpoint ->
-            if (!reached.contains(index)) {
-                val distance = calculateDistance(currentLocation, checkpoint)
-                if (distance <= CHECKPOINT_PROXIMITY_RADIUS) {
-                    reached.add(index)
-                    _reachedCheckpoints.value = reached
-                    _checkpointAlert.value = "Checkpoint ${index + 1} reached! ✓"
-                    Log.i(
-                        "MapViewmodel",
-                        "✅ Checkpoint $index reached at distance: $distance meters"
-                    )
-                }
-            }
-        }
-    }
-
     private fun calculateDistance(point1: LatLng, point2: LatLng): Double {
         val results = FloatArray(1)
-        android.location.Location.distanceBetween(
+        distanceBetween(
             point1.latitude,
             point1.longitude,
             point2.latitude,
@@ -280,84 +368,146 @@ class MapViewmodel @Inject constructor(
         return results[0].toDouble()
     }
 
-    fun onLeavingRadiationZone(radData: RadiationData) {
-        val zoneId = radData.id ?: return
-        enteredZones.remove(zoneId)
-        Log.i("MapViewmodel", "✅ User left radiation zone: $zoneId")
-    }
-
-    private fun decodePolyline(encoded: String): List<LatLng> {
-        val poly = ArrayList<LatLng>()
-        var index = 0
-        val len = encoded.length
-        var lat = 0
-        var lng = 0
-        while (index < len) {
-            var b: Int
-            var shift = 0
-            var result = 0
-            do {
-                b = encoded[index++].code - 63
-                result = result or ((b and 0x1f) shl shift)
-                shift += 5
-            } while (b >= 0x20)
-            val dlat = if ((result and 1) != 0) (result shr 1).inv() else (result shr 1)
-            lat += dlat
-            shift = 0
-            result = 0
-            do {
-                b = encoded[index++].code - 63
-                result = result or ((b and 0x1f) shl shift)
-                shift += 5
-            } while (b >= 0x20)
-            val dlng = if ((result and 1) != 0) (result shr 1).inv() else (result shr 1)
-            lng += dlng
-            poly.add(LatLng(lat / 1E5, lng / 1E5))
-        }
-        return poly
-    }
-
-    fun fetchRoutePolyline(origin: LatLng, destination: LatLng) {
+    // Route fetching with Google Routes API (Compute Routes)
+    fun fetchRoutePolyline(
+        origin: LatLng,
+        destination: LatLng,
+        waypoints: List<LatLng> = emptyList(),
+        useCurrentLocationAsOrigin: Boolean = true
+    ) {
         viewModelScope.launch {
             try {
                 val apiKey = BuildConfig.MAPS_API_KEY
-                val url = "https://maps.googleapis.com/maps/api/directions/json?" +
-                        "origin=${origin.latitude},${origin.longitude}" +
-                        "&destination=${destination.latitude},${destination.longitude}" +
-                        "&key=$apiKey"
-                val client = OkHttpClient()
-                val request = Request.Builder().url(url).build()
-                val body = withContext(Dispatchers.IO) {
-                    client.newCall(request).execute().body?.string()
-                        ?: throw Exception("No response body")
+
+                // Determine the actual origin to use
+                val actualOrigin = if (useCurrentLocationAsOrigin) {
+                    _currentLocation.value ?: origin
+                } else {
+                    origin
                 }
-                val json = Json.parseToJsonElement(body).jsonObject
-                val routes = json["routes"]?.jsonArray
-                if (routes != null && routes.isNotEmpty()) {
-                    val overviewPolyline = routes[0].jsonObject["overview_polyline"]?.jsonObject
-                    val points = overviewPolyline?.get("points")?.jsonPrimitive?.content
-                    if (points != null) {
-                        val decoded = decodePolyline(points)
-                        _routePolyline.value = decoded
-                        _error.value = null
-                        return@launch
+
+                Log.d("MapViewmodel", "========================================")
+                Log.d("MapViewmodel", "fetchRoutePolyline called")
+                Log.d("MapViewmodel", "Origin: ${actualOrigin.latitude}, ${actualOrigin.longitude} (current location: $useCurrentLocationAsOrigin)")
+                Log.d("MapViewmodel", "Destination: ${destination.latitude}, ${destination.longitude}")
+                Log.d("MapViewmodel", "Waypoints: ${waypoints.size}")
+                Log.d("MapViewmodel", "API Key: ${if (apiKey.isBlank()) "EMPTY/BLANK" else "Present (${apiKey.take(10)}...)"}")
+                Log.d("MapViewmodel", "========================================")
+
+                if (apiKey.isBlank()) {
+                    // Fallback: use checkpoints as polyline (straight lines)
+                    val fallbackRoute = mutableListOf(actualOrigin)
+                    fallbackRoute.addAll(waypoints)
+                    fallbackRoute.add(destination)
+                    _routePolyline.value = fallbackRoute
+                    initializeRouteDrawing()
+                    return@launch
+                }
+
+                Log.i("MapViewmodel", "Calling Google Routes API (Compute Routes)...")
+
+                // Use clean RoutesRepository with Retrofit
+                val result = routesRepository.computeRoute(
+                    apiKey = apiKey,
+                    origin = actualOrigin,
+                    destination = destination,
+                    waypoints = waypoints
+                )
+
+                when (result) {
+                    is RouteResult.Success -> {
+                        // Use Google's built-in polyline decoder from maps-utils
+                        val decodedPolyline = PolyUtil.decode(result.encodedPolyline)
+                        _routePolyline.value = decodedPolyline
+
+                        Log.i("MapViewmodel", "Route computed: ${decodedPolyline.size} points")
+
+                        // Format distance
+                        val distanceKm = result.distanceMeters / 1000.0
+                        val distanceText = if (distanceKm >= 1.0) {
+                            "%.1f km".format(distanceKm)
+                        } else {
+                            "${result.distanceMeters} m"
+                        }
+
+                        // Format duration
+                        val durationMins = result.durationSeconds / 60
+                        val durationText = if (durationMins >= 60) {
+                            val hours = durationMins / 60
+                            val mins = durationMins % 60
+                            "${hours}h ${mins}m"
+                        } else {
+                            "$durationMins min"
+                        }
+
+                        _routeInfo.value = RouteInfo(
+                            distance = distanceText,
+                            duration = durationText,
+                            distanceMeters = result.distanceMeters,
+                            durationSeconds = result.durationSeconds
+                        )
+
+                        initializeRouteDrawing()
+                    }
+
+                    is RouteResult.Error -> {
+                        Log.e("MapViewmodel", "Routes API error: ${result.message}")
+
+                        // Fallback to checkpoints
+                        val allPoints = mutableListOf(actualOrigin)
+                        allPoints.addAll(waypoints)
+                        allPoints.add(destination)
+                        _routePolyline.value = allPoints
+                        initializeRouteDrawing()
                     }
                 }
-                _error.value = "No route found"
-                _routePolyline.value = emptyList()
+
             } catch (e: Exception) {
-                _error.value = "Failed to fetch route: ${e.message}"
-                _routePolyline.value = emptyList()
+                Log.e("MapViewmodel", "Route fetch error: ${e.message}", e)
+                Log.e("MapViewmodel", "Using fallback: straight lines")
+
+                // Fallback: use checkpoints directly
+                val checkpoints = _pendingCheckpoints.value
+                if (checkpoints.size >= 2) {
+                    _routePolyline.value = checkpoints
+                    initializeRouteDrawing()
+                }
             }
+        }
+    }
+
+    private fun initializeRouteDrawing() {
+        val route = _routePolyline.value
+        if (route.isNotEmpty()) {
+            // Start with empty traveled path, full route as remaining
+            _traveledPath.value = listOf(route.first())
+            _remainingRoute.value = route
+            Log.d("MapViewmodel", "Route drawing initialized: ${route.size} points")
         }
     }
 
     fun fetchRouteForPendingCheckpoints() {
         val points = _pendingCheckpoints.value
         if (points.size >= 2) {
-            fetchRoutePolyline(points.first(), points.last())
+            // When starting a route, use current location as origin and ALL checkpoints as waypoints/destination
+            // This ensures the first checkpoint is not skipped
+            val destination = points.last()
+            val waypoints = if (points.size > 1) {
+                // Include all checkpoints except the last one (which is the destination)
+                points.dropLast(1)
+            } else {
+                emptyList()
+            }
+            // Pass first checkpoint as origin (will be overridden by useCurrentLocationAsOrigin=true)
+            // but this ensures fallback works correctly
+            fetchRoutePolyline(
+                origin = points.first(),
+                destination = destination,
+                waypoints = waypoints,
+                useCurrentLocationAsOrigin = true
+            )
         } else {
-            _error.value = "Need at least 2 checkpoints to fetch route."
+            Log.w("MapViewmodel", "Need at least 2 checkpoints to fetch route")
         }
     }
 }

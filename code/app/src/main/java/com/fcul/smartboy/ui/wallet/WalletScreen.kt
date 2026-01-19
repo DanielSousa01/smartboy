@@ -12,7 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.transaction.Transaction
 import com.fcul.smartboy.domain.user.User
 import java.util.Date
@@ -27,7 +29,7 @@ fun WalletScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Transactions")
+        Text(stringResource(R.string.transactions))
 
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -57,16 +59,16 @@ private fun TransactionEntry(transaction: Transaction) {
         ) {
             Column {
                 if (transaction.amount >= 0) {
-                    Text("Received Caps from")
+                    Text(stringResource(R.string.receive_caps))
                 } else {
-                    Text("Sent Caps to")
+                    Text(stringResource(R.string.send_caps))
                 }
                 Text(transaction.userDestination.name)
             }
             Column(horizontalAlignment = Alignment.End) {
                 val absAmount = kotlin.math.abs(transaction.amount)
                 val amountText =
-                    (if (transaction.amount >= 0) "+$absAmount" else "-$absAmount") + " Caps"
+                    (if (transaction.amount >= 0) "+$absAmount" else "-$absAmount") + " " + stringResource(R.string.caps)
                 Text(amountText)
                 Text(transaction.date.toString())
             }

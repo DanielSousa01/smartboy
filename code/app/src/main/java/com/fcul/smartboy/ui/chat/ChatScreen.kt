@@ -51,10 +51,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.chat.Conversation
 import com.fcul.smartboy.domain.chat.Message
 import com.google.firebase.auth.FirebaseAuth
@@ -72,7 +74,7 @@ fun ConversationsScreen(viewModel: ChatViewmodel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Messages") },
+                title = { Text(stringResource(R.string.messages)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -105,7 +107,7 @@ fun ConversationsScreen(viewModel: ChatViewmodel) {
                             modifier = Modifier.weight(1f)
                         )
                         TextButton(onClick = { viewModel.clearError() }) {
-                            Text("Dismiss")
+                            Text(stringResource(R.string.dismiss))
                         }
                     }
                 }
@@ -134,12 +136,12 @@ fun ConversationsScreen(viewModel: ChatViewmodel) {
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "No conversations yet",
+                            stringResource(R.string.no_conversations),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "Conversations will appear when someone messages you",
+                            stringResource(R.string.start_a_conversation),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -360,7 +362,7 @@ fun ChatMessagesScreen(viewModel: ChatViewmodel) {
                     value = messageText,
                     onValueChange = { viewModel.updateMessageText(it) },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Message ${selectedUser?.userName ?: ""}...") },
+                    placeholder = { Text(stringResource(R.string.send_message_to) +" ${selectedUser?.userName ?: ""}...") },
                     maxLines = 3,
                     enabled = !isLoading
                 )

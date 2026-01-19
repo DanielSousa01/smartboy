@@ -25,7 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.ui.inventory.components.ItemCard
@@ -107,7 +109,7 @@ fun InventoryScreen(
                 } else {
                     item {
                         Text(
-                            text = "No items in this category",
+                            text = stringResource(R.string.no_items_in_category),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(vertical = 4.dp)
                         )

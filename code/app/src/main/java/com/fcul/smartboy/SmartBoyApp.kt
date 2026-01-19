@@ -11,11 +11,13 @@ import androidx.navigation.compose.rememberNavController
 @Composable
 fun SmartBoyApp(vm: MainViewmodel) {
     val user by vm.user.collectAsState()
+    val userProfile by vm.userProfile.collectAsState()
     val navController = rememberNavController()
 
     SmartBoyScaffold(
         navController = navController,
         user = user,
+        userProfile = userProfile,
         onSignOut = vm::signOut
     )
 }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SmartBoy</string>
+    <string name="send_caps">Enviar Caps para</string>
+    <string name="receive_caps">Receber Caps de</string>
+    <string name="transactions">Transações</string>
+    <string name="settings">Definições</string>
+    <string name="profile">Perfil</string>
+    <string name="no_conversations">Nenhuma conversa ainda</string>
+    <string name="start_a_conversation">Conversas irão aparecer aqui se mandar mensagem a alguém ou alguém a si</string>
+    <string name="dismiss">Fechar</string>
+    <string name="steps_today">Passos dados hoje</string>
+    <string name="goal">Objetivo</string>
+    <string name="steps">passos</string>
+    <string name="radiation_exposure">Exposição à radiação</string>
+    <string name="no_items_in_category">Nenhuns itens nesta categoria</string>
+    <string name="messages">Mensagens</string>
+    <string name="sign_in_failed">Houve um erro ao fazer login</string>
+    <string name="map_permissions_description">Esta aplicacao necessita de permissoes de localizacao para mostrar a tua posicao no mapa, dar track dos passos e detetar zonas de radiacao.</string>
+    <string name="grant_permission">Permitir</string>
+    <string name="map_permissions_title">Permissao de localizacao necessaria</string>
+    <string name="map">Mapa</string>
+    <string name="chat">Chat</string>
+    <string name="inventory">Inventario</string>
+    <string name="cart">Carrinho</string>
+    <string name="wallet">Carteira</string>
+    <string name="send_message_to">Enviar mensagem a</string>
+    <string name="distance_traveled">Distancia caminhada</string>
+</resources>

@@ -94,6 +94,31 @@ class ProfileRepository(
         return false
     }
 
+    suspend fun updateRadiation(userId: String, radiation: Double): Boolean {
+        col.document(userId).update("radiation", radiation).await()
+        return true
+    }
+
+    suspend fun addRadiation(userId: String, amount: Double): Boolean {
+        val profile = read(userId)
+        if (profile != null) {
+            val newRadiation = profile.radiation + amount
+            updateRadiation(userId, newRadiation)
+            return true
+        }
+        return false
+    }
+
+    suspend fun deductSteps(userId: String, amount: Long): Boolean {
+        val profile = read(userId)
+        if (profile != null && profile.steps >= amount) {
+            val newSteps = profile.steps - amount
+            updateSteps(userId, newSteps)
+            return true
+        }
+        return false
+    }
+
     fun observeProfile(userId: String): Flow<Profile?> = callbackFlow {
         val docRef = col.document(userId)
 

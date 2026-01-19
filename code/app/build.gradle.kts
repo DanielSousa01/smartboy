@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -7,6 +9,12 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+val localProps = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
+}
+
+val mapsApiKey = localProps.getProperty("MAPS_API_KEY") ?: ""
 
 android {
     namespace = "com.fcul.smartboy"
@@ -27,8 +35,10 @@ android {
         buildConfigField(
             "String",
             "MAPS_API_KEY",
-            "\"${project.findProperty("MAPS_API_KEY") ?: ""}\""
+            "\"$mapsApiKey\""
         )
+
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
@@ -65,6 +75,12 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
 
+    // Retrofit
+    implementation(libs.retrofit2.kotlinx.serialization.converter)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.okhttp)
+
     // Image loading
     implementation(libs.coil.compose)
 
@@ -72,6 +88,7 @@ dependencies {
     implementation("com.google.maps.android:maps-compose:4.4.1")
     implementation("com.google.android.gms:play-services-maps:19.0.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.maps.android:android-maps-utils:3.8.2")
     implementation(libs.play.services.maps)
     implementation(libs.androidx.material3)
 

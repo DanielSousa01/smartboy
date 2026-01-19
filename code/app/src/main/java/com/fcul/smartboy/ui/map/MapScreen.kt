@@ -1,26 +1,23 @@
 package com.fcul.smartboy.ui.map
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Looper
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonMenu
-import androidx.compose.material3.FloatingActionButtonMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -32,25 +29,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.route.RadiationData
+import com.fcul.smartboy.domain.route.RouteInfo
+import com.fcul.smartboy.ui.map.components.ActiveRadiationAlertDialog
 import com.fcul.smartboy.ui.map.components.AddRadPointDialog
+import com.fcul.smartboy.ui.map.components.FloatingMenu
+import com.fcul.smartboy.ui.map.components.GoogleMapComponent
+import com.fcul.smartboy.ui.map.components.MapDebugOverlay
+import com.fcul.smartboy.ui.map.components.RadiationAlertDialog
+import com.fcul.smartboy.ui.map.components.RouteInfoPanel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.Circle
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -59,26 +59,49 @@ fun MapScreen(
     currentLocation: LatLng?,
     radiationSpots: List<RadiationData>,
     radiationAlert: RadiationData?,
-    isRouteActive: Boolean,
-    routeCheckpoints: List<LatLng>,
     pendingCheckpoints: List<LatLng>,
     routePolyline: List<LatLng>,
-    reachedCheckpoints: Set<Int>,
-    checkpointAlert: String?,
+    routeInfo: RouteInfo?,
+    traveledPath: List<LatLng>,
+    remainingRoute: List<LatLng>,
+    selectedRadiationMarker: RadiationData?,
+    selectedCheckpointMarker: LatLng?,
+    isRouteActive: Boolean,
     onEnteringRadPoint: (RadiationData) -> Unit,
     onDismissAlert: () -> Unit,
-    onDismissCheckpointAlert: () -> Unit,
     onSetPoint: (LatLng) -> Unit,
     onCreateRadPoint: (LatLng, Double, Double) -> Unit,
     onLocationUpdate: (LatLng) -> Unit,
+    onRadiationMarkerClick: (RadiationData) -> Unit,
+    onCheckpointMarkerClick: (LatLng) -> Unit,
+    onClearMarkerSelection: () -> Unit,
     onStartRoute: () -> Unit,
     onAddPendingCheckpoint: () -> Unit,
-    onAddCheckpoint: () -> Unit,
+    onClearPendingCheckpoints: () -> Unit,
+    onClearSelectedCheckpoint: () -> Unit,
     onEndRoute: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    // Permission state
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    // Permission launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+    }
 
     var showAddRadDialog by remember { mutableStateOf(false) }
     var selectedRadLocation by remember { mutableStateOf<LatLng?>(null) }
@@ -86,11 +109,51 @@ fun MapScreen(
 
     var activeAlert by remember { mutableStateOf<RadiationData?>(null) }
 
+    // If no permission, show permission request UI
+    if (!hasLocationPermission) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(32.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.map_permissions_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = stringResource(R.string.map_permissions_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = {
+                        permissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        )
+                    }
+                ) {
+                    Text(stringResource(R.string.grant_permission))
+                }
+            }
+        }
+        return
+    }
+
     // Camera state for Compose GoogleMap
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(currentLocation ?: LatLng(0.0, 0.0), 15f)
     }
-
 
     DisposableEffect(Unit) {
         val locationRequest = LocationRequest.Builder(
@@ -110,14 +173,22 @@ fun MapScreen(
             }
         }
 
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            Looper.getMainLooper()
-        )
+        try {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+        } catch (e: SecurityException) {
+            // Permission not granted - location updates won't work
+        }
 
         onDispose {
-            fusedLocationClient.removeLocationUpdates(locationCallback)
+            try {
+                fusedLocationClient.removeLocationUpdates(locationCallback)
+            } catch (e: SecurityException) {
+                // Permission issue - ignore
+            }
         }
     }
 
@@ -148,194 +219,89 @@ fun MapScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
+        GoogleMapComponent(
             cameraPositionState = cameraPositionState,
-            uiSettings = MapUiSettings(
-                zoomControlsEnabled = false,
-                myLocationButtonEnabled = true
-            ),
-            properties = MapProperties(isMyLocationEnabled = true),
+            radiationSpots = radiationSpots,
+            selectedRadLocation = selectedRadLocation,
+            pendingCheckpoints = pendingCheckpoints,
+            routePolyline = routePolyline,
+            traveledPath = traveledPath,
+            remainingRoute = remainingRoute,
+            selectedRadiationMarker = selectedRadiationMarker,
+            selectedCheckpointMarker = selectedCheckpointMarker,
+            isRouteActive = isRouteActive,
             onMapClick = { latLng ->
                 selectedRadLocation = latLng
                 onSetPoint(latLng)
-            }
-        ) {
-            // Stable circles and markers
-            val markers = remember(radiationSpots) {
-                radiationSpots.map { rad -> rad to MarkerState(rad.location) }
-            }
+                onClearMarkerSelection() // Clear marker selection when clicking the map
+            },
+            onRadiationMarkerClick = onRadiationMarkerClick,
+            onCheckpointMarkerClick = onCheckpointMarkerClick,
+            modifier = Modifier.fillMaxSize(),
+        )
 
-            markers.forEach { (rad, state) ->
-                Circle(
-                    center = rad.location,
-                    radius = rad.radius.toDouble(),
-                    strokeColor = Color(0xCCFF6B00),
-                    fillColor = Color(0x33FF6B00),
-                    strokeWidth = 3f
-                )
-                Marker(
-                    state = state,
-                    title = "⚠️ Radiation Zone",
-                    snippet = "Level: ${rad.radiationLevelInSv} Sv\nRadius: ${rad.radius} m",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
-                )
-            }
-
-            // Marker for selected RAD
-            selectedRadLocation?.let {
-                Marker(state = MarkerState(it), title = "RAD Point")
-            }
-
-            // Show pending checkpoints if not active, else show active route checkpoints
-            val checkpointsToShow = if (isRouteActive) routeCheckpoints else pendingCheckpoints
-            checkpointsToShow.forEachIndexed { index, checkpoint ->
-                val isReached = isRouteActive && reachedCheckpoints.contains(index)
-                val markerColor = when {
-                    isReached -> BitmapDescriptorFactory.HUE_GREEN
-                    isRouteActive -> BitmapDescriptorFactory.HUE_BLUE
-                    else -> BitmapDescriptorFactory.HUE_AZURE
-                }
-                val title = when {
-                    isReached -> "✓ Checkpoint ${index + 1} (Reached)"
-                    isRouteActive -> "Checkpoint ${index + 1}"
-                    else -> "Pending Checkpoint ${index + 1}"
-                }
-
-                Marker(
-                    state = MarkerState(checkpoint),
-                    title = title,
-                    icon = BitmapDescriptorFactory.defaultMarker(markerColor)
-                )
-            }
-            if (checkpointsToShow.size >= 2) {
-                Polyline(
-                    points = checkpointsToShow,
-                    color = Color.Blue,
-                    width = 8f
-                )
-            }
-            // Draw Directions API polyline if present
-            if (routePolyline.isNotEmpty()) {
-                Polyline(
-                    points = routePolyline,
-                    color = Color.Red,
-                    width = 10f
-                )
-            }
+        // Route Info Panel (like Google Maps navigation bottom panel)
+        if (isRouteActive && routeInfo != null) {
+            RouteInfoPanel(
+                routeInfo = routeInfo,
+                traveledPath = traveledPath,
+                remainingRoute = remainingRoute,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 100.dp, start = 16.dp, end = 16.dp)
+            )
         }
 
         // Debug overlay
         Surface(
-            modifier = Modifier
+            modifier = modifier
                 .align(Alignment.TopStart)
                 .padding(16.dp),
             color = Color.Black.copy(alpha = 0.7f),
-            shape = RoundedCornerShape(8.dp)
+            shape = MaterialTheme.shapes.medium
         ) {
-            Column(modifier = Modifier.padding(8.dp)) {
-                Text(
-                    text = "📍 Radiation Spots: ${radiationSpots.size}",
-                    color = Color.White
-                )
-                Text(
-                    text = "🚩 Route: ${if (isRouteActive) "Active" else "Inactive"}",
-                    color = if (isRouteActive) Color.Green else Color.Gray
-                )
-                if (isRouteActive) {
-                    Text(
-                        text = "📌 Checkpoints: ${routeCheckpoints.size}",
-                        color = Color.White
-                    )
-                } else {
-                    Text(
-                        text = "🕒 Pending Checkpoints: ${pendingCheckpoints.size}",
-                        color = Color.White
-                    )
-                }
-            }
+            MapDebugOverlay(
+                currentLocation = currentLocation,
+                radiationSpots = radiationSpots,
+                isRouteActive = isRouteActive,
+                pendingCheckpoints = pendingCheckpoints,
+                routePolyline = routePolyline,
+                traveledPath = traveledPath,
+                remainingRoute = remainingRoute,
+                modifier = Modifier.align(Alignment.TopStart)
+            )
         }
 
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
         ) {
-            FloatingActionButtonMenu(
-                expanded = isMenuOpen,
-                button = {
-                    FloatingActionButton(onClick = { isMenuOpen = !isMenuOpen }) {
-                        Icon(Icons.Default.Add, contentDescription = "Menu")
-                    }
-                }
-            ) {
-                FloatingActionButtonMenuItem(
-                    icon = { Icon(Icons.Default.Add, contentDescription = "Add RAD") },
-                    text = { Text("Create RAD") },
-                    onClick = {
-                        val targetPos = cameraPositionState.position.target
-                        selectedRadLocation = targetPos
-                        showAddRadDialog = true
-                        isMenuOpen = false
-                    }
-                )
-                if (!isRouteActive) {
-                    FloatingActionButtonMenuItem(
-                        icon = { Text("📍") },
-                        text = { Text("Add Checkpoint") },
-                        onClick = {
-                            onAddPendingCheckpoint()
-                            isMenuOpen = false
-                        }
-                    )
-                    if (pendingCheckpoints.size >= 2) {
-                        FloatingActionButtonMenuItem(
-                            icon = { Text("🚀") },
-                            text = { Text("Start Route") },
-                            onClick = {
-                                onStartRoute()
-                                isMenuOpen = false
-                            },
-                        )
-                    }
-                } else {
-                    FloatingActionButtonMenuItem(
-                        icon = { Text("📍") },
-                        text = { Text("Add Checkpoint") },
-                        onClick = {
-                            onAddCheckpoint()
-                            isMenuOpen = false
-                        }
-                    )
-                    FloatingActionButtonMenuItem(
-                        icon = { Text("🏁") },
-                        text = { Text("End Route") },
-                        onClick = {
-                            onEndRoute()
-                            isMenuOpen = false
-                        }
-                    )
-                }
-            }
+            FloatingMenu(
+                isRouteActive = isRouteActive,
+                pendingCheckpoints = pendingCheckpoints,
+                cameraPositionState = cameraPositionState,
+                checkpointSelected = selectedCheckpointMarker,
+                onClearPendingCheckpoints = onClearPendingCheckpoints,
+                onClearSelectedCheckpoint = onClearSelectedCheckpoint,
+                onAddPendingCheckpoint = onAddPendingCheckpoint,
+                onStartRoute = onStartRoute,
+                onEndRoute = onEndRoute,
+                onAddRadPoint = { targetPos ->
+                    isMenuOpen = false
+                    selectedRadLocation = targetPos
+                    showAddRadDialog = true
+                },
+                isMenuOpen = isMenuOpen,
+                onMenuOpenChange = { isMenuOpen = it }
+            )
         }
     }
 
     activeAlert?.let { alert ->
-        AlertDialog(
-            onDismissRequest = { activeAlert = null },
-            title = { Text("⚠️ Radiation Alert") },
-            text = {
-                Text(
-                    "You entered a radiation zone!\n" +
-                            "Level: ${alert.radiationLevelInSv} Sv\n" +
-                            "Radius: ${alert.radius} m"
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { activeAlert = null }) {
-                    Text("OK")
-                }
-            }
+        ActiveRadiationAlertDialog(
+            alert = alert,
+            onDismiss = { activeAlert = null }
         )
     }
 
@@ -355,45 +321,9 @@ fun MapScreen(
     }
 
     if (radiationAlert != null) {
-        AlertDialog(
-            onDismissRequest = onDismissAlert,
-            icon = { Text("⚠️", style = MaterialTheme.typography.displayMedium) },
-            title = { Text("Radiation Zone Warning") },
-            text = {
-                Column {
-                    Text("You have entered a radiation zone!")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Radiation Level: ${radiationAlert.radiationLevelInSv} Sv")
-                    Text("Affected Radius: ${radiationAlert.radius}m")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "⚠️ Take appropriate safety measures!",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onDismissAlert) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-
-    if (checkpointAlert != null) {
-        AlertDialog(
-            onDismissRequest = onDismissCheckpointAlert,
-            icon = { Text("✅", style = MaterialTheme.typography.displayMedium) },
-            title = { Text("Checkpoint Reached!") },
-            text = {
-                Text(checkpointAlert)
-            },
-            confirmButton = {
-                TextButton(onClick = onDismissCheckpointAlert) {
-                    Text("OK")
-                }
-            }
+        RadiationAlertDialog(
+            radiationAlert = radiationAlert,
+            onDismiss = onDismissAlert
         )
     }
 }

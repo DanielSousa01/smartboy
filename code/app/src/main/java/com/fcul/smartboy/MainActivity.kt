@@ -69,7 +69,10 @@ class MainActivity : ComponentActivity() {
                 profileRepository.create(Profile(userId = user.uid))
             }
 
-            val vm = MainViewmodel(auth = auth)
+            val vm = MainViewmodel(
+                auth = auth,
+                profileRepository = profileRepository
+            )
 
             enableEdgeToEdge()
 

@@ -61,7 +61,7 @@ class AuthActivity : ComponentActivity() {
         } else {
             Toast.makeText(
                 this,
-                "There was an error signing in",
+                getString(R.string.sign_in_failed),
                 Toast.LENGTH_LONG
             ).show()
 

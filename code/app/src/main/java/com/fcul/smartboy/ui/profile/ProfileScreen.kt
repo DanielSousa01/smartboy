@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
@@ -19,17 +20,22 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.user.Profile
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
 fun ProfileScreen(
     profile: Profile?,
-    currentUser: FirebaseUser?,
+    user: FirebaseUser?,
     isLoading: Boolean = false,
     error: String? = null,
     onRefresh: () -> Unit
@@ -47,7 +53,7 @@ fun ProfileScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Profile",
+                text = stringResource(R.string.profile),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -68,12 +74,12 @@ fun ProfileScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = currentUser?.displayName ?: "User",
+                    text = user?.displayName ?: "User",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = currentUser?.email ?: "",
+                    text = user?.email ?: "",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
@@ -116,13 +122,13 @@ fun ProfileScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        Icons.Default.DirectionsWalk,
+                        Icons.AutoMirrored.Filled.DirectionsWalk,
                         contentDescription = "Steps",
                         modifier = Modifier.size(32.dp),
                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Text(
-                        text = "Steps Today",
+                        text = stringResource(R.string.steps_today),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -141,7 +147,7 @@ fun ProfileScreen(
                 )
 
                 Text(
-                    text = "Goal: 10,000 steps",
+                    text = stringResource(R.string.goal) + ": 10,000 " + stringResource(R.string.steps),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                 )
@@ -163,7 +169,7 @@ fun ProfileScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Distance",
+                        text = stringResource(R.string.distance_traveled),
                         style = MaterialTheme.typography.labelMedium
                     )
                     Text(
@@ -185,7 +191,7 @@ fun ProfileScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Caps",
+                        text = stringResource(R.string.caps),
                         style = MaterialTheme.typography.labelMedium
                     )
                     Text(
@@ -208,7 +214,7 @@ fun ProfileScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "Radiation Exposure",
+                    text = stringResource(R.string.radiation_exposure),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

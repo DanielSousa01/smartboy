@@ -20,7 +20,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
 
-
     @Provides
     @Singleton
     fun provideMapRouteRepository(
@@ -65,7 +64,6 @@ object RepositoryModule {
             firestore
         )
     }
-
 
     @Provides
     @Singleton
