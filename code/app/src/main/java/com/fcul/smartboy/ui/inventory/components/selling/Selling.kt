@@ -25,7 +25,10 @@ import com.fcul.smartboy.domain.inventory.SellingItem
 @Composable
 fun Selling(
     inventoryItems: List<Item>,
-    sellingItems: List<SellingItem>
+    sellingItems: List<SellingItem>,
+    onRemove: (Long) -> Unit,
+    onQuantityChange: (Long, Int) -> Unit,
+    onValueChange: (Long, Int) -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
 
@@ -67,7 +70,16 @@ fun Selling(
             items(filteredItems) { sellingItem ->
                 SellingItemCard(
                     inventoryItem = inventoryItems.find { it.id == sellingItem.id },
-                    item = sellingItem
+                    item = sellingItem,
+                    onRemove = {
+                        onRemove(sellingItem.id)
+                    },
+                    onQuantityChange = { newQuantity ->
+                        onQuantityChange(sellingItem.id, newQuantity)
+                    },
+                    onValueChange = { newValue ->
+                        onValueChange(sellingItem.id, newValue)
+                    }
                 )
             }
         }

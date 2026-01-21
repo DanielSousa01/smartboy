@@ -30,6 +30,9 @@ import com.fcul.smartboy.domain.inventory.SellingItem
 fun SellingItemCard(
     inventoryItem: Item?,
     item: SellingItem,
+    onRemove: () -> Unit,
+    onQuantityChange: (Int) -> Unit,
+    onValueChange: (Int) -> Unit
 ) {
     var isItemDetailsOpen by remember { mutableStateOf(false) }
 
@@ -38,9 +41,9 @@ fun SellingItemCard(
             inventoryItem = inventoryItem,
             item = item,
             onDismiss = { isItemDetailsOpen = false },
-            onRemove = {},
-            onQuantityChange = {},
-            onValueChange = {}
+            onRemove = onRemove,
+            onQuantityChange = onQuantityChange,
+            onValueChange = onValueChange
         )
     }
 

@@ -41,6 +41,7 @@ fun SellingItemDetails(
 ) {
     val context = LocalContext.current
     var quantity: Int? by remember { mutableStateOf(item.quantity) }
+    var inventoryQuantity: Int? by remember { mutableStateOf(inventoryItem?.quantity) }
     var value: Int? by remember { mutableStateOf(item.valuePerUnit) }
 
     AlertDialog(
@@ -60,6 +61,11 @@ fun SellingItemDetails(
                         text = item.category.displayName,
                         style = MaterialTheme.typography.bodyMedium
                     )
+                }
+
+                Button(onClick = {
+                }) {
+                    Text("Sell")
                 }
 
                 IconButton(onClick = onDismiss) {
@@ -106,16 +112,23 @@ fun SellingItemDetails(
                         },
                         onIncrement = {
                             quantity?.let {
-                                if (inventoryItem != null && inventoryItem.quantity + it <= it + 1)
+                                if (inventoryQuantity != null && inventoryQuantity!! > 0) {
                                     quantity = it + 1
+                                    inventoryQuantity = inventoryQuantity!! - 1
+                                }
                             }
                         },
-                        isIncrementEnabled = quantity != null && inventoryItem != null
-                                && inventoryItem.quantity >= quantity!!,
+                        isIncrementEnabled = quantity != null && inventoryQuantity != null
+                                && inventoryQuantity!! > 0,
                         onDecrement = {
                             quantity?.let {
                                 if (it > 1) {
                                     quantity = it - 1
+                                    inventoryQuantity = if (inventoryQuantity != null) {
+                                        inventoryQuantity!! + 1
+                                    } else {
+                                        1
+                                    }
                                 }
                             }
                         },
@@ -154,7 +167,10 @@ fun SellingItemDetails(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Button(
-                    onClick = onRemove,
+                    onClick = {
+                        onRemove()
+                        onDismiss()
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     )
@@ -166,10 +182,10 @@ fun SellingItemDetails(
                     onClick = {
                         var dismissible = true
 
-                        value?.let{
+                        value?.let {
                             if (it != item.valuePerUnit && it > 0) {
                                 onValueChange(it)
-                            } else {
+                            } else if (it < 0) {
                                 dismissible = false
                                 Toast.makeText(
                                     context,
@@ -182,7 +198,7 @@ fun SellingItemDetails(
                         quantity?.let {
                             if (it != item.quantity && it > 0) {
                                 onQuantityChange(it)
-                            } else {
+                            } else if (it == 0) {
                                 dismissible = false
                                 Toast.makeText(
                                     context,

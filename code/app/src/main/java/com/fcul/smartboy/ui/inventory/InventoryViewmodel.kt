@@ -67,24 +67,90 @@ class InventoryViewmodel @Inject constructor(
 
     fun addItem(item: Item) {
         _items.update { it + item }
+        viewModelScope.launch {
+            inventoryRepository.create(item)
+        }
     }
 
     fun removeItem(item: Long) {
         _items.update { list -> list.filter { it.id != item } }
         viewModelScope.launch {
-            Log.d("Inventory", "Removing item with ID: $item")
             inventoryRepository.delete(item)
-            Log.d("Inventory", "Item removed with ID: $item")
         }
     }
 
-    fun changeQuantity(itemId: Long, quantity: Int) {
+    fun removeSellingItem(item: Long) {
+        val removedSellingItem = _sellingItems.value.find { it.id == item }
+
+        if (removedSellingItem != null) {
+            _sellingItems.value.filter { it.id != item }
+
+            viewModelScope.launch {
+                sellingRepository.delete(item)
+            }
+
+            val inventoryItem = _items.value.find { it.id == removedSellingItem.id }
+
+            if (inventoryItem != null) {
+                val newQuantity = inventoryItem.quantity + removedSellingItem.quantity
+
+                changeItemQuantity(removedSellingItem.id, newQuantity)
+            } else {
+                addItem(removedSellingItem.toItem())
+            }
+        }
+    }
+
+
+    fun changeItemQuantity(itemId: Long, quantity: Int) {
         val item = _items.value.find { it.id == itemId }
         if (item != null) {
             val newItem = item.copyItem(quantity = quantity)
             _items.update { list -> list.map { if (it.id == itemId) newItem else it } }
             viewModelScope.launch {
                 inventoryRepository.update(itemId, newItem)
+            }
+        }
+    }
+
+    fun changeSellingItemQuantity(itemId: Long, quantity: Int) {
+        val sellingItem = _sellingItems.value.find { it.id == itemId }
+        val item = _items.value.find { it.id == sellingItem?.id }
+
+        if (sellingItem != null) {
+            val quantityDiff = sellingItem.quantity - quantity
+
+            val newSellingItem = sellingItem.copyItem(quantity = quantity)
+
+            _sellingItems.update { list -> list.map { if (it.id == itemId) newSellingItem else it } }
+
+            if (item != null) {
+                if (item.quantity + quantityDiff <= 0) {
+                    removeItem(itemId)
+                } else {
+                    changeItemQuantity(itemId, item.quantity + quantityDiff)
+                }
+            } else if (quantityDiff > 0) {
+                addItem(newSellingItem.toItem())
+            }
+
+
+            viewModelScope.launch {
+                sellingRepository.update(itemId, newSellingItem)
+            }
+        }
+    }
+
+    fun changeSellingItemValue(itemId: Long, value: Int) {
+        val sellingItem = _sellingItems.value.find { it.id == itemId }
+
+        if (sellingItem != null) {
+            val newSellingItem = sellingItem.copyItem(valuePerUnit = value)
+
+            _sellingItems.update { list -> list.map { if (it.id == itemId) newSellingItem else it } }
+
+            viewModelScope.launch {
+                sellingRepository.update(itemId, newSellingItem)
             }
         }
     }
@@ -160,7 +226,7 @@ class InventoryViewmodel @Inject constructor(
             if (item.quantity - quantity <= 0) {
                 removeItem(itemId)
             } else {
-                changeQuantity(itemId, item.quantity - quantity)
+                changeItemQuantity(itemId, item.quantity - quantity)
             }
 
             viewModelScope.launch {

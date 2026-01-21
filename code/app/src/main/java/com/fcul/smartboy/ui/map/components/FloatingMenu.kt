@@ -15,7 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.CameraPositionState
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

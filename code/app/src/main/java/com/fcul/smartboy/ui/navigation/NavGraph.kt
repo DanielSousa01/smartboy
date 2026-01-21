@@ -117,14 +117,17 @@ fun NavGraph(
         composable(Screen.Inventory.route) {
             val viewModel: InventoryViewmodel = hiltViewModel()
             InventoryScreen(
+                isLoadingState = viewModel.isLoading,
                 itemsState = viewModel.items,
                 sellingItemsState = viewModel.sellingItems,
-                isLoadingState = viewModel.isLoading,
                 onUnload = viewModel::unloadAmmo,
                 onReload = viewModel::reloadAmmo,
-                onRemove = viewModel::removeItem,
-                onQuantityChange = viewModel::changeQuantity,
+                onRemoveItem = viewModel::removeItem,
+                onItemQuantityChange = viewModel::changeItemQuantity,
                 onSell = viewModel::sellItem,
+                onRemoveSellingItem = viewModel::removeSellingItem,
+                onSellingItemQuantityChange = viewModel::changeSellingItemQuantity,
+                onSellingItemValueChange = viewModel::changeSellingItemValue
             )
         }
         composable(Screen.Cart.route) { CartScreen() }

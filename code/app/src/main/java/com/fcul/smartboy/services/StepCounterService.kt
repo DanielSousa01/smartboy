@@ -97,7 +97,10 @@ class StepCounterService : Service(), SensorEventListener {
 
             currentStepCount = steps
             sessionSteps = currentStepCount - initialStepCount
-            Log.d(TAG, "Session steps: $sessionSteps (current: $currentStepCount, initial: $initialStepCount)")
+            Log.d(
+                TAG,
+                "Session steps: $sessionSteps (current: $currentStepCount, initial: $initialStepCount)"
+            )
 
             val notification = createNotification(sessionSteps)
             val notificationManager =

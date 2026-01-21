@@ -17,6 +17,7 @@ sealed class SellingItem {
         name: String = this.name,
         quantity: Int = this.quantity,
         category: Category = this.category,
+        valuePerUnit: Int = this.valuePerUnit
     ): SellingItem
 
     data class Weapon(
@@ -43,12 +44,14 @@ sealed class SellingItem {
             name: String,
             quantity: Int,
             category: Category,
+            valuePerUnit: Int
         ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
                 quantity = quantity,
-                category = category
+                category = category,
+                valuePerUnit = valuePerUnit
             )
         }
 
@@ -60,7 +63,8 @@ sealed class SellingItem {
             ammoId: Long? = this.ammoId,
             ammoName: String? = this.ammoName,
             ammoMax: Int? = this.ammoMax,
-            ammoLoaded: Int? = this.ammoLoaded
+            ammoLoaded: Int? = this.ammoLoaded,
+            valuePerUnit: Int = this.valuePerUnit
         ): SellingItem {
             return this.copy(
                 id = id,
@@ -70,7 +74,8 @@ sealed class SellingItem {
                 ammoId = ammoId,
                 ammoName = ammoName,
                 ammoMax = ammoMax,
-                ammoLoaded = ammoLoaded
+                ammoLoaded = ammoLoaded,
+                valuePerUnit = valuePerUnit
             )
         }
     }
@@ -86,13 +91,15 @@ sealed class SellingItem {
             id: Long,
             name: String,
             quantity: Int,
-            category: Category
+            category: Category,
+            valuePerUnit: Int
         ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
                 quantity = quantity,
-                category = category
+                category = category,
+                valuePerUnit = valuePerUnit
             )
         }
     }
@@ -108,13 +115,15 @@ sealed class SellingItem {
             id: Long,
             name: String,
             quantity: Int,
-            category: Category
+            category: Category,
+            valuePerUnit: Int
         ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
                 quantity = quantity,
-                category = category
+                category = category,
+                valuePerUnit = valuePerUnit
             )
         }
     }
@@ -130,13 +139,15 @@ sealed class SellingItem {
             id: Long,
             name: String,
             quantity: Int,
-            category: Category
+            category: Category,
+            valuePerUnit: Int
         ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
                 quantity = quantity,
-                category = category
+                category = category,
+                valuePerUnit = valuePerUnit
             )
         }
     }
@@ -152,13 +163,15 @@ sealed class SellingItem {
             id: Long,
             name: String,
             quantity: Int,
-            category: Category
+            category: Category,
+            valuePerUnit: Int
         ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
                 quantity = quantity,
-                category = category
+                category = category,
+                valuePerUnit = valuePerUnit
             )
         }
     }
@@ -174,13 +187,15 @@ sealed class SellingItem {
             id: Long,
             name: String,
             quantity: Int,
-            category: Category
+            category: Category,
+            valuePerUnit: Int
         ): SellingItem {
             return this.copy(
                 id = id,
                 name = name,
                 quantity = quantity,
-                category = category
+                category = category,
+                valuePerUnit = valuePerUnit
             )
         }
     }
