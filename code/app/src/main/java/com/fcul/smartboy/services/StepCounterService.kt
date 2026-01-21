@@ -80,6 +80,10 @@ class StepCounterService : Service(), SensorEventListener {
         return START_STICKY
     }
 
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        TODO("Not yet implemented")
+    }
+
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_STEP_COUNTER) {
             val steps = event.values[0].toLong()
