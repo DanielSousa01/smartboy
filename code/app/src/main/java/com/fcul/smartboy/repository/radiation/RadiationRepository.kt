@@ -15,9 +15,8 @@ class RadiationRepository(
     private val col get() = firestore.collection(Path.RADIATION_DATA.path)
 
     override suspend fun create(document: RadiationData): String {
-        val id = document.id ?: col.document().id
-        val toSave = if (document.id == null) document.copy(id = id) else document
-        col.document(id).set(toMap(toSave)).await()
+        val id = document.id
+        col.document(id).set(toMap(document)).await()
         return id
     }
 

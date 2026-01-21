@@ -7,7 +7,9 @@ import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.repository.InventoryRepository
+import com.fcul.smartboy.repository.ProfileRepository
 import com.fcul.smartboy.repository.SellingRepository
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +21,9 @@ import javax.inject.Inject
 @HiltViewModel
 class InventoryViewmodel @Inject constructor(
     private val inventoryRepository: InventoryRepository,
-    private val sellingRepository: SellingRepository
+    private val sellingRepository: SellingRepository,
+    private val profileRepository: ProfileRepository,
+    private val auth: FirebaseAuth
 ) : ViewModel() {
     private val _items = MutableStateFlow<List<Item>>(emptyList())
     private val _sellingItems = MutableStateFlow<List<SellingItem>>(emptyList())
@@ -235,6 +239,60 @@ class InventoryViewmodel @Inject constructor(
         }
     }
 
+    fun useItem(itemId: Long): Boolean {
+        val userId = auth.currentUser?.uid ?: return false
+        val item = _items.value.find { it.id == itemId }
+
+        if (item == null || item.quantity <= 0) {
+            Log.w("InventoryViewmodel", "Cannot use item: not found or quantity is 0")
+            return false
+        }
+
+        viewModelScope.launch {
+            try {
+                when (item.name) {
+                    "RadAway" -> {
+                        // RadAway reduces current radiation by 50 Sv
+                        val success = profileRepository.useRadAway(userId, RADAWAY_REDUCTION)
+                        if (success) {
+                            changeItemQuantity(itemId, item.quantity - 1)
+                            Log.i("InventoryViewmodel", "RadAway used: reduced radiation by $RADAWAY_REDUCTION Sv")
+                        } else {
+                            Log.w("InventoryViewmodel", "RadAway use failed: no radiation to remove")
+                        }
+                    }
+                    "Rad-X" -> {
+                        // Rad-X provides 50% radiation resistance for 5 minutes
+                        val success = profileRepository.useRadX(userId, RADX_RESISTANCE_BOOST, RADX_DURATION_MS)
+                        if (success) {
+                            changeItemQuantity(itemId, item.quantity - 1)
+                            Log.i("InventoryViewmodel", "Rad-X used: increased resistance by ${RADX_RESISTANCE_BOOST * 100}%")
+
+                            // Schedule resistance decay after duration
+                            viewModelScope.launch {
+                                kotlinx.coroutines.delay(RADX_DURATION_MS)
+                                profileRepository.decreaseRadiationResistance(userId, RADX_RESISTANCE_BOOST)
+                                Log.i("InventoryViewmodel", "Rad-X effect expired")
+                            }
+                        }
+                    }
+                    else -> {
+                        Log.w("InventoryViewmodel", "Item ${item.name} has no use effect")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("InventoryViewmodel", "Failed to use item: ${e.message}", e)
+            }
+        }
+        return true
+    }
+
+    companion object {
+        private const val RADAWAY_REDUCTION = 50.0 // Reduces 50 Sv of radiation
+        private const val RADX_RESISTANCE_BOOST = 0.5 // 50% radiation resistance
+        private const val RADX_DURATION_MS = 300000L // 5 minutes
+    }
+
     fun populateDatabase() {
         viewModelScope.launch {
             val samples = sampleItems()
@@ -267,8 +325,9 @@ private fun sampleItems(): List<Item> {
         Item.Aid(id = 4, name = "Health Potion", quantity = 3, category = Category.AID),
         Item.Weapon(id = 5, name = "Shield", quantity = 1, category = Category.WEAPONS),
         Item.Ammo(id = 6, name = "Arrow", quantity = 1, category = Category.AMMO),
-
-        )
+        Item.Aid(id = 7, name = "RadAway", quantity = 3, category = Category.AID),
+        Item.Aid(id = 8, name = "Rad-X", quantity = 2, category = Category.AID),
+    )
 }
 
 

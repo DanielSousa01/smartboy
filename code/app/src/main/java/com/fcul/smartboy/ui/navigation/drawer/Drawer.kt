@@ -13,10 +13,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,20 +31,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.fcul.smartboy.R
 
 @Composable
 fun Drawer(
     userName: String,
-    userPicture: String? = null,
-    steps: Long = 0,
-    radiation: Double = 0.0,
-    caps: Int = 0,
     onProfileClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    userPicture: String? = null,
+    steps: Long = 0,
+    radiation: Double = 0.0,
+    radiationResistance: Double = 0.0,
+    caps: Int = 0,
 ) {
     Surface(
         modifier = modifier
@@ -60,6 +67,7 @@ fun Drawer(
             DrawerBody(
                 steps = steps,
                 radiation = radiation,
+                radiationResistance = radiationResistance,
                 caps = caps
             )
 
@@ -120,6 +128,7 @@ fun DrawerTop(
 fun DrawerBody(
     steps: Long,
     radiation: Double,
+    radiationResistance: Double,
     caps: Int,
     modifier: Modifier = Modifier
 ) {
@@ -144,13 +153,13 @@ fun DrawerBody(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "🚶",
-                        style = MaterialTheme.typography.headlineSmall,
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
+                        contentDescription = stringResource(R.string.steps),
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
-                        text = "Steps",
+                        text = stringResource(R.string.steps),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -173,9 +182,9 @@ fun DrawerBody(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "☢️",
-                        style = MaterialTheme.typography.headlineSmall,
+                    Icon(
+                        imageVector = Icons.Filled.Waves,
+                        contentDescription = "Radiation Icon",
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
@@ -187,6 +196,35 @@ fun DrawerBody(
                     text = "%.2f Sv".format(radiation),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            // Radiation Resistance Display
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .padding(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Shield,
+                        contentDescription = "Radiation Resistance Icon",
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = "Rad Resistance",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                Text(
+                    text = "%.0f%%".format(radiationResistance * 100),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (radiationResistance > 0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
 

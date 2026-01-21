@@ -11,6 +11,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.fcul.smartboy.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,7 +32,7 @@ fun TopBar(
             IconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "Menu"
+                    contentDescription = stringResource(R.string.menu)
                 )
             }
         },
@@ -39,7 +41,7 @@ fun TopBar(
             IconButton(onClick = onShoppingCartClick) {
                 Icon(
                     imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = "Shopping cart"
+                    contentDescription = stringResource(R.string.cart)
                 )
             }
         }

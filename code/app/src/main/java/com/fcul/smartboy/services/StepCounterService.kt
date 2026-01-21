@@ -1,10 +1,12 @@
 package com.fcul.smartboy.services
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -13,6 +15,7 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.fcul.smartboy.repository.ProfileRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
@@ -54,6 +57,36 @@ class StepCounterService : Service(), SensorEventListener {
         super.onCreate()
         Log.d(TAG, "StepCounterService onCreate() called")
 
+        // Check permissions before starting foreground service
+        val hasActivityRecognition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACTIVITY_RECOGNITION
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Not required for older versions
+        }
+
+        if (!hasActivityRecognition) {
+            Log.e(TAG, "Missing ACTIVITY_RECOGNITION permission, stopping service")
+            stopSelf()
+            return
+        }
+
+        try {
+            createNotificationChannel()
+            startForeground(NOTIFICATION_ID, createNotification(0))
+            Log.d(TAG, "Service started in foreground")
+        } catch (e: SecurityException) {
+            Log.e(TAG, "SecurityException when starting foreground: ${e.message}", e)
+            stopSelf()
+            return
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception when starting foreground: ${e.message}", e)
+            stopSelf()
+            return
+        }
+
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
@@ -70,10 +103,6 @@ class StepCounterService : Service(), SensorEventListener {
             val allSensors = sensorManager.getSensorList(Sensor.TYPE_ALL)
             Log.d(TAG, "Available sensors: ${allSensors.joinToString { it.name }}")
         }
-
-        createNotificationChannel()
-        startForeground(NOTIFICATION_ID, createNotification(0))
-        Log.d(TAG, "Service started in foreground")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

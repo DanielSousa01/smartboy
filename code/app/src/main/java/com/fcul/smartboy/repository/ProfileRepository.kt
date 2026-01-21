@@ -1,7 +1,9 @@
 package com.fcul.smartboy.repository
 
 import android.util.Log
+import com.fcul.smartboy.domain.user.MeasurementUnit
 import com.fcul.smartboy.domain.user.Profile
+import com.fcul.smartboy.domain.user.UserPreferences
 import com.fcul.smartboy.repository.base.CRUD
 import com.fcul.smartboy.repository.base.Path
 import com.google.firebase.database.DataSnapshot
@@ -135,6 +137,96 @@ class ProfileRepository(
         return false
     }
 
+    suspend fun updatePreferences(userId: String, preferences: UserPreferences): Boolean {
+        val preferencesMap = mapOf(
+            "measurementUnit" to preferences.measurementUnit.name
+        )
+        profilesRef.child(userId).child("preferences").setValue(preferencesMap).await()
+        Log.d(TAG, "Updated preferences for user $userId: $preferences")
+        return true
+    }
+
+    suspend fun updateMeasurementUnit(userId: String, unit: MeasurementUnit): Boolean {
+        profilesRef.child(userId).child("preferences").child("measurementUnit").setValue(unit.name).await()
+        Log.d(TAG, "Updated measurement unit for user $userId: $unit")
+        return true
+    }
+
+    suspend fun useRadAway(userId: String, radiationReduction: Double): Boolean {
+        val profile = read(userId)
+        if (profile != null && profile.radiation > 0) {
+            val newRadiation = maxOf(0.0, profile.radiation - radiationReduction)
+            updateRadiation(userId, newRadiation)
+            Log.d(TAG, "RadAway used: reduced radiation by $radiationReduction Sv (${profile.radiation} -> $newRadiation)")
+            return true
+        }
+        return false
+    }
+
+    suspend fun useRadX(userId: String, resistanceBoost: Double, durationMillis: Long): Boolean {
+        val profile = read(userId)
+        if (profile != null) {
+            val currentTime = System.currentTimeMillis()
+            val expiryTime = currentTime + durationMillis
+
+            // Cap resistance at 0.95 (95% max resistance)
+            val newResistance = minOf(0.95, profile.radiationResistance + resistanceBoost)
+
+            // Update both resistance and expiry time
+            val updates = mapOf(
+                "radiationResistance" to newResistance,
+                "radXExpiryTime" to expiryTime
+            )
+            profilesRef.child(userId).updateChildren(updates).await()
+
+            Log.d(TAG, "Rad-X used: increased resistance by ${resistanceBoost * 100}% (${profile.radiationResistance} -> $newResistance), expires at $expiryTime")
+            return true
+        }
+        return false
+    }
+
+    suspend fun updateRadiationResistance(userId: String, resistance: Double): Boolean {
+        val cappedResistance = minOf(0.95, maxOf(0.0, resistance))
+        profilesRef.child(userId).child("radiationResistance").setValue(cappedResistance).await()
+        Log.d(TAG, "Updated radiation resistance for user $userId: $cappedResistance")
+        return true
+    }
+
+    suspend fun decreaseRadiationResistance(userId: String, amount: Double): Boolean {
+        val profile = read(userId)
+        if (profile != null) {
+            val newResistance = maxOf(0.0, profile.radiationResistance - amount)
+            updateRadiationResistance(userId, newResistance)
+            return true
+        }
+        return false
+    }
+
+    suspend fun decayRadXEffect(userId: String): Boolean {
+        val profile = read(userId) ?: return false
+        val currentTime = System.currentTimeMillis()
+
+        // If no Rad-X effect active or already expired, reset to 0
+        if (profile.radXExpiryTime == 0L || currentTime >= profile.radXExpiryTime) {
+            if (profile.radiationResistance > 0 || profile.radXExpiryTime > 0) {
+                val updates = mapOf(
+                    "radiationResistance" to 0.0,
+                    "radXExpiryTime" to 0L
+                )
+                profilesRef.child(userId).updateChildren(updates).await()
+                Log.d(TAG, "Rad-X effect expired, resistance reset to 0")
+                return true
+            }
+            return false
+        }
+
+        // Rad-X effect is active, log current status
+        val timeRemaining = profile.radXExpiryTime - currentTime
+        Log.d(TAG, "Rad-X active: resistance = ${profile.radiationResistance}, time remaining = ${timeRemaining / 1000}s")
+
+        return true
+    }
+
     fun observeProfile(userId: String): Flow<Profile?> = callbackFlow {
         val profileRef = profilesRef.child(userId)
 
@@ -167,7 +259,12 @@ class ProfileRepository(
         "caps" to d.caps,
         "steps" to d.steps,
         "distance" to d.distance,
-        "radiation" to d.radiation
+        "radiation" to d.radiation,
+        "radiationResistance" to d.radiationResistance,
+        "radXExpiryTime" to d.radXExpiryTime,
+        "preferences" to mapOf(
+            "measurementUnit" to d.preferences.measurementUnit.name
+        )
     )
 
     private fun fromSnapshot(snapshot: DataSnapshot): Profile? {
@@ -177,13 +274,28 @@ class ProfileRepository(
             val steps = snapshot.child("steps").getValue(Long::class.java) ?: 0L
             val distance = snapshot.child("distance").getValue(Double::class.java) ?: 0.0
             val radiation = snapshot.child("radiation").getValue(Double::class.java) ?: 0.0
+            val radiationResistance = snapshot.child("radiationResistance").getValue(Double::class.java) ?: 0.0
+            val radXExpiryTime = snapshot.child("radXExpiryTime").getValue(Long::class.java) ?: 0L
+
+            // Parse preferences
+            val preferencesSnapshot = snapshot.child("preferences")
+            val measurementUnitStr = preferencesSnapshot.child("measurementUnit").getValue(String::class.java)
+            val measurementUnit = try {
+                measurementUnitStr?.let { MeasurementUnit.valueOf(it) } ?: MeasurementUnit.METRIC
+            } catch (_: IllegalArgumentException) {
+                MeasurementUnit.METRIC
+            }
+            val preferences = UserPreferences(measurementUnit = measurementUnit)
 
             Profile(
                 userId = userId,
                 caps = caps,
                 steps = steps,
                 distance = distance,
-                radiation = radiation
+                radiation = radiation,
+                radiationResistance = radiationResistance,
+                radXExpiryTime = radXExpiryTime,
+                preferences = preferences
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing profile from snapshot", e)

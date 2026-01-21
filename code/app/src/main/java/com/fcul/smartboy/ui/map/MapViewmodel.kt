@@ -12,9 +12,11 @@ import com.fcul.smartboy.data.api.RoutesRepository.RouteResult
 import com.fcul.smartboy.domain.route.ActiveRoute
 import com.fcul.smartboy.domain.route.RadiationData
 import com.fcul.smartboy.domain.route.RouteInfo
+import com.fcul.smartboy.domain.user.Profile
 import com.fcul.smartboy.repository.ProfileRepository
 import com.fcul.smartboy.repository.radiation.RadiationRepository
 import com.fcul.smartboy.repository.route.ActiveRouteRepository
+import com.fcul.smartboy.utils.MeasurementUtils
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -49,6 +51,10 @@ class MapViewmodel @Inject constructor(
     val currentLocation: StateFlow<LatLng?> = _currentLocation
 
     private var locationCallback: LocationCallback? = null
+
+    // User profile (for preferences like measurement unit)
+    private val _userProfile = MutableStateFlow<Profile?>(null)
+    val userProfile: StateFlow<Profile?> = _userProfile
 
     // Radiation spots
     private val _radSpots = MutableStateFlow<List<RadiationData>>(emptyList())
@@ -98,6 +104,18 @@ class MapViewmodel @Inject constructor(
         loadInitialLocation()
         startLocationUpdates()
         observeActiveRoutes()
+        startRadXDecayTimer()
+        observeUserProfile()
+    }
+
+    private fun observeUserProfile() {
+        val userId = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            profileRepository.observeProfile(userId).collect { profile ->
+                _userProfile.value = profile
+                Log.d("MapViewmodel", "User profile updated: preferences=${profile?.preferences}")
+            }
+        }
     }
 
     fun loadInitialLocation() {
@@ -171,6 +189,23 @@ class MapViewmodel @Inject constructor(
         locationCallback?.let {
             locationClient.removeLocationUpdates(it)
             locationCallback = null
+        }
+    }
+
+    private fun startRadXDecayTimer() {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(RADX_DECAY_INTERVAL)
+
+                val userId = auth.currentUser?.uid
+                if (userId != null) {
+                    try {
+                        profileRepository.decayRadXEffect(userId)
+                    } catch (e: Exception) {
+                        Log.e("MapViewmodel", "Failed to decay Rad-X effect: ${e.message}")
+                    }
+                }
+            }
         }
     }
 
@@ -330,26 +365,42 @@ class MapViewmodel @Inject constructor(
         if (timeSinceLastUpdate >= RADIATION_UPDATE_INTERVAL && activeRadiationZones.isNotEmpty()) {
             val userId = auth.currentUser?.uid ?: return
 
-            // Calculate total radiation from all active zones
-            val totalRadiation = activeRadiationZones.values.sumOf {
-                it.radiationLevelInSv * RADIATION_MULTIPLIER
-            }
-
-            // Calculate steps to deduct (based on radiation level)
-            val stepsToDeduct = activeRadiationZones.values.sumOf {
-                (it.radiationLevelInSv * STEPS_DEDUCTION_PER_SV).roundToLong()
-            }
-
             viewModelScope.launch {
                 try {
-                    profileRepository.addRadiation(userId, totalRadiation)
+                    // Get current profile to check radiation resistance
+                    val profile = profileRepository.read(userId)
+                    val resistance = profile?.radiationResistance ?: 0.0
+
+                    // Calculate total radiation from all active zones
+                    val rawRadiation = activeRadiationZones.values.sumOf {
+                        it.radiationLevelInSv * RADIATION_MULTIPLIER
+                    }
+
+                    // Apply radiation resistance (Rad-X effect)
+                    val actualRadiation = rawRadiation * (1.0 - resistance)
+
+                    // Calculate steps to deduct (based on actual radiation after resistance)
+                    val stepsToDeduct = (actualRadiation * (STEPS_DEDUCTION_PER_SV / RADIATION_MULTIPLIER)).roundToLong()
+
+                    // Add radiation to profile
+                    if (actualRadiation > 0) {
+                        profileRepository.addRadiation(userId, actualRadiation)
+                    }
 
                     // Deduct steps as penalty
                     if (stepsToDeduct > 0) {
                         profileRepository.deductSteps(userId, stepsToDeduct)
+                    }
+
+                    if (resistance > 0) {
                         Log.w(
                             "MapViewmodel",
-                            "Radiation damage: +${totalRadiation} Sv, -${stepsToDeduct} steps"
+                            "Radiation damage: +${actualRadiation} Sv (${rawRadiation} reduced by ${resistance * 100}%), -${stepsToDeduct} steps"
+                        )
+                    } else {
+                        Log.w(
+                            "MapViewmodel",
+                            "Radiation damage: +${actualRadiation} Sv, -${stepsToDeduct} steps"
                         )
                     }
 
@@ -532,10 +583,15 @@ class MapViewmodel @Inject constructor(
 
                 Log.i("MapViewmodel", "Calling Google Routes API (Compute Routes)...")
 
+                // Get user's measurement preference
+                val measurementUnit = _userProfile.value?.preferences?.measurementUnit
+                    ?: com.fcul.smartboy.domain.user.MeasurementUnit.METRIC
+
                 val result = routesRepository.computeRoute(
                     apiKey = apiKey,
                     origin = actualOrigin,
                     destination = destination,
+                    measurementUnit = measurementUnit,
                     waypoints = waypoints
                 )
 
@@ -547,13 +603,14 @@ class MapViewmodel @Inject constructor(
 
                         Log.i("MapViewmodel", "Route computed: ${decodedPolyline.size} points")
 
-                        // Format distance
-                        val distanceKm = result.distanceMeters / 1000.0
-                        val distanceText = if (distanceKm >= 1.0) {
-                            "%.1f km".format(distanceKm)
-                        } else {
-                            "${result.distanceMeters} m"
-                        }
+                        // Format distance based on user's measurement preference
+                        val measurementUnit = _userProfile.value?.preferences?.measurementUnit
+                            ?: com.fcul.smartboy.domain.user.MeasurementUnit.METRIC
+
+                        val distanceText = MeasurementUtils.formatDistance(
+                            result.distanceMeters.toDouble(),
+                            measurementUnit
+                        )
 
                         // Format duration
                         val durationMins = result.durationSeconds / 60
@@ -737,6 +794,7 @@ class MapViewmodel @Inject constructor(
         private const val MAX_ROUTE_DEVIATION_METERS =
             100.0 // Recalculate if user is >100m off route
         private const val ROUTE_RECALC_COOLDOWN = 10000L // Wait 10s between recalculations
+        private const val RADX_DECAY_INTERVAL = 15000L // Decay Rad-X effect every 15 seconds
     }
 }
 

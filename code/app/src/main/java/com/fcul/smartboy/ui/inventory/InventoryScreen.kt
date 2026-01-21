@@ -11,9 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.domain.inventory.SellingItem
@@ -24,11 +27,11 @@ import kotlinx.coroutines.flow.StateFlow
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun InventoryScreen(
-    isLoadingState: StateFlow<Boolean>,
     itemsState: StateFlow<List<Item>>,
     sellingItemsState: StateFlow<List<SellingItem>>,
     onUnload: (Long) -> Unit,
     onReload: (Long) -> Unit,
+    onUseItem: (Long) -> Unit,
     onRemoveItem: (Long) -> Unit,
     onRemoveSellingItem: (Long) -> Unit,
     onItemQuantityChange: (Long, Int) -> Unit,
@@ -40,31 +43,31 @@ fun InventoryScreen(
     val sellingItems by sellingItemsState.collectAsState()
 
     val itemsByCategory: Map<Category, List<Item>> = items.groupBy { it.category }
-    var selectedTab by remember { mutableIntStateOf(0) }
-
+    var selectedTab by remember { mutableStateOf(InventoryTab.INVENTORY) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column {
-            SecondaryTabRow(selectedTabIndex = selectedTab) {
+            SecondaryTabRow(selectedTabIndex = selectedTab.ordinal) {
                 Tab(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    text = { Text("Inventory") }
+                    selected = selectedTab == InventoryTab.INVENTORY,
+                    onClick = { selectedTab = InventoryTab.INVENTORY },
+                    text = { Text(stringResource(R.string.inventory)) }
                 )
                 Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    text = { Text("Selling") }
+                    selected = selectedTab == InventoryTab.SELLING,
+                    onClick = { selectedTab = InventoryTab.SELLING },
+                    text = { Text(stringResource(R.string.selling)) }
                 )
             }
 
             when (selectedTab) {
-                0 -> {
+                InventoryTab.INVENTORY -> {
                     Inventory(
                         itemsByCategory = itemsByCategory,
                         sellingItems = sellingItems,
                         onUnload = onUnload,
                         onReload = onReload,
+                        onUseItem = onUseItem,
                         onRemove = onRemoveItem,
                         onQuantityChange = onItemQuantityChange,
                         onSellingItemQuantityChange = onSellingItemQuantityChange,
@@ -73,7 +76,7 @@ fun InventoryScreen(
                     )
                 }
 
-                1 -> {
+                InventoryTab.SELLING -> {
                     Selling(
                         inventoryItems = items,
                         sellingItems = sellingItems,
@@ -86,3 +89,9 @@ fun InventoryScreen(
         }
     }
 }
+
+enum class InventoryTab {
+    INVENTORY,
+    SELLING
+}
+

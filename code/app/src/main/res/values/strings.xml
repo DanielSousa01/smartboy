@@ -11,13 +11,13 @@
     <string name="dismiss">Dismiss</string>
     <string name="steps_today">Steps today</string>
     <string name="goal">Goal</string>
-    <string name="steps">steps</string>
+    <string name="steps">Steps</string>
     <string name="radiation_exposure">Radiation exposure</string>
     <string name="no_items_in_category">No items in this category</string>
     <string name="messages">Messages</string>
     <string name="sign_in_failed">There was an error signing in</string>
     <string name="map_permissions_title">Location Permission Required</string>
-    <string name="map_permissions_description">This app needs location permission to show your position on the map, track your steps, and detect radiation zones.</string>
+    <string name="map_permissions_description">This app requires location and activity recognition permissions to function properly. Location is needed for the map, and activity recognition is required for step counting and health features.</string>
     <string name="grant_permission">Grant Permission</string>
     <string name="map">Map</string>
     <string name="chat">Chat</string>
@@ -26,4 +26,22 @@
     <string name="wallet">Wallet</string>
     <string name="send_message_to">Send message to</string>
     <string name="distance_traveled">Distance traveled</string>
+    <string name="selling">Selling</string>
+    <string name="guest">Guest</string>
+    <string name="menu" translatable="false">Menu</string>
+    <string name="back">Back</string>
+    <string name="refresh" translatable="false">Refresh</string>
+    <string name="measurement_unit">Measurement unit</string>
+    <string name="metric">Metric (km, m)</string>
+    <string name="imperial">Imperial (mi, ft)</string>
+    <string name="preferences">Preferences</string>
+    <string name="create_rad">Create RAD</string>
+    <string name="create_checkpoint">Create checkpoint</string>
+    <string name="end_route">End route</string>
+    <string name="clear_checkpoints">Clear checkpoints</string>
+    <string name="start_route">Start route</string>
+    <string name="clear_selected_checkpoint">Clear selected checkpoint</string>
+    <string name="open_settings">Open settings</string>
+    <string name="radiation_resistance">Radiation resistance</string>
+    <string name="active_rad_x">Active Rad-X Effect</string>
 </resources>

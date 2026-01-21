@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.user.Profile
+import com.fcul.smartboy.utils.MeasurementUtils
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
@@ -55,7 +57,7 @@ fun ProfileScreen(
             )
 
             IconButton(onClick = { onRefresh() }) {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
             }
         }
 
@@ -70,7 +72,7 @@ fun ProfileScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = user?.displayName ?: "User",
+                    text = user?.displayName ?: stringResource(R.string.guest),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -119,7 +121,7 @@ fun ProfileScreen(
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.DirectionsWalk,
-                        contentDescription = "Steps",
+                        contentDescription = stringResource(R.string.steps),
                         modifier = Modifier.size(32.dp),
                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                     )
@@ -168,8 +170,17 @@ fun ProfileScreen(
                         text = stringResource(R.string.distance_traveled),
                         style = MaterialTheme.typography.labelMedium
                     )
+
+                    // Format distance based on user's measurement preference
+                    val distanceText = profile?.let {
+                        MeasurementUtils.formatDistance(
+                            it.distance,
+                            it.preferences.measurementUnit
+                        )
+                    } ?: "0.00 km"
+
                     Text(
-                        text = String.format("%.2f km", (profile?.distance ?: 0.0) / 1000),
+                        text = distanceText,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -220,6 +231,47 @@ fun ProfileScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.error
                 )
+            }
+        }
+
+        // Radiation Resistance Card
+        if ((profile?.radiationResistance ?: 0.0) > 0.0) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = stringResource(R.string.radiation_resistance),
+                        )
+                        Text(
+                            text = stringResource(R.string.radiation_resistance),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Text(
+                        text = "%.0f%%".format((profile?.radiationResistance ?: 0.0) * 100),
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    Text(
+                        text = stringResource(R.string.active_rad_x),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }

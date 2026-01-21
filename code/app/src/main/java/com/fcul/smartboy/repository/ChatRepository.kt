@@ -25,27 +25,6 @@ class ChatRepository(
     private val storage: FirebaseStorage
 ) {
     private val messagesRef = database.getReference(Path.MESSAGES.path)
-    private val usersCollection = firestore.collection(Path.USERS.path)
-
-    suspend fun getUsers(): List<ChatUser> {
-        val currentUserId = auth.currentUser?.uid ?: return emptyList()
-
-        return try {
-            val snapshot = usersCollection.get().await()
-            snapshot.documents.mapNotNull { doc ->
-                val userId = doc.id
-                if (userId != currentUserId) {
-                    ChatUser(
-                        userId = userId,
-                        userName = doc.getString("userName") ?: "User",
-                        photoUrl = doc.getString("photoUrl")
-                    )
-                } else null
-            }
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
 
     private fun getConversationId(userId1: String, userId2: String): String {
         val ids = listOf(userId1, userId2).sorted()

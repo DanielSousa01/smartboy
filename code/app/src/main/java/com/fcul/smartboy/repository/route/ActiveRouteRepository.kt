@@ -1,5 +1,6 @@
 package com.fcul.smartboy.repository.route
 
+import android.location.Location
 import android.util.Log
 import com.fcul.smartboy.domain.route.ActiveRoute
 import com.google.android.gms.maps.model.LatLng
@@ -25,7 +26,7 @@ class ActiveRouteRepository @Inject constructor(
 
         private fun calculateDistance(point1: LatLng, point2: LatLng): Double {
             val results = FloatArray(1)
-            android.location.Location.distanceBetween(
+            Location.distanceBetween(
                 point1.latitude,
                 point1.longitude,
                 point2.latitude,

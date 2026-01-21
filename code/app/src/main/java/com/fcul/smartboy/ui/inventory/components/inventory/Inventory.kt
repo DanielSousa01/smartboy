@@ -25,6 +25,7 @@ fun Inventory(
     sellingItems: List<SellingItem>,
     onUnload: (Long) -> Unit,
     onReload: (Long) -> Unit,
+    onUseItem: (Long) -> Unit,
     onRemove: (Long) -> Unit,
     onQuantityChange: (Long, Int) -> Unit,
     onSellingItemQuantityChange: (Long, Int) -> Unit,

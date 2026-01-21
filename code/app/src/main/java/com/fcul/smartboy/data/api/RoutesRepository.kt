@@ -1,5 +1,6 @@
 package com.fcul.smartboy.data.api
 
+import com.fcul.smartboy.domain.user.MeasurementUnit
 import com.google.android.gms.maps.model.LatLng
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -20,6 +21,7 @@ class RoutesRepository @Inject constructor() {
         apiKey: String,
         origin: LatLng,
         destination: LatLng,
+        measurementUnit: MeasurementUnit,
         waypoints: List<LatLng> = emptyList()
     ): RouteResult {
         return try {
@@ -46,7 +48,7 @@ class RoutesRepository @Inject constructor() {
                 travelMode = "WALK",
                 computeAlternativeRoutes = false,
                 languageCode = "en-US",
-                units = "METRIC"
+                units = measurementUnit.name
             )
 
             val response = routesService.computeRoutes(apiKey, request = request)

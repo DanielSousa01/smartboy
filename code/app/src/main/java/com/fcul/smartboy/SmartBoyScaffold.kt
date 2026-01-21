@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.fcul.smartboy.domain.navigation.Screen
@@ -54,10 +55,11 @@ fun SmartBoyScaffold(
         leftDrawerState = leftDrawerState,
         leftDrawerContent = {
             Drawer(
-                userName = user?.displayName ?: user?.email ?: "Guest",
+                userName = user?.displayName ?: user?.email ?: stringResource(R.string.guest),
                 userPicture = user?.photoUrl?.toString(),
                 steps = userProfile?.steps ?: 0L,
                 radiation = userProfile?.radiation ?: 0.0,
+                radiationResistance = userProfile?.radiationResistance ?: 0.0,
                 caps = userProfile?.caps ?: 0,
                 onProfileClick = {
                     scope.launch { leftDrawerState.close() }
