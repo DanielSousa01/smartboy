@@ -81,7 +81,7 @@ class StepCounterService : Service(), SensorEventListener {
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        TODO("Not yet implemented")
+        // No action needed for accuracy changes in this service
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
