@@ -111,7 +111,9 @@ fun ItemDetails(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(
-                                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
+                                modifier = Modifier
+                                    .padding(vertical = 8.dp)
+                                    .fillMaxWidth(),
                                 horizontalArrangement = Arrangement.Start
                             ) {
                                 Text(text = "Selling:")
@@ -143,7 +145,9 @@ fun ItemDetails(
                             )
 
                             Row(
-                                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
+                                modifier = Modifier
+                                    .padding(vertical = 8.dp)
+                                    .fillMaxWidth(),
                                 horizontalArrangement = Arrangement.Start
                             ) {
                                 Text(text = "Value per Unit:")
@@ -259,13 +263,13 @@ fun ItemDetails(
                             if (sellingItem != null && it != sellingItem.valuePerUnit && it > 0) {
                                 onSellingItemValueChange(it)
                             } else if (sellingItem != null && sellingItem.valuePerUnit != sellingValue!!
-                                && sellingValue!! < 0) {
+                                && sellingValue!! < 0
+                            ) {
                                 dismissible = false
 
                                 Toast.makeText(
                                     context,
-                                    "Value must be greater or equal to 0"
-                                    , Toast.LENGTH_SHORT
+                                    "Value must be greater or equal to 0", Toast.LENGTH_SHORT
                                 ).show()
                             }
                         }
@@ -274,16 +278,17 @@ fun ItemDetails(
                             if (sellingItem != null && it != sellingItem.quantity && it > 0 && tempItemQuantity >= 0) {
                                 onSellingItemQuantityChange(it)
                             } else if (sellingItem != null && sellingItem.quantity != sellingQuantity!!
-                                && sellingQuantity!! < 0 && tempItemQuantity >= 0) {
+                                && sellingQuantity!! < 0 && tempItemQuantity >= 0
+                            ) {
                                 dismissible = false
 
                                 Toast.makeText(
                                     context,
-                                    "Quantity must be greater than 0"
-                                    , Toast.LENGTH_SHORT
+                                    "Quantity must be greater than 0", Toast.LENGTH_SHORT
                                 ).show()
                             } else if (sellingItem != null && sellingItem.quantity != sellingQuantity!!
-                                && tempItemQuantity < 0) {
+                                && tempItemQuantity < 0
+                            ) {
                                 dismissible = false
 
                                 Toast.makeText(
@@ -298,9 +303,9 @@ fun ItemDetails(
                             onDismiss()
                     },
                     enabled = quantity != null && item.quantity != quantity!! && quantity!! > 0 ||
-                    sellingValue != null && sellingItem != null
+                            sellingValue != null && sellingItem != null
                             && sellingItem.valuePerUnit != sellingValue!! && sellingValue!! >= 0 ||
-                    sellingQuantity != null && sellingItem != null && sellingItem.quantity != sellingQuantity!!
+                            sellingQuantity != null && sellingItem != null && sellingItem.quantity != sellingQuantity!!
                             && sellingQuantity!! > 0 && tempItemQuantity >= 0
                 ) {
                     Text("Update")
