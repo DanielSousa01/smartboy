@@ -30,6 +30,7 @@ import com.fcul.smartboy.domain.inventory.SellingItem
 fun SellingItemCard(
     inventoryItem: Item?,
     item: SellingItem,
+    userId: String?,
     onRemove: () -> Unit,
     onQuantityChange: (Int) -> Unit,
     onValueChange: (Int) -> Unit
@@ -40,6 +41,7 @@ fun SellingItemCard(
         SellingItemDetails(
             inventoryItem = inventoryItem,
             item = item,
+            userId = userId,
             onDismiss = { isItemDetailsOpen = false },
             onRemove = onRemove,
             onQuantityChange = onQuantityChange,

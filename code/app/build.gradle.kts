@@ -91,6 +91,7 @@ dependencies {
     implementation("com.google.maps.android:android-maps-utils:3.8.2")
     implementation(libs.play.services.maps)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.ui.text)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -129,4 +130,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
 
+    // QR code
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
 }

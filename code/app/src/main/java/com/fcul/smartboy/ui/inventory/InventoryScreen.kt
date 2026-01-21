@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 fun InventoryScreen(
     itemsState: StateFlow<List<Item>>,
     sellingItemsState: StateFlow<List<SellingItem>>,
+    userId: String?,
     onUnload: (Long) -> Unit,
     onReload: (Long) -> Unit,
     onUseItem: (Long) -> Unit,
@@ -80,6 +81,7 @@ fun InventoryScreen(
                     Selling(
                         inventoryItems = items,
                         sellingItems = sellingItems,
+                        userId = userId,
                         onRemove = onRemoveSellingItem,
                         onQuantityChange = onSellingItemQuantityChange,
                         onValueChange = onSellingItemValueChange

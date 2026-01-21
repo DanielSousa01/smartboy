@@ -34,6 +34,7 @@ import com.fcul.smartboy.ui.inventory.components.IncrementalTextField
 fun SellingItemDetails(
     inventoryItem: Item?,
     item: SellingItem,
+    userId: String?,
     onDismiss: () -> Unit,
     onRemove: () -> Unit,
     onQuantityChange: (Int) -> Unit,
@@ -43,6 +44,15 @@ fun SellingItemDetails(
     var quantity: Int? by remember { mutableStateOf(item.quantity) }
     var inventoryQuantity: Int? by remember { mutableStateOf(inventoryItem?.quantity) }
     var value: Int? by remember { mutableStateOf(item.valuePerUnit) }
+    var isSellingMenuOpen by remember { mutableStateOf(false) }
+
+    if (isSellingMenuOpen)
+        SellingId(
+            itemId = item.id,
+            itemName = item.name,
+            userId = userId,
+            onDismiss = { isSellingMenuOpen = false }
+        )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -64,6 +74,7 @@ fun SellingItemDetails(
                 }
 
                 Button(onClick = {
+                    isSellingMenuOpen = true
                 }) {
                     Text("Sell")
                 }

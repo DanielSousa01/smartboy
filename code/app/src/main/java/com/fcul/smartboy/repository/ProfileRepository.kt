@@ -147,7 +147,8 @@ class ProfileRepository(
     }
 
     suspend fun updateMeasurementUnit(userId: String, unit: MeasurementUnit): Boolean {
-        profilesRef.child(userId).child("preferences").child("measurementUnit").setValue(unit.name).await()
+        profilesRef.child(userId).child("preferences").child("measurementUnit").setValue(unit.name)
+            .await()
         Log.d(TAG, "Updated measurement unit for user $userId: $unit")
         return true
     }
@@ -157,7 +158,10 @@ class ProfileRepository(
         if (profile != null && profile.radiation > 0) {
             val newRadiation = maxOf(0.0, profile.radiation - radiationReduction)
             updateRadiation(userId, newRadiation)
-            Log.d(TAG, "RadAway used: reduced radiation by $radiationReduction Sv (${profile.radiation} -> $newRadiation)")
+            Log.d(
+                TAG,
+                "RadAway used: reduced radiation by $radiationReduction Sv (${profile.radiation} -> $newRadiation)"
+            )
             return true
         }
         return false
@@ -179,7 +183,10 @@ class ProfileRepository(
             )
             profilesRef.child(userId).updateChildren(updates).await()
 
-            Log.d(TAG, "Rad-X used: increased resistance by ${resistanceBoost * 100}% (${profile.radiationResistance} -> $newResistance), expires at $expiryTime")
+            Log.d(
+                TAG,
+                "Rad-X used: increased resistance by ${resistanceBoost * 100}% (${profile.radiationResistance} -> $newResistance), expires at $expiryTime"
+            )
             return true
         }
         return false
@@ -222,7 +229,10 @@ class ProfileRepository(
 
         // Rad-X effect is active, log current status
         val timeRemaining = profile.radXExpiryTime - currentTime
-        Log.d(TAG, "Rad-X active: resistance = ${profile.radiationResistance}, time remaining = ${timeRemaining / 1000}s")
+        Log.d(
+            TAG,
+            "Rad-X active: resistance = ${profile.radiationResistance}, time remaining = ${timeRemaining / 1000}s"
+        )
 
         return true
     }
@@ -274,12 +284,14 @@ class ProfileRepository(
             val steps = snapshot.child("steps").getValue(Long::class.java) ?: 0L
             val distance = snapshot.child("distance").getValue(Double::class.java) ?: 0.0
             val radiation = snapshot.child("radiation").getValue(Double::class.java) ?: 0.0
-            val radiationResistance = snapshot.child("radiationResistance").getValue(Double::class.java) ?: 0.0
+            val radiationResistance =
+                snapshot.child("radiationResistance").getValue(Double::class.java) ?: 0.0
             val radXExpiryTime = snapshot.child("radXExpiryTime").getValue(Long::class.java) ?: 0L
 
             // Parse preferences
             val preferencesSnapshot = snapshot.child("preferences")
-            val measurementUnitStr = preferencesSnapshot.child("measurementUnit").getValue(String::class.java)
+            val measurementUnitStr =
+                preferencesSnapshot.child("measurementUnit").getValue(String::class.java)
             val measurementUnit = try {
                 measurementUnitStr?.let { MeasurementUnit.valueOf(it) } ?: MeasurementUnit.METRIC
             } catch (_: IllegalArgumentException) {

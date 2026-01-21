@@ -120,6 +120,7 @@ fun NavGraph(
             InventoryScreen(
                 itemsState = viewModel.items,
                 sellingItemsState = viewModel.sellingItems,
+                userId = user?.uid,
                 onUnload = viewModel::unloadAmmo,
                 onReload = viewModel::reloadAmmo,
                 onUseItem = viewModel::useItem,

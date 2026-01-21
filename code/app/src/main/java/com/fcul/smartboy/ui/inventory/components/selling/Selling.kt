@@ -26,6 +26,7 @@ import com.fcul.smartboy.domain.inventory.SellingItem
 fun Selling(
     inventoryItems: List<Item>,
     sellingItems: List<SellingItem>,
+    userId: String?,
     onRemove: (Long) -> Unit,
     onQuantityChange: (Long, Int) -> Unit,
     onValueChange: (Long, Int) -> Unit
@@ -71,6 +72,7 @@ fun Selling(
                 SellingItemCard(
                     inventoryItem = inventoryItems.find { it.id == sellingItem.id },
                     item = sellingItem,
+                    userId = userId,
                     onRemove = {
                         onRemove(sellingItem.id)
                     },

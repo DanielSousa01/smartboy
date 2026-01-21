@@ -46,6 +46,7 @@ fun ItemDetails(
 
     ) {
     val context = LocalContext.current
+
     var isSellingMenuOpen by remember { mutableStateOf(false) }
     var quantity: Int? by remember { mutableStateOf(item.quantity) }
     var sellingQuantity: Int? by remember { mutableStateOf(sellingItem?.quantity) }
