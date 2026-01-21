@@ -126,8 +126,10 @@ class ActiveRouteRepository @Inject constructor(
                         // Parse current location
                         val currentLocationSnapshot = childSnapshot.child("currentLocation")
                         val currentLocation = if (currentLocationSnapshot.exists()) {
-                            val lat = currentLocationSnapshot.child("latitude").getValue(Double::class.java)
-                            val lng = currentLocationSnapshot.child("longitude").getValue(Double::class.java)
+                            val lat = currentLocationSnapshot.child("latitude")
+                                .getValue(Double::class.java)
+                            val lng = currentLocationSnapshot.child("longitude")
+                                .getValue(Double::class.java)
                             if (lat != null && lng != null) LatLng(lat, lng) else null
                         } else null
 
@@ -135,13 +137,17 @@ class ActiveRouteRepository @Inject constructor(
                             id = childSnapshot.key,
                             userId = userId,
                             userName = childSnapshot.child("userName").getValue(String::class.java),
-                            startTime = childSnapshot.child("startTime").getValue(Long::class.java) ?: 0L,
-                            lastUpdateTime = childSnapshot.child("lastUpdateTime").getValue(Long::class.java)
+                            startTime = childSnapshot.child("startTime").getValue(Long::class.java)
+                                ?: 0L,
+                            lastUpdateTime = childSnapshot.child("lastUpdateTime")
+                                .getValue(Long::class.java)
                                 ?: 0L,
                             checkpoints = checkpoints,
                             currentLocation = currentLocation,
-                            isActive = childSnapshot.child("isActive").getValue(Boolean::class.java) ?: true,
-                            totalDistance = childSnapshot.child("totalDistance").getValue(Double::class.java)
+                            isActive = childSnapshot.child("isActive").getValue(Boolean::class.java)
+                                ?: true,
+                            totalDistance = childSnapshot.child("totalDistance")
+                                .getValue(Double::class.java)
                                 ?: 0.0
                         )
                     } catch (e: Exception) {
@@ -207,8 +213,10 @@ class ActiveRouteRepository @Inject constructor(
                     // Parse current location
                     val currentLocationSnapshot = childSnapshot.child("currentLocation")
                     val currentLocation = if (currentLocationSnapshot.exists()) {
-                        val lat = currentLocationSnapshot.child("latitude").getValue(Double::class.java)
-                        val lng = currentLocationSnapshot.child("longitude").getValue(Double::class.java)
+                        val lat =
+                            currentLocationSnapshot.child("latitude").getValue(Double::class.java)
+                        val lng =
+                            currentLocationSnapshot.child("longitude").getValue(Double::class.java)
                         if (lat != null && lng != null) LatLng(lat, lng) else null
                     } else null
 
@@ -216,12 +224,16 @@ class ActiveRouteRepository @Inject constructor(
                         id = childSnapshot.key,
                         userId = userId,
                         userName = childSnapshot.child("userName").getValue(String::class.java),
-                        startTime = childSnapshot.child("startTime").getValue(Long::class.java) ?: 0L,
-                        lastUpdateTime = childSnapshot.child("lastUpdateTime").getValue(Long::class.java) ?: 0L,
+                        startTime = childSnapshot.child("startTime").getValue(Long::class.java)
+                            ?: 0L,
+                        lastUpdateTime = childSnapshot.child("lastUpdateTime")
+                            .getValue(Long::class.java) ?: 0L,
                         checkpoints = checkpoints,
                         currentLocation = currentLocation,
-                        isActive = childSnapshot.child("isActive").getValue(Boolean::class.java) ?: true,
-                        totalDistance = childSnapshot.child("totalDistance").getValue(Double::class.java) ?: 0.0
+                        isActive = childSnapshot.child("isActive").getValue(Boolean::class.java)
+                            ?: true,
+                        totalDistance = childSnapshot.child("totalDistance")
+                            .getValue(Double::class.java) ?: 0.0
                     )
                 } catch (e: Exception) {
                     Log.e(TAG, "Error parsing active route", e)

@@ -42,6 +42,7 @@ class ProfileRepository(
                 @Suppress("UNCHECKED_CAST")
                 profilesRef.child(id).updateChildren(data as Map<String, Any>).await()
             }
+
             is Profile -> profilesRef.child(id).setValue(toMap(data)).await()
             else -> throw IllegalArgumentException("Unsupported update type: ${data::class}")
         }

@@ -107,12 +107,18 @@ class MapViewmodel @Inject constructor(
             try {
                 locationClient.lastLocation.addOnSuccessListener { location ->
                     if (location != null) {
-                        Log.d("MapViewmodel", "Got last location: ${location.latitude}, ${location.longitude}")
+                        Log.d(
+                            "MapViewmodel",
+                            "Got last location: ${location.latitude}, ${location.longitude}"
+                        )
                         updateCurrentLocation(
                             LatLng(location.latitude, location.longitude)
                         )
                     } else {
-                        Log.w("MapViewmodel", "Last location is null, location updates should provide location")
+                        Log.w(
+                            "MapViewmodel",
+                            "Last location is null, location updates should provide location"
+                        )
                     }
                 }.addOnFailureListener { e ->
                     Log.e("MapViewmodel", "Failed to get last location: ${e.message}")
@@ -137,7 +143,10 @@ class MapViewmodel @Inject constructor(
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 result.lastLocation?.let { location ->
-                    Log.d("MapViewmodel", "Location update: ${location.latitude}, ${location.longitude}")
+                    Log.d(
+                        "MapViewmodel",
+                        "Location update: ${location.latitude}, ${location.longitude}"
+                    )
                     updateCurrentLocation(
                         LatLng(location.latitude, location.longitude)
                     )
@@ -649,7 +658,10 @@ class MapViewmodel @Inject constructor(
                     radiusKm = 10.0  // Only show routes within 10km
                 ).collect { routes ->
                     _otherActiveRoutes.value = routes
-                    Log.d("MapViewmodel", "Updated other active routes: ${routes.size} routes within 10km")
+                    Log.d(
+                        "MapViewmodel",
+                        "Updated other active routes: ${routes.size} routes within 10km"
+                    )
                 }
             }
         }
@@ -722,7 +734,8 @@ class MapViewmodel @Inject constructor(
         private const val RADIATION_UPDATE_INTERVAL = 5000L
         private const val RADIATION_MULTIPLIER = 0.1
         private const val STEPS_DEDUCTION_PER_SV = 10L
-        private const val MAX_ROUTE_DEVIATION_METERS = 100.0 // Recalculate if user is >100m off route
+        private const val MAX_ROUTE_DEVIATION_METERS =
+            100.0 // Recalculate if user is >100m off route
         private const val ROUTE_RECALC_COOLDOWN = 10000L // Wait 10s between recalculations
     }
 }

@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -362,7 +361,7 @@ fun ChatMessagesScreen(
                     value = messageText,
                     onValueChange = { viewModel.updateMessageText(it) },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text(stringResource(R.string.send_message_to) +" $userName...") },
+                    placeholder = { Text(stringResource(R.string.send_message_to) + " $userName...") },
                     maxLines = 3,
                     enabled = !isLoading
                 )
