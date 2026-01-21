@@ -3,6 +3,7 @@ package com.fcul.smartboy.ui.map.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PushPin
@@ -20,7 +21,6 @@ import com.google.maps.android.compose.CameraPositionState
 @Composable
 fun FloatingMenu(
     pendingCheckpoints: List<LatLng>,
-    cameraPositionState: CameraPositionState,
     checkpointSelected: LatLng?,
     isRouteActive: Boolean,
     isMenuOpen: Boolean,
@@ -29,9 +29,18 @@ fun FloatingMenu(
     onClearPendingCheckpoints: () -> Unit,
     onStartRoute: () -> Unit,
     onEndRoute: () -> Unit,
-    onAddRadPoint: (LatLng) -> Unit,
+    onAddRadPoint: () -> Unit,
     onMenuOpenChange: (Boolean) -> Unit
 ) {
+    fun closeAnd(action: () -> Unit) {
+        onMenuOpenChange(false)
+        action()
+    }
+
+    val canStartRoute = pendingCheckpoints.size >= 2 && !isRouteActive
+    val hasPending = pendingCheckpoints.isNotEmpty()
+    val hasSelection = checkpointSelected != null
+
     FloatingActionButtonMenu(
         expanded = isMenuOpen,
         button = {
@@ -43,56 +52,41 @@ fun FloatingMenu(
         FloatingActionButtonMenuItem(
             icon = { Icon(Icons.Default.Add, contentDescription = "Add RAD") },
             text = { Text("Create RAD") },
-            onClick = { onAddRadPoint(cameraPositionState.position.target) }
+            onClick = { closeAnd(onAddRadPoint) }
         )
-        if (!isRouteActive) {
+        if (isRouteActive) {
             FloatingActionButtonMenuItem(
                 icon = { Icon(Icons.Default.PushPin, contentDescription = "Add Checkpoint") },
                 text = { Text("Add Checkpoint") },
-                onClick = {
-                    onMenuOpenChange(false)
-                    onAddPendingCheckpoint()
-                }
+                onClick = { closeAnd(onAddPendingCheckpoint) }
             )
-            if (pendingCheckpoints.isNotEmpty()) {
+            FloatingActionButtonMenuItem(
+                icon = { Icon(Icons.Default.Flag, contentDescription = "End Route") },
+                text = { Text("End Route") },
+                onClick = { closeAnd(onEndRoute) }
+            )
+        } else {
+            FloatingActionButtonMenuItem(
+                icon = { Icon(Icons.Default.PushPin, contentDescription = "Add Checkpoint") },
+                text = { Text("Add Checkpoint") },
+                onClick = { closeAnd(onAddPendingCheckpoint) }
+            )
+            if (hasPending) {
                 FloatingActionButtonMenuItem(
                     icon = { Icon(Icons.Default.Clear, contentDescription = "Clear Checkpoints") },
                     text = { Text("Clear Checkpoints") },
-                    onClick = {
-                        onMenuOpenChange(false)
-                        onClearPendingCheckpoints()
-                    }
+                    onClick = { closeAnd(onClearPendingCheckpoints) }
                 )
             }
-            if (pendingCheckpoints.size >= 2) {
+            if (canStartRoute) {
                 FloatingActionButtonMenuItem(
                     icon = { Icon(Icons.Default.PlayArrow, contentDescription = "Start Route") },
                     text = { Text("Start Route") },
-                    onClick = {
-                        onMenuOpenChange(false)
-                        onStartRoute()
-                    },
+                    onClick = { closeAnd(onStartRoute) },
                 )
             }
-        } else {
-            FloatingActionButtonMenuItem(
-                icon = { Text("📍") },
-                text = { Text("Add Checkpoint") },
-                onClick = {
-                    onMenuOpenChange(false)
-                    onAddPendingCheckpoint()
-                }
-            )
-            FloatingActionButtonMenuItem(
-                icon = { Text("🏁") },
-                text = { Text("End Route") },
-                onClick = {
-                    onMenuOpenChange(false)
-                    onEndRoute()
-                }
-            )
         }
-        if (checkpointSelected != null) {
+        if (hasSelection) {
             FloatingActionButtonMenuItem(
                 icon = {
                     Icon(
@@ -101,10 +95,7 @@ fun FloatingMenu(
                     )
                 },
                 text = { Text("Clear Selected Checkpoint") },
-                onClick = {
-                    onMenuOpenChange(false)
-                    onClearSelectedCheckpoint()
-                }
+                onClick = { closeAnd(onClearSelectedCheckpoint) }
             )
         }
     }

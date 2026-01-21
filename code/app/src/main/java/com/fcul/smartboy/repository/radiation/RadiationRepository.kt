@@ -105,7 +105,7 @@ class RadiationRepository(
         }
 
         return RadiationData(
-            id = data["id"] as? String,
+            id = data["id"] as String,
             location = LatLng(lat, lng),
             radiationLevelInSv = (data["radiationLevelInSv"] as? Double) ?: 0.0,
             radius = radius,

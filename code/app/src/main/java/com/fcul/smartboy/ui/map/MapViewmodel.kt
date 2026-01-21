@@ -1,23 +1,34 @@
 package com.fcul.smartboy.ui.map
 
+import android.content.Context
 import android.location.Location.distanceBetween
+import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fcul.smartboy.BuildConfig
 import com.fcul.smartboy.data.api.RoutesRepository
 import com.fcul.smartboy.data.api.RoutesRepository.RouteResult
+import com.fcul.smartboy.domain.route.ActiveRoute
 import com.fcul.smartboy.domain.route.RadiationData
 import com.fcul.smartboy.domain.route.RouteInfo
 import com.fcul.smartboy.repository.ProfileRepository
 import com.fcul.smartboy.repository.radiation.RadiationRepository
+import com.fcul.smartboy.repository.route.ActiveRouteRepository
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.maps.android.PolyUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 import kotlin.math.roundToLong
 
@@ -26,11 +37,18 @@ class MapViewmodel @Inject constructor(
     private val radiationRepository: RadiationRepository,
     private val profileRepository: ProfileRepository,
     private val routesRepository: RoutesRepository,
-    private val auth: FirebaseAuth
+    private val activeRouteRepository: ActiveRouteRepository,
+    private val auth: FirebaseAuth,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
+    private val locationClient =
+        LocationServices.getFusedLocationProviderClient(context)
+
     // User location tracking
     private val _currentLocation = MutableStateFlow<LatLng?>(null)
     val currentLocation: StateFlow<LatLng?> = _currentLocation
+
+    private var locationCallback: LocationCallback? = null
 
     // Radiation spots
     private val _radSpots = MutableStateFlow<List<RadiationData>>(emptyList())
@@ -58,6 +76,9 @@ class MapViewmodel @Inject constructor(
     private val _routeInfo = MutableStateFlow<RouteInfo?>(null)
     val routeInfo: StateFlow<RouteInfo?> = _routeInfo
 
+    private val _otherActiveRoutes = MutableStateFlow<List<ActiveRoute>>(emptyList())
+    val otherActiveRoutes: StateFlow<List<ActiveRoute>> = _otherActiveRoutes
+
     // Progressive route drawing
     private val _traveledPath = MutableStateFlow<List<LatLng>>(emptyList())
     val traveledPath: StateFlow<List<LatLng>> = _traveledPath
@@ -73,16 +94,77 @@ class MapViewmodel @Inject constructor(
     private var lastRadiationUpdate = System.currentTimeMillis()
     private var lastRouteRecalculation = System.currentTimeMillis()
 
-    companion object {
-        private const val RADIATION_UPDATE_INTERVAL = 5000L
-        private const val RADIATION_MULTIPLIER = 0.1
-        private const val STEPS_DEDUCTION_PER_SV = 10L
-        private const val MAX_ROUTE_DEVIATION_METERS =
-            100.0 // Recalculate if user is >100m off route
-        private const val ROUTE_RECALC_COOLDOWN = 10000L // Wait 10s between recalculations
+    init {
+        loadInitialLocation()
+        startLocationUpdates()
+        observeActiveRoutes()
     }
 
-    // User location tracking
+    fun loadInitialLocation() {
+        if (_currentLocation.value != null) return
+
+        viewModelScope.launch {
+            try {
+                locationClient.lastLocation.addOnSuccessListener { location ->
+                    if (location != null) {
+                        Log.d("MapViewmodel", "Got last location: ${location.latitude}, ${location.longitude}")
+                        updateCurrentLocation(
+                            LatLng(location.latitude, location.longitude)
+                        )
+                    } else {
+                        Log.w("MapViewmodel", "Last location is null, location updates should provide location")
+                    }
+                }.addOnFailureListener { e ->
+                    Log.e("MapViewmodel", "Failed to get last location: ${e.message}")
+                }
+            } catch (e: SecurityException) {
+                Log.e("MapViewmodel", "Location permission not granted", e)
+            }
+        }
+    }
+
+    fun startLocationUpdates() {
+        if (locationCallback != null) {
+            Log.d("MapViewmodel", "Location updates already started")
+            return
+        }
+
+        val request = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            3000L
+        ).setMinUpdateIntervalMillis(1500L).build()
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let { location ->
+                    Log.d("MapViewmodel", "Location update: ${location.latitude}, ${location.longitude}")
+                    updateCurrentLocation(
+                        LatLng(location.latitude, location.longitude)
+                    )
+                }
+            }
+        }
+
+        try {
+            Log.d("MapViewmodel", "Starting location updates...")
+            locationClient.requestLocationUpdates(
+                request,
+                locationCallback!!,
+                Looper.getMainLooper()
+            )
+        } catch (e: SecurityException) {
+            Log.e("MapViewmodel", "Location permission not granted", e)
+            locationCallback = null
+        }
+    }
+
+    fun stopLocationUpdates() {
+        locationCallback?.let {
+            locationClient.removeLocationUpdates(it)
+            locationCallback = null
+        }
+    }
+
     fun updateCurrentLocation(location: LatLng) {
         _currentLocation.value = location
         loadRadSpots()
@@ -92,6 +174,8 @@ class MapViewmodel @Inject constructor(
         // Update route drawing if route is active
         if (_isRouteActive.value && _routePolyline.value.isNotEmpty()) {
             updateRouteDrawing(location)
+            // Update current location in Firestore for other users to see
+            updateActiveRouteLocation(location)
         }
     }
 
@@ -206,7 +290,7 @@ class MapViewmodel @Inject constructor(
         val currentZoneIds = mutableSetOf<String>()
 
         spots.forEach { radSpot ->
-            val zoneId = radSpot.id ?: return@forEach
+            val zoneId = radSpot.id
             val distance = calculateDistance(location, radSpot.location)
 
             if (distance <= radSpot.radius) {
@@ -249,7 +333,6 @@ class MapViewmodel @Inject constructor(
 
             viewModelScope.launch {
                 try {
-                    // Add radiation to user profile
                     profileRepository.addRadiation(userId, totalRadiation)
 
                     // Deduct steps as penalty
@@ -307,7 +390,10 @@ class MapViewmodel @Inject constructor(
         fetchRouteForPendingCheckpoints()
 
         _isRouteActive.value = true
-        Log.i("MapViewmodel", "Route activated")
+
+        saveActiveRouteToFirestore()
+
+        Log.i("MapViewmodel", "Route activated and saved to Firestore")
     }
 
     fun endRoute() {
@@ -315,7 +401,9 @@ class MapViewmodel @Inject constructor(
         _traveledPath.value = emptyList()
         _remainingRoute.value = emptyList()
         clearPendingCheckpoints()
-        Log.i("MapViewmodel", "Route ended")
+        endActiveRouteInFirestore()
+
+        Log.i("MapViewmodel", "Route ended and removed from Firestore")
     }
 
     fun setPoint(location: LatLng) {
@@ -345,6 +433,7 @@ class MapViewmodel @Inject constructor(
         viewModelScope.launch {
             try {
                 val radData = RadiationData(
+                    id = UUID.randomUUID().toString(),
                     location = location,
                     radiationLevelInSv = radiationLevel,
                     radius = radius,
@@ -359,7 +448,7 @@ class MapViewmodel @Inject constructor(
     }
 
     fun onEnteringRadiationZone(radData: RadiationData) {
-        val zoneId = radData.id ?: return
+        val zoneId = radData.id
 
         if (enteredZones.add(zoneId)) {
             Log.w("MapViewmodel", "USER ENTERED RADIATION ZONE")
@@ -434,7 +523,6 @@ class MapViewmodel @Inject constructor(
 
                 Log.i("MapViewmodel", "Calling Google Routes API (Compute Routes)...")
 
-                // Use clean RoutesRepository with Retrofit
                 val result = routesRepository.computeRoute(
                     apiKey = apiKey,
                     origin = actualOrigin,
@@ -526,8 +614,6 @@ class MapViewmodel @Inject constructor(
             } else {
                 emptyList()
             }
-            // Pass first checkpoint as origin (will be overridden by useCurrentLocationAsOrigin=true)
-            // but this ensures fallback works correctly
             fetchRoutePolyline(
                 origin = points.first(),
                 destination = destination,
@@ -537,6 +623,107 @@ class MapViewmodel @Inject constructor(
         } else {
             Log.w("MapViewmodel", "Need at least 2 checkpoints to fetch route")
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("MapViewmodel", "ViewModel cleared, stopping location updates")
+        stopLocationUpdates()
+
+        // Clean up active route if user closes app
+        if (_isRouteActive.value) {
+            endActiveRouteInFirestore()
+        }
+    }
+
+    // Active Routes Management
+    private fun observeActiveRoutes() {
+        val currentUserId = auth.currentUser?.uid ?: return
+
+        viewModelScope.launch {
+            // Combine current location and observe routes within 10km radius
+            currentLocation.collect { location ->
+                activeRouteRepository.observeActiveRoutes(
+                    excludeUserId = currentUserId,
+                    userLocation = location,
+                    radiusKm = 10.0  // Only show routes within 10km
+                ).collect { routes ->
+                    _otherActiveRoutes.value = routes
+                    Log.d("MapViewmodel", "Updated other active routes: ${routes.size} routes within 10km")
+                }
+            }
+        }
+    }
+
+    private fun saveActiveRouteToFirestore() {
+        val userId = auth.currentUser?.uid ?: return
+        val userName = auth.currentUser?.displayName ?: auth.currentUser?.email ?: "Unknown User"
+        val currentLoc = _currentLocation.value
+        val checkpoints = _pendingCheckpoints.value
+
+        if (checkpoints.size < 2) {
+            Log.w("MapViewmodel", "Cannot save route with less than 2 checkpoints")
+            return
+        }
+
+        val activeRoute = ActiveRoute(
+            id = userId,
+            userId = userId,
+            userName = userName,
+            startTime = System.currentTimeMillis(),
+            checkpoints = checkpoints,
+            currentLocation = currentLoc,
+            isActive = true,
+            totalDistance = calculateTotalRouteDistance(checkpoints)
+        )
+
+        viewModelScope.launch {
+            activeRouteRepository.saveActiveRoute(activeRoute).onSuccess {
+                Log.i("MapViewmodel", "Active route saved to Firestore")
+            }.onFailure { e ->
+                Log.e("MapViewmodel", "Failed to save active route", e)
+            }
+        }
+    }
+
+    private fun updateActiveRouteLocation(location: LatLng) {
+        val userId = auth.currentUser?.uid ?: return
+
+        viewModelScope.launch {
+            activeRouteRepository.updateCurrentLocation(userId, location).onFailure { e ->
+                Log.e("MapViewmodel", "Failed to update route location", e)
+            }
+        }
+    }
+
+    private fun endActiveRouteInFirestore() {
+        val userId = auth.currentUser?.uid ?: return
+
+        viewModelScope.launch {
+            activeRouteRepository.endActiveRoute(userId).onSuccess {
+                Log.i("MapViewmodel", "Active route removed from Firestore")
+            }.onFailure { e ->
+                Log.e("MapViewmodel", "Failed to end active route", e)
+            }
+        }
+    }
+
+    private fun calculateTotalRouteDistance(checkpoints: List<LatLng>): Double {
+        if (checkpoints.size < 2) return 0.0
+
+        var totalDistance = 0.0
+        for (i in 0 until checkpoints.size - 1) {
+            totalDistance += calculateDistance(checkpoints[i], checkpoints[i + 1])
+        }
+        return totalDistance / 1000.0 // Convert to kilometers
+    }
+
+    companion object {
+        private const val RADIATION_UPDATE_INTERVAL = 5000L
+        private const val RADIATION_MULTIPLIER = 0.1
+        private const val STEPS_DEDUCTION_PER_SV = 10L
+        private const val MAX_ROUTE_DEVIATION_METERS = 100.0 // Recalculate if user is >100m off route
+        private const val ROUTE_RECALC_COOLDOWN = 10000L // Wait 10s between recalculations
     }
 }
 

@@ -16,8 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.fcul.smartboy.R
 
-@OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
@@ -25,6 +23,7 @@ fun SettingsScreen(
 ) {
     Scaffold(
         topBar = {
+            @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
                 title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {

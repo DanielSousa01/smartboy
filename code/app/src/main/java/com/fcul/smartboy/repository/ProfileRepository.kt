@@ -1,50 +1,63 @@
 package com.fcul.smartboy.repository
 
+import android.util.Log
 import com.fcul.smartboy.domain.user.Profile
 import com.fcul.smartboy.repository.base.CRUD
 import com.fcul.smartboy.repository.base.Path
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class ProfileRepository(
-    private val firestore: FirebaseFirestore
+    private val database: FirebaseDatabase
 ) : CRUD<Profile, String> {
 
-    private val col get() = firestore.collection(Path.USERS.path)
+    private val profilesRef get() = database.getReference(Path.USERS.path)
+
+    companion object {
+        private const val TAG = "ProfileRepository"
+    }
 
     override suspend fun create(document: Profile): String {
-        col.document(document.userId).set(document).await()
+        profilesRef.child(document.userId).setValue(toMap(document)).await()
+        Log.d(TAG, "Profile created for user: ${document.userId}")
         return document.userId
     }
 
     override suspend fun read(id: String): Profile? {
-        val snap = col.document(id).get().await()
-        return if (snap.exists()) fromMap(snap.data) else null
+        val snapshot = profilesRef.child(id).get().await()
+        return if (snapshot.exists()) {
+            fromSnapshot(snapshot)
+        } else null
     }
 
     override suspend fun update(id: String, data: Any): Boolean {
         when (data) {
             is Map<*, *> -> {
                 @Suppress("UNCHECKED_CAST")
-                col.document(id).update(data as Map<String, Any?>).await()
+                profilesRef.child(id).updateChildren(data as Map<String, Any>).await()
             }
-
-            is Profile -> col.document(id).set(data).await()
+            is Profile -> profilesRef.child(id).setValue(toMap(data)).await()
             else -> throw IllegalArgumentException("Unsupported update type: ${data::class}")
         }
+        Log.d(TAG, "Profile updated for user: $id")
         return true
     }
 
     override suspend fun delete(id: String): Boolean {
-        col.document(id).delete().await()
+        profilesRef.child(id).removeValue().await()
+        Log.d(TAG, "Profile deleted for user: $id")
         return true
     }
 
     suspend fun updateSteps(userId: String, steps: Long): Boolean {
-        col.document(userId).update("steps", steps).await()
+        profilesRef.child(userId).child("steps").setValue(steps).await()
+        Log.d(TAG, "Updated steps for user $userId: $steps")
         return true
     }
 
@@ -59,7 +72,8 @@ class ProfileRepository(
     }
 
     suspend fun updateCaps(userId: String, caps: Int): Boolean {
-        col.document(userId).update("caps", caps).await()
+        profilesRef.child(userId).child("caps").setValue(caps).await()
+        Log.d(TAG, "Updated caps for user $userId: $caps")
         return true
     }
 
@@ -95,7 +109,8 @@ class ProfileRepository(
     }
 
     suspend fun updateRadiation(userId: String, radiation: Double): Boolean {
-        col.document(userId).update("radiation", radiation).await()
+        profilesRef.child(userId).child("radiation").setValue(radiation).await()
+        Log.d(TAG, "Updated radiation for user $userId: $radiation")
         return true
     }
 
@@ -120,23 +135,30 @@ class ProfileRepository(
     }
 
     fun observeProfile(userId: String): Flow<Profile?> = callbackFlow {
-        val docRef = col.document(userId)
+        val profileRef = profilesRef.child(userId)
 
-        val listener = docRef.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-                return@addSnapshotListener
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val profile = if (snapshot.exists()) {
+                    fromSnapshot(snapshot)
+                } else {
+                    null
+                }
+                trySend(profile)
+                Log.d(TAG, "Profile observed for user $userId: $profile")
             }
 
-            val profile = if (snapshot?.exists() == true) {
-                fromMap(snapshot.data)
-            } else {
-                null
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Error observing profile: ${error.message}")
+                close(error.toException())
             }
-            trySend(profile)
         }
 
-        awaitClose { listener.remove() }
+        profileRef.addValueEventListener(listener)
+
+        awaitClose {
+            profileRef.removeEventListener(listener)
+        }
     }
 
     private fun toMap(d: Profile): Map<String, Any?> = mapOf(
@@ -147,21 +169,24 @@ class ProfileRepository(
         "radiation" to d.radiation
     )
 
-    @Suppress("UNCHECKED_CAST")
-    private fun fromMap(data: Map<String, Any?>?): Profile? {
-        if (data == null) return null
-        val userId = data["userId"] as? String ?: return null
-        val caps = (data["caps"] as? Long)?.toInt() ?: 0
-        val steps = (data["steps"] as? Long) ?: 0L
-        val distance = (data["distance"] as? Double) ?: 0.0
-        val radiation = (data["radiation"] as? Double) ?: 0.0
+    private fun fromSnapshot(snapshot: DataSnapshot): Profile? {
+        return try {
+            val userId = snapshot.child("userId").getValue(String::class.java) ?: return null
+            val caps = snapshot.child("caps").getValue(Long::class.java)?.toInt() ?: 0
+            val steps = snapshot.child("steps").getValue(Long::class.java) ?: 0L
+            val distance = snapshot.child("distance").getValue(Double::class.java) ?: 0.0
+            val radiation = snapshot.child("radiation").getValue(Double::class.java) ?: 0.0
 
-        return Profile(
-            userId = userId,
-            caps = caps,
-            steps = steps,
-            distance = distance,
-            radiation = radiation
-        )
+            Profile(
+                userId = userId,
+                caps = caps,
+                steps = steps,
+                distance = distance,
+                radiation = radiation
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing profile from snapshot", e)
+            null
+        }
     }
 }

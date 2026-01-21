@@ -44,27 +44,36 @@ class StepCounterService : Service(), SensorEventListener {
     private var isInitialized = false
 
     companion object {
+        private const val TAG = "StepCounterService"
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "step_counter_channel"
-        private const val SYNC_THRESHOLD = 100 // Sync every 100 steps
+        private const val SYNC_THRESHOLD = 10 // Sync every 10 steps
     }
 
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "StepCounterService onCreate() called")
 
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
         if (stepCounterSensor != null) {
-            sensorManager.registerListener(
+            Log.i(TAG, "Step counter sensor found: ${stepCounterSensor?.name}")
+            val registered = sensorManager.registerListener(
                 this,
                 stepCounterSensor,
                 SensorManager.SENSOR_DELAY_NORMAL
             )
+            Log.i(TAG, "Sensor listener registered: $registered")
+        } else {
+            Log.e(TAG, "Step counter sensor NOT available on this device!")
+            val allSensors = sensorManager.getSensorList(Sensor.TYPE_ALL)
+            Log.d(TAG, "Available sensors: ${allSensors.joinToString { it.name }}")
         }
 
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification(0))
+        Log.d(TAG, "Service started in foreground")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -74,42 +83,48 @@ class StepCounterService : Service(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_STEP_COUNTER) {
             val steps = event.values[0].toLong()
+            Log.d(TAG, "onSensorChanged: Raw step count = $steps")
 
             if (!isInitialized) {
                 initialStepCount = steps
                 isInitialized = true
+                Log.i(TAG, "Initialized with step count: $initialStepCount")
             }
 
             currentStepCount = steps
             sessionSteps = currentStepCount - initialStepCount
+            Log.d(TAG, "Session steps: $sessionSteps (current: $currentStepCount, initial: $initialStepCount)")
 
-            // Update notification
             val notification = createNotification(sessionSteps)
             val notificationManager =
                 getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(NOTIFICATION_ID, notification)
 
             // Sync to Firebase periodically
-            if (sessionSteps - lastSyncedSteps >= SYNC_THRESHOLD) {
+            val stepsSinceLastSync = sessionSteps - lastSyncedSteps
+            if (stepsSinceLastSync >= SYNC_THRESHOLD) {
+                Log.i(TAG, "Syncing $stepsSinceLastSync steps to Firebase")
                 syncStepsToFirebase()
             }
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Not needed for step counter
-    }
-
     private fun syncStepsToFirebase() {
-        val userId = auth.currentUser?.uid ?: return
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            Log.w(TAG, "Cannot sync steps: User not authenticated")
+            return
+        }
 
         serviceScope.launch {
             try {
                 val increment = sessionSteps - lastSyncedSteps
+                Log.d(TAG, "Syncing $increment steps to Firebase for user $userId")
                 profileRepository.incrementSteps(userId, increment)
                 lastSyncedSteps = sessionSteps
+                Log.i(TAG, "Successfully synced steps. Total session steps: $sessionSteps")
             } catch (e: Exception) {
-                Log.e("StepCounterService", "Failed to sync steps", e)
+                Log.e(TAG, "Failed to sync steps to Firebase", e)
             }
         }
     }
@@ -142,9 +157,11 @@ class StepCounterService : Service(), SensorEventListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.d(TAG, "Service destroying, performing final sync")
         sensorManager.unregisterListener(this)
-        syncStepsToFirebase() // Final sync before stopping
+        syncStepsToFirebase()
         serviceScope.cancel()
+        Log.d(TAG, "StepCounterService destroyed")
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

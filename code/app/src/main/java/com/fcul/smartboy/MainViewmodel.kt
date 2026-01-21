@@ -6,13 +6,16 @@ import com.fcul.smartboy.domain.user.Profile
 import com.fcul.smartboy.repository.ProfileRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
-class MainViewmodel(
+@HiltViewModel
+class MainViewModel @Inject constructor(
     private val auth: FirebaseAuth,
     private val profileRepository: ProfileRepository
 ) : ViewModel() {
@@ -24,16 +27,14 @@ class MainViewmodel(
 
     init {
         auth.currentUser?.uid?.let { userId ->
-            loadProfile(userId)
+            observeProfile(userId)
         }
     }
 
-    private fun loadProfile(userId: String) {
+    private fun observeProfile(userId: String) {
         viewModelScope.launch {
-            try {
-                _userProfile.value = profileRepository.read(userId)
-            } catch (_: Exception) {
-                _userProfile.value = null
+            profileRepository.observeProfile(userId).collect { profile ->
+                _userProfile.value = profile
             }
         }
     }

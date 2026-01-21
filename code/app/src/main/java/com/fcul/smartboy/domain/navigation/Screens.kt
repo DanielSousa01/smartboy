@@ -19,6 +19,9 @@ sealed class Screen(
     object Map : Screen("map", R.string.map, Icons.Default.Place)
     object Profile : Screen("profile", R.string.profile, Icons.Default.AccountBox)
     object Chat : Screen("chat", R.string.chat, Icons.Default.MailOutline)
+    object ChatMessages : Screen("chat_messages/{userId}/{userName}", R.string.chat, Icons.Default.MailOutline) {
+        fun createRoute(userId: String, userName: String) = "chat_messages/$userId/$userName"
+    }
     object Inventory : Screen("inventory", R.string.inventory, Icons.Default.Star)
     object Cart : Screen("cart", R.string.cart, Icons.Default.ShoppingCart)
     object Wallet : Screen("wallet", R.string.wallet, Icons.Default.AccountBox)
@@ -29,6 +32,7 @@ sealed class Screen(
             Map,
             Profile,
             Chat,
+            ChatMessages,
             Inventory,
             Cart,
             Wallet,

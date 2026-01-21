@@ -66,25 +66,18 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ConversationsScreen(viewModel: ChatViewmodel) {
+fun ConversationsScreen(
+    viewModel: ChatViewmodel,
+    onConversationClick: (Conversation) -> Unit
+) {
     val conversations by viewModel.conversations.collectAsState()
     val error by viewModel.error.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.messages)) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            )
-        }
-    ) { padding ->
+    Scaffold { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
         ) {
             error?.let {
                 Card(
@@ -154,7 +147,7 @@ fun ConversationsScreen(viewModel: ChatViewmodel) {
                     items(conversations) { conversation ->
                         ConversationItem(
                             conversation = conversation,
-                            onClick = { viewModel.openConversation(conversation) }
+                            onClick = { onConversationClick(conversation) }
                         )
                         HorizontalDivider()
                     }
@@ -220,8 +213,12 @@ fun ConversationItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatMessagesScreen(viewModel: ChatViewmodel) {
-    val selectedUser by viewModel.selectedUser.collectAsState()
+fun ChatMessagesScreen(
+    viewModel: ChatViewmodel,
+    userId: String,
+    userName: String,
+    onBackClick: () -> Unit
+) {
     val messages by viewModel.messages.collectAsState()
     val messageText by viewModel.messageText.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -234,7 +231,11 @@ fun ChatMessagesScreen(viewModel: ChatViewmodel) {
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.sendImageMessage(it) }
+        uri?.let { viewModel.sendImageMessage(it, userName) }
+    }
+
+    LaunchedEffect(userId) {
+        viewModel.startChat(userId)
     }
 
     LaunchedEffect(messages.size) {
@@ -265,11 +266,11 @@ fun ChatMessagesScreen(viewModel: ChatViewmodel) {
                                 )
                             }
                         }
-                        Text(selectedUser?.userName ?: "Chat")
+                        Text(userName)
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { viewModel.backToConversations() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -326,7 +327,6 @@ fun ChatMessagesScreen(viewModel: ChatViewmodel) {
                     .weight(1f)
                     .fillMaxWidth(),
                 state = listState,
-                contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 items(messages) { message ->
                     MessageItem(
@@ -362,13 +362,13 @@ fun ChatMessagesScreen(viewModel: ChatViewmodel) {
                     value = messageText,
                     onValueChange = { viewModel.updateMessageText(it) },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text(stringResource(R.string.send_message_to) + " ${selectedUser?.userName ?: ""}...") },
+                    placeholder = { Text(stringResource(R.string.send_message_to) +" $userName...") },
                     maxLines = 3,
                     enabled = !isLoading
                 )
 
                 IconButton(
-                    onClick = { viewModel.sendMessage() },
+                    onClick = { viewModel.sendMessage(userName) },
                     enabled = !isLoading && messageText.isNotBlank()
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")

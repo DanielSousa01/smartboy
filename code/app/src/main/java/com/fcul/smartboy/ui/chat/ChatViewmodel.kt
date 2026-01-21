@@ -3,7 +3,6 @@ package com.fcul.smartboy.ui.chat
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.fcul.smartboy.domain.chat.ChatUser
 import com.fcul.smartboy.domain.chat.Conversation
 import com.fcul.smartboy.domain.chat.Message
 import com.fcul.smartboy.repository.ChatRepository
@@ -22,9 +21,6 @@ class ChatViewmodel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val auth: FirebaseAuth
 ) : ViewModel() {
-    private val _selectedUser = MutableStateFlow<ChatUser?>(null)
-    val selectedUser: StateFlow<ChatUser?> = _selectedUser
-
     private val _conversations = MutableStateFlow<List<Conversation>>(emptyList())
     val conversations: StateFlow<List<Conversation>> = _conversations
 
@@ -40,11 +36,10 @@ class ChatViewmodel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    private val _viewState = MutableStateFlow("conversations")
-    val viewState: StateFlow<String> = _viewState
-
     private val _userCaps = MutableStateFlow(0)
     val userCaps: StateFlow<Int> = _userCaps
+
+    private var currentChatUserId: String? = null
 
     init {
         observeConversations()
@@ -60,32 +55,16 @@ class ChatViewmodel @Inject constructor(
         }
     }
 
-    fun selectUser(user: ChatUser) {
-        _selectedUser.value = user
-        _viewState.value = "chat"
-        observeMessages(user.userId)
+    fun startChat(userId: String) {
+        currentChatUserId = userId
+        observeMessages(userId)
     }
 
-    fun backToConversations() {
-        _selectedUser.value = null
-        _viewState.value = "conversations"
+    fun stopChat() {
+        currentChatUserId = null
         _messages.value = emptyList()
     }
 
-
-    fun openConversation(conversation: Conversation) {
-        val otherUserId = conversation.participantIds.firstOrNull {
-            it != auth.currentUser?.uid
-        } ?: return
-
-        val otherUserName = conversation.participantNames[otherUserId] ?: "User"
-
-        val chatUser = ChatUser(
-            userId = otherUserId,
-            userName = otherUserName
-        )
-        selectUser(chatUser)
-    }
 
     private fun observeConversations() {
         viewModelScope.launch {
@@ -115,18 +94,18 @@ class ChatViewmodel @Inject constructor(
         _messageText.value = text
     }
 
-    fun sendMessage() {
+    fun sendMessage(recipientName: String) {
         val text = _messageText.value.trim()
-        val recipient = _selectedUser.value
+        val recipientId = currentChatUserId
 
-        if (text.isEmpty() || recipient == null) return
+        if (text.isEmpty() || recipientId == null) return
 
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 chatRepository.sendMessage(
-                    recipientId = recipient.userId,
-                    recipientName = recipient.userName,
+                    recipientId = recipientId,
+                    recipientName = recipientName,
                     text = text
                 )
                 _messageText.value = ""
@@ -139,16 +118,16 @@ class ChatViewmodel @Inject constructor(
         }
     }
 
-    fun sendImageMessage(imageUri: Uri) {
-        val recipient = _selectedUser.value ?: return
+    fun sendImageMessage(imageUri: Uri, recipientName: String) {
+        val recipientId = currentChatUserId ?: return
 
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 val imageUrl = chatRepository.uploadImage(imageUri)
                 chatRepository.sendMessage(
-                    recipientId = recipient.userId,
-                    recipientName = recipient.userName,
+                    recipientId = recipientId,
+                    recipientName = recipientName,
                     text = "",
                     imageUrl = imageUrl
                 )

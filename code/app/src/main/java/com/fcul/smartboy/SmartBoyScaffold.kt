@@ -7,6 +7,9 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -21,7 +24,6 @@ import com.fcul.smartboy.ui.navigation.drawer.Drawer
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.launch
 
-@ExperimentalMaterial3ExpressiveApi
 @Composable
 fun SmartBoyScaffold(
     navController: NavHostController,
@@ -34,13 +36,20 @@ fun SmartBoyScaffold(
     val scope = rememberCoroutineScope()
 
 
-    val currentBackStackEntry = navController.currentBackStackEntryAsState()
-    val currentRoute = currentBackStackEntry.value?.destination?.route
+    val currentRoute = navController
+        .currentBackStackEntryAsState()
+        .value
+        ?.destination
+        ?.route
     val currentScreen = Screen.fromRoute(currentRoute) ?: Screen.Map
 
     // Determine if bars should be shown based on route
-    val showBars = currentRoute != Screen.Settings.route
-
+    val showBars by remember(currentRoute) {
+        derivedStateOf {
+            currentRoute != Screen.Settings.route &&
+                    !currentRoute.orEmpty().startsWith("chat_messages/")
+        }
+    }
     DrawerNavigation(
         rightDrawerState = rightDrawerState,
         leftDrawerState = leftDrawerState,
@@ -74,13 +83,23 @@ fun SmartBoyScaffold(
             topBar = {
                 if (showBars) {
                     TopBar(
-                        onMenuClick = { scope.launch { leftDrawerState.open() } },
+                        onMenuClick = {
+                            scope.launch {
+                                rightDrawerState.close()
+                                leftDrawerState.open()
+                            }
+                        },
                         onDestinationChange = {
                             navController.navigate(Screen.Wallet.route) {
                                 launchSingleTop = true
                             }
                         },
-                        onShoppingCartClick = { scope.launch { rightDrawerState.open() } }
+                        onShoppingCartClick = {
+                            scope.launch {
+                                leftDrawerState.close()
+                                rightDrawerState.open()
+                            }
+                        }
                     )
                 }
             },

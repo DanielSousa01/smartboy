@@ -9,7 +9,7 @@ import androidx.navigation.compose.rememberNavController
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SmartBoyApp(vm: MainViewmodel) {
+fun SmartBoyApp(vm: MainViewModel) {
     val user by vm.user.collectAsState()
     val userProfile by vm.userProfile.collectAsState()
     val navController = rememberNavController()
