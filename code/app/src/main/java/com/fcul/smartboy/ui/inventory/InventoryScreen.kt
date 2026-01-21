@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,7 +41,7 @@ fun InventoryScreen(
     val sellingItems by sellingItemsState.collectAsState()
 
     val itemsByCategory: Map<Category, List<Item>> = items.groupBy { it.category }
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(0) }
 
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -62,10 +63,13 @@ fun InventoryScreen(
                 0 -> {
                     Inventory(
                         itemsByCategory = itemsByCategory,
+                        sellingItems = sellingItems,
                         onUnload = onUnload,
                         onReload = onReload,
                         onRemove = onRemoveItem,
                         onQuantityChange = onItemQuantityChange,
+                        onSellingItemQuantityChange = onSellingItemQuantityChange,
+                        onSellingItemValueChange = onSellingItemValueChange,
                         onSell = onSell
                     )
                 }

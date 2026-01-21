@@ -17,14 +17,18 @@ import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
+import com.fcul.smartboy.domain.inventory.SellingItem
 
 @Composable
 fun Inventory(
     itemsByCategory: Map<Category, List<Item>>,
+    sellingItems: List<SellingItem>,
     onUnload: (Long) -> Unit,
     onReload: (Long) -> Unit,
     onRemove: (Long) -> Unit,
     onQuantityChange: (Long, Int) -> Unit,
+    onSellingItemQuantityChange: (Long, Int) -> Unit,
+    onSellingItemValueChange: (Long, Int) -> Unit,
     onSell: (Long, Int, Int) -> Unit
 ) {
     LazyColumn(
@@ -49,15 +53,19 @@ fun Inventory(
                     if (invItem is Item.Weapon && invItem.ammoId != null) {
                         ItemCard(
                             item = invItem,
+                            sellingItem = sellingItems.find { it.id == invItem.id },
                             onUse = onUnload,
                             onReload = onReload,
                             onQuantityChange = onQuantityChange,
+                            onSellingItemQuantityChange = onSellingItemQuantityChange,
+                            onSellingItemValueChange = onSellingItemValueChange,
                             onRemove = onRemove,
                             onSell = onSell
                         )
                     } else if (invItem is Item.Aid) {
                         ItemCard(
                             item = invItem,
+                            sellingItem = sellingItems.find { it.id == invItem.id },
                             onUse = {
                                 val newQuantity = invItem.quantity - 1
                                 if (newQuantity > 0)
@@ -66,13 +74,18 @@ fun Inventory(
                                     onRemove(invItem.id)
                             },
                             onQuantityChange = onQuantityChange,
+                            onSellingItemQuantityChange = onSellingItemQuantityChange,
+                            onSellingItemValueChange = onSellingItemValueChange,
                             onRemove = onRemove,
                             onSell = onSell
                         )
                     } else {
                         ItemCard(
                             item = invItem,
+                            sellingItem = sellingItems.find { it.id == invItem.id },
                             onQuantityChange = onQuantityChange,
+                            onSellingItemQuantityChange = onSellingItemQuantityChange,
+                            onSellingItemValueChange = onSellingItemValueChange,
                             onRemove = onRemove,
                             onSell = onSell
                         )

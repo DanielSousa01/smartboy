@@ -19,11 +19,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.domain.inventory.Item
+import com.fcul.smartboy.domain.inventory.SellingItem
 
 @Composable
 fun ItemCard(
     item: Item,
+    sellingItem: SellingItem? = null,
     onQuantityChange: (Long, Int) -> Unit,
+    onSellingItemQuantityChange: (Long, Int) -> Unit,
+    onSellingItemValueChange: (Long, Int) -> Unit,
     onRemove: (Long) -> Unit,
     onUse: (Long) -> Unit = {},
     onReload: (Long) -> Unit = {},
@@ -34,20 +38,26 @@ fun ItemCard(
     if (isItemDetailsOpen) {
         ItemDetails(
             item = item,
+            sellingItem = sellingItem,
             onUse = { onUse(item.id) },
             onReload = { onReload(item.id) },
             onDismiss = { isItemDetailsOpen = false },
             onRemove = {
                 onRemove(item.id)
-                isItemDetailsOpen = false
             },
             onQuantityChange = { newQuantity ->
                 onQuantityChange(item.id, newQuantity)
-                isItemDetailsOpen = false
             },
             onSell = { price, quantity ->
                 onSell(item.id, price, quantity)
-                isItemDetailsOpen = false
+            },
+            onSellingItemQuantityChange = { newQuantity ->
+                if (sellingItem != null)
+                    onSellingItemQuantityChange(sellingItem.id, newQuantity)
+            },
+            onSellingItemValueChange = { newValue ->
+                if (sellingItem != null)
+                    onSellingItemValueChange(sellingItem.id, newValue)
             }
         )
     }

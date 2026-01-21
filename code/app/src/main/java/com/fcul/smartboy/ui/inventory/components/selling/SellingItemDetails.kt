@@ -196,7 +196,8 @@ fun SellingItemDetails(
                         }
 
                         quantity?.let {
-                            if (it != item.quantity && it > 0) {
+                            if (it != item.quantity && it > 0
+                                && inventoryQuantity != null && inventoryQuantity!! > 0) {
                                 onQuantityChange(it)
                             } else if (it == 0) {
                                 dismissible = false
