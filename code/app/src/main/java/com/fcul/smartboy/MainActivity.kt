@@ -118,7 +118,10 @@ class MainActivity : ComponentActivity() {
         }
 
         if (!hasActivityRecognition) {
-            Log.w("MainActivity", "Cannot start StepCounterService: Missing ACTIVITY_RECOGNITION permission")
+            Log.w(
+                "MainActivity",
+                "Cannot start StepCounterService: Missing ACTIVITY_RECOGNITION permission"
+            )
             return
         }
 

@@ -51,32 +51,57 @@ fun FloatingMenu(
         }
     ) {
         FloatingActionButtonMenuItem(
-            icon = { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.create_rad)) },
+            icon = {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = stringResource(R.string.create_rad)
+                )
+            },
             text = { Text(stringResource(R.string.create_rad)) },
             onClick = { closeAnd(onAddRadPoint) }
         )
         if (isRouteActive) {
             FloatingActionButtonMenuItem(
-                icon = { Icon(Icons.Default.Flag, contentDescription = stringResource(R.string.end_route)) },
+                icon = {
+                    Icon(
+                        Icons.Default.Flag,
+                        contentDescription = stringResource(R.string.end_route)
+                    )
+                },
                 text = { Text(stringResource(R.string.end_route)) },
                 onClick = { closeAnd(onEndRoute) }
             )
         } else {
             FloatingActionButtonMenuItem(
-                icon = { Icon(Icons.Default.PushPin, contentDescription = stringResource(R.string.create_checkpoint)) },
+                icon = {
+                    Icon(
+                        Icons.Default.PushPin,
+                        contentDescription = stringResource(R.string.create_checkpoint)
+                    )
+                },
                 text = { Text(stringResource(R.string.create_checkpoint)) },
                 onClick = { closeAnd(onAddPendingCheckpoint) }
             )
             if (hasPending) {
                 FloatingActionButtonMenuItem(
-                    icon = { Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear_checkpoints)) },
+                    icon = {
+                        Icon(
+                            Icons.Default.Clear,
+                            contentDescription = stringResource(R.string.clear_checkpoints)
+                        )
+                    },
                     text = { Text(stringResource(R.string.clear_checkpoints)) },
                     onClick = { closeAnd(onClearPendingCheckpoints) }
                 )
             }
             if (canStartRoute) {
                 FloatingActionButtonMenuItem(
-                    icon = { Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.start_route)) },
+                    icon = {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = stringResource(R.string.start_route)
+                        )
+                    },
                     text = { Text(stringResource(R.string.start_route)) },
                     onClick = { closeAnd(onStartRoute) },
                 )

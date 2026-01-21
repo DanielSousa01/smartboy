@@ -224,7 +224,9 @@ fun DrawerBody(
                 Text(
                     text = "%.0f%%".format(radiationResistance * 100),
                     style = MaterialTheme.typography.titleMedium,
-                    color = if (radiationResistance > 0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = if (radiationResistance > 0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface.copy(
+                        alpha = 0.6f
+                    )
                 )
             }
 

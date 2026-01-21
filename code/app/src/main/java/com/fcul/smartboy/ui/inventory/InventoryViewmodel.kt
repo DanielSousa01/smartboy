@@ -256,26 +256,44 @@ class InventoryViewmodel @Inject constructor(
                         val success = profileRepository.useRadAway(userId, RADAWAY_REDUCTION)
                         if (success) {
                             changeItemQuantity(itemId, item.quantity - 1)
-                            Log.i("InventoryViewmodel", "RadAway used: reduced radiation by $RADAWAY_REDUCTION Sv")
+                            Log.i(
+                                "InventoryViewmodel",
+                                "RadAway used: reduced radiation by $RADAWAY_REDUCTION Sv"
+                            )
                         } else {
-                            Log.w("InventoryViewmodel", "RadAway use failed: no radiation to remove")
+                            Log.w(
+                                "InventoryViewmodel",
+                                "RadAway use failed: no radiation to remove"
+                            )
                         }
                     }
+
                     "Rad-X" -> {
                         // Rad-X provides 50% radiation resistance for 5 minutes
-                        val success = profileRepository.useRadX(userId, RADX_RESISTANCE_BOOST, RADX_DURATION_MS)
+                        val success = profileRepository.useRadX(
+                            userId,
+                            RADX_RESISTANCE_BOOST,
+                            RADX_DURATION_MS
+                        )
                         if (success) {
                             changeItemQuantity(itemId, item.quantity - 1)
-                            Log.i("InventoryViewmodel", "Rad-X used: increased resistance by ${RADX_RESISTANCE_BOOST * 100}%")
+                            Log.i(
+                                "InventoryViewmodel",
+                                "Rad-X used: increased resistance by ${RADX_RESISTANCE_BOOST * 100}%"
+                            )
 
                             // Schedule resistance decay after duration
                             viewModelScope.launch {
                                 kotlinx.coroutines.delay(RADX_DURATION_MS)
-                                profileRepository.decreaseRadiationResistance(userId, RADX_RESISTANCE_BOOST)
+                                profileRepository.decreaseRadiationResistance(
+                                    userId,
+                                    RADX_RESISTANCE_BOOST
+                                )
                                 Log.i("InventoryViewmodel", "Rad-X effect expired")
                             }
                         }
                     }
+
                     else -> {
                         Log.w("InventoryViewmodel", "Item ${item.name} has no use effect")
                     }

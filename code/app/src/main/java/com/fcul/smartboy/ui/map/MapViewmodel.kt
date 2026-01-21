@@ -380,7 +380,8 @@ class MapViewmodel @Inject constructor(
                     val actualRadiation = rawRadiation * (1.0 - resistance)
 
                     // Calculate steps to deduct (based on actual radiation after resistance)
-                    val stepsToDeduct = (actualRadiation * (STEPS_DEDUCTION_PER_SV / RADIATION_MULTIPLIER)).roundToLong()
+                    val stepsToDeduct =
+                        (actualRadiation * (STEPS_DEDUCTION_PER_SV / RADIATION_MULTIPLIER)).roundToLong()
 
                     // Add radiation to profile
                     if (actualRadiation > 0) {

@@ -24,6 +24,7 @@ object MeasurementUtils {
                     String.format(Locale.US, "%.0f m", distanceMeters)
                 }
             }
+
             MeasurementUnit.IMPERIAL -> {
                 val distanceFeet = distanceMeters * 3.28084
                 if (distanceFeet >= 5280) {
@@ -52,6 +53,7 @@ object MeasurementUtils {
                     Pair(distanceMeters, "m")
                 }
             }
+
             MeasurementUnit.IMPERIAL -> {
                 val distanceFeet = distanceMeters * 3.28084
                 if (distanceFeet >= 5280) {
