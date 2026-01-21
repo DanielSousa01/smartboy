@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
+import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.repository.InventoryRepository
 import com.fcul.smartboy.repository.SellingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,14 +22,17 @@ class InventoryViewmodel @Inject constructor(
     private val sellingRepository: SellingRepository
 ) : ViewModel() {
     private val _items = MutableStateFlow<List<Item>>(emptyList())
+    private val _sellingItems = MutableStateFlow<List<SellingItem>>(emptyList())
     private val _isLoading = MutableStateFlow(false)
 
     val items: StateFlow<List<Item>> = _items.asStateFlow()
+    val sellingItems: StateFlow<List<SellingItem>> = _sellingItems.asStateFlow()
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     init {
         populateDatabase()
         observeInventory()
+        observeSellingItems()
     }
 
     private fun observeInventory() {
@@ -46,16 +50,16 @@ class InventoryViewmodel @Inject constructor(
         }
     }
 
-    private fun loadInventory() {
+    private fun observeSellingItems() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val items = inventoryRepository.getInventory()
-
-                _items.value = items
+                sellingRepository.observeSellingItems().collect { items ->
+                    _sellingItems.value = items
+                    _isLoading.value = false
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
-            } finally {
                 _isLoading.value = false
             }
         }

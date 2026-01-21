@@ -77,7 +77,8 @@ class MapViewmodel @Inject constructor(
         private const val RADIATION_UPDATE_INTERVAL = 5000L
         private const val RADIATION_MULTIPLIER = 0.1
         private const val STEPS_DEDUCTION_PER_SV = 10L
-        private const val MAX_ROUTE_DEVIATION_METERS = 100.0 // Recalculate if user is >100m off route
+        private const val MAX_ROUTE_DEVIATION_METERS =
+            100.0 // Recalculate if user is >100m off route
         private const val ROUTE_RECALC_COOLDOWN = 10000L // Wait 10s between recalculations
     }
 
@@ -133,7 +134,10 @@ class MapViewmodel @Inject constructor(
                 recalculateRouteFromCurrentLocation()
                 return
             } else {
-                Log.d("MapViewmodel", "User off route but cooldown active (${timeSinceLastRecalc}ms < ${ROUTE_RECALC_COOLDOWN}ms)")
+                Log.d(
+                    "MapViewmodel",
+                    "User off route but cooldown active (${timeSinceLastRecalc}ms < ${ROUTE_RECALC_COOLDOWN}ms)"
+                )
             }
         }
 
@@ -149,7 +153,10 @@ class MapViewmodel @Inject constructor(
             remaining.addAll(fullRoute.drop(closestIndex + 1))
             _remainingRoute.value = remaining
 
-            Log.d("MapViewmodel", "Route drawing: ${traveled.size} traveled, ${remaining.size} remaining (${minDistance}m from route)")
+            Log.d(
+                "MapViewmodel",
+                "Route drawing: ${traveled.size} traveled, ${remaining.size} remaining (${minDistance}m from route)"
+            )
         }
     }
 
@@ -178,7 +185,10 @@ class MapViewmodel @Inject constructor(
         }
 
         // Recalculate route from current location
-        Log.i("MapViewmodel", "Recalculating route from current location to ${remainingCheckpoints.size} checkpoints")
+        Log.i(
+            "MapViewmodel",
+            "Recalculating route from current location to ${remainingCheckpoints.size} checkpoints"
+        )
         fetchRoutePolyline(
             origin = currentLoc,
             destination = remainingCheckpoints.last(),
@@ -204,7 +214,10 @@ class MapViewmodel @Inject constructor(
                 if (!activeRadiationZones.containsKey(zoneId)) {
                     // Just entered this zone
                     activeRadiationZones[zoneId] = radSpot
-                    Log.w("MapViewmodel", "Entered radiation zone: $zoneId (${radSpot.radiationLevelInSv} Sv)")
+                    Log.w(
+                        "MapViewmodel",
+                        "Entered radiation zone: $zoneId (${radSpot.radiationLevelInSv} Sv)"
+                    )
                 }
             }
         }
@@ -242,7 +255,10 @@ class MapViewmodel @Inject constructor(
                     // Deduct steps as penalty
                     if (stepsToDeduct > 0) {
                         profileRepository.deductSteps(userId, stepsToDeduct)
-                        Log.w("MapViewmodel", "Radiation damage: +${totalRadiation} Sv, -${stepsToDeduct} steps")
+                        Log.w(
+                            "MapViewmodel",
+                            "Radiation damage: +${totalRadiation} Sv, -${stepsToDeduct} steps"
+                        )
                     }
 
                     lastRadiationUpdate = currentTime
@@ -308,7 +324,10 @@ class MapViewmodel @Inject constructor(
 
     fun onRadiationMarkerClick(radiationData: RadiationData) {
         _selectedRadiationMarker.value = radiationData
-        Log.d("MapViewmodel", "Radiation marker selected: ${radiationData.radiationLevelInSv} Sv at ${radiationData.location}")
+        Log.d(
+            "MapViewmodel",
+            "Radiation marker selected: ${radiationData.radiationLevelInSv} Sv at ${radiationData.location}"
+        )
     }
 
     fun onCheckpointMarkerClick(checkpoint: LatLng) {
@@ -388,10 +407,19 @@ class MapViewmodel @Inject constructor(
 
                 Log.d("MapViewmodel", "========================================")
                 Log.d("MapViewmodel", "fetchRoutePolyline called")
-                Log.d("MapViewmodel", "Origin: ${actualOrigin.latitude}, ${actualOrigin.longitude} (current location: $useCurrentLocationAsOrigin)")
-                Log.d("MapViewmodel", "Destination: ${destination.latitude}, ${destination.longitude}")
+                Log.d(
+                    "MapViewmodel",
+                    "Origin: ${actualOrigin.latitude}, ${actualOrigin.longitude} (current location: $useCurrentLocationAsOrigin)"
+                )
+                Log.d(
+                    "MapViewmodel",
+                    "Destination: ${destination.latitude}, ${destination.longitude}"
+                )
                 Log.d("MapViewmodel", "Waypoints: ${waypoints.size}")
-                Log.d("MapViewmodel", "API Key: ${if (apiKey.isBlank()) "EMPTY/BLANK" else "Present (${apiKey.take(10)}...)"}")
+                Log.d(
+                    "MapViewmodel",
+                    "API Key: ${if (apiKey.isBlank()) "EMPTY/BLANK" else "Present (${apiKey.take(10)}...)"}"
+                )
                 Log.d("MapViewmodel", "========================================")
 
                 if (apiKey.isBlank()) {

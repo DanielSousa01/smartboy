@@ -1,7 +1,5 @@
 package com.fcul.smartboy.repository
 
-import com.fcul.smartboy.domain.inventory.Item
-import com.fcul.smartboy.domain.inventory.ItemEntity
 import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.domain.inventory.SellingItemEntity
 import com.fcul.smartboy.repository.base.CRUD
@@ -10,6 +8,9 @@ import com.fcul.smartboy.repository.base.Path
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import javax.inject.Inject
 
 class SellingRepository @Inject constructor(
@@ -22,15 +23,29 @@ class SellingRepository @Inject constructor(
 
     private val col get() = firestore.collection(Path.USERS.path)
 
-    suspend fun getSellingItems(): List<SellingItem> {
-        val user = user ?: return emptyList()
-
-        val inventorySnapshot = col.document(user.uid)
-            .collection(Path.INVENTORY.path).get().awaitTask()
-
-        return inventorySnapshot.documents.mapNotNull { doc ->
-            doc.toObject(SellingItemEntity::class.java)?.toItem()
+    fun observeSellingItems(): Flow<List<SellingItem>> = callbackFlow {
+        val user = user ?: run {
+            close()
+            return@callbackFlow
         }
+
+        val sellingRef = col.document(user.uid)
+            .collection(Path.SELLING.path)
+
+        val listener = sellingRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+
+            val items = snapshot?.documents?.mapNotNull { doc ->
+                doc.toObject(SellingItemEntity::class.java)?.toItem()
+            } ?: emptyList()
+
+            trySend(items)
+        }
+
+        awaitClose { listener.remove() }
     }
 
     override suspend fun create(document: SellingItem): Long {

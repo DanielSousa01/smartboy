@@ -91,6 +91,7 @@ fun NavGraph(
             val viewModel: InventoryViewmodel = hiltViewModel()
             InventoryScreen(
                 itemsState = viewModel.items,
+                sellingItemsState = viewModel.sellingItems,
                 isLoadingState = viewModel.isLoading,
                 onUnload = viewModel::unloadAmmo,
                 onReload = viewModel::reloadAmmo,

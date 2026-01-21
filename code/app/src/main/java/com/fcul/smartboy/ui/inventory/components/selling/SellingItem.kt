@@ -1,4 +1,4 @@
-package com.fcul.smartboy.ui.inventory.components
+package com.fcul.smartboy.ui.inventory.components.selling
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import com.fcul.smartboy.domain.inventory.Item
+import com.fcul.smartboy.ui.inventory.components.IncrementalTextField
 
 @Composable
 fun SellingItem(

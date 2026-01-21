@@ -2,7 +2,6 @@ package com.fcul.smartboy.repository
 
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.domain.inventory.ItemEntity
-import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.repository.base.CRUD
 import com.fcul.smartboy.repository.base.CRUD.Companion.awaitTask
 import com.fcul.smartboy.repository.base.Path
@@ -23,24 +22,14 @@ class InventoryRepository @Inject constructor(
 
     private val col get() = firestore.collection(Path.USERS.path)
 
-    suspend fun getInventory(): List<Item> {
-        val user = user ?: return emptyList()
-
-        val inventorySnapshot = col.document(user.uid)
-            .collection(Path.INVENTORY.path).get().awaitTask()
-
-        return inventorySnapshot.documents.mapNotNull { doc ->
-            doc.toObject(ItemEntity::class.java)?.toItem()
-        }
-    }
-
     fun observeInventory(): Flow<List<Item>> = callbackFlow {
         val user = user ?: run {
             close()
             return@callbackFlow
         }
 
-        val inventoryRef = col.document(user.uid).collection(Path.INVENTORY.path)
+        val inventoryRef = col.document(user.uid)
+            .collection(Path.INVENTORY.path)
 
         val listener = inventoryRef.addSnapshotListener { snapshot, error ->
             if (error != null) {

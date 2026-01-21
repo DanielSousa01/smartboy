@@ -68,7 +68,9 @@ private fun TransactionEntry(transaction: Transaction) {
             Column(horizontalAlignment = Alignment.End) {
                 val absAmount = kotlin.math.abs(transaction.amount)
                 val amountText =
-                    (if (transaction.amount >= 0) "+$absAmount" else "-$absAmount") + " " + stringResource(R.string.caps)
+                    (if (transaction.amount >= 0) "+$absAmount" else "-$absAmount") + " " + stringResource(
+                        R.string.caps
+                    )
                 Text(amountText)
                 Text(transaction.date.toString())
             }

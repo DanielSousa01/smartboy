@@ -94,7 +94,12 @@ fun FloatingMenu(
         }
         if (checkpointSelected != null) {
             FloatingActionButtonMenuItem(
-                icon = { Icon(Icons.Default.Clear, contentDescription = "Clear Selected Checkpoint") },
+                icon = {
+                    Icon(
+                        Icons.Default.Clear,
+                        contentDescription = "Clear Selected Checkpoint"
+                    )
+                },
                 text = { Text("Clear Selected Checkpoint") },
                 onClick = {
                     onMenuOpenChange(false)

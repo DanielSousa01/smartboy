@@ -1,4 +1,4 @@
-package com.fcul.smartboy.ui.inventory.components
+package com.fcul.smartboy.ui.inventory.components.inventory
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +23,6 @@ import com.fcul.smartboy.domain.inventory.Item
 @Composable
 fun ItemCard(
     item: Item,
-    sellingMode: Boolean,
     onQuantityChange: (Long, Int) -> Unit,
     onRemove: (Long) -> Unit,
     onUse: (Long) -> Unit = {},
@@ -74,12 +72,6 @@ fun ItemCard(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
-
-                if (sellingMode) {
-                    Button(onClick = { }) {
-                        Text("Sell")
-                    }
-                }
             }
             if (item is Item.Weapon && item.ammoId != null) {
                 Row {

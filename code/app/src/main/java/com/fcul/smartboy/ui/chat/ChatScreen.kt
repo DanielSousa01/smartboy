@@ -362,7 +362,7 @@ fun ChatMessagesScreen(viewModel: ChatViewmodel) {
                     value = messageText,
                     onValueChange = { viewModel.updateMessageText(it) },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text(stringResource(R.string.send_message_to) +" ${selectedUser?.userName ?: ""}...") },
+                    placeholder = { Text(stringResource(R.string.send_message_to) + " ${selectedUser?.userName ?: ""}...") },
                     maxLines = 3,
                     enabled = !isLoading
                 )

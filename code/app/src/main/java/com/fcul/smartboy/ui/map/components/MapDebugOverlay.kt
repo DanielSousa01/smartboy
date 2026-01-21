@@ -4,14 +4,13 @@ import android.location.Location
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.google.android.gms.maps.model.LatLng
 import com.fcul.smartboy.domain.route.RadiationData
+import com.google.android.gms.maps.model.LatLng
 
 @Composable
 fun MapDebugOverlay(
@@ -69,7 +68,8 @@ fun MapDebugOverlay(
                 )
             }
             if (traveledPath.isNotEmpty()) {
-                val progress = (traveledPath.size.toFloat() / (traveledPath.size + remainingRoute.size)) * 100
+                val progress =
+                    (traveledPath.size.toFloat() / (traveledPath.size + remainingRoute.size)) * 100
                 Text(
                     text = "✅ Progress: ${progress.toInt()}%",
                     color = Color.Green

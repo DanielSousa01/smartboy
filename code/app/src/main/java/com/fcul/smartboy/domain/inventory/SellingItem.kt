@@ -9,7 +9,7 @@ sealed class SellingItem {
 
     init {
         require(quantity >= 0) { "Quantity must be non-negative" }
-        require(valuePerUnit >= 0) { "Value must be non-negative"}
+        require(valuePerUnit >= 0) { "Value must be non-negative" }
     }
 
     abstract fun copyItem(
@@ -213,6 +213,7 @@ sealed class SellingItem {
                     ammoLoaded = this.ammoLoaded
                 )
             }
+
             is Ammo -> {
                 Item.Ammo(
                     id = this.id,
@@ -221,6 +222,7 @@ sealed class SellingItem {
                     category = this.category
                 )
             }
+
             is Apparel -> {
                 Item.Apparel(
                     id = this.id,
@@ -229,6 +231,7 @@ sealed class SellingItem {
                     category = this.category
                 )
             }
+
             is Aid -> {
                 Item.Aid(
                     id = this.id,
@@ -237,6 +240,7 @@ sealed class SellingItem {
                     category = this.category
                 )
             }
+
             is Misc -> {
                 Item.Misc(
                     id = this.id,
@@ -245,6 +249,7 @@ sealed class SellingItem {
                     category = this.category
                 )
             }
+
             is Junk -> {
                 Item.Junk(
                     id = this.id,
