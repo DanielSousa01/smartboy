@@ -90,7 +90,7 @@ fun ItemDetails(
                     .padding(8.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceEvenly
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (item is Item.Weapon && item.ammoId != null) {
                     Card {
@@ -116,38 +116,29 @@ fun ItemDetails(
                         }
                     }
                 }
-                Row(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Card {
-                            Text(text = "Quantity: ")
-                            IncrementalTextField(
-                                value = quantity?.toString() ?: "",
-                                onValueChange = { newValue ->
-                                    quantity = newValue.toIntOrNull()
-                                },
-                                onIncrement = {
-                                    quantity?.let {
-                                        quantity = it + 1
-                                    }
-                                },
-                                isIncrementEnabled = quantity != null,
-                                onDecrement = {
-                                    quantity?.let {
-                                        if (it > 1) {
-                                            quantity = it - 1
-                                        }
-                                    }
-                                },
-                                isDecrementEnabled = quantity != null && quantity!! > 1,
-                            )
-                        }
-                    }
+
+                Card {
+                    Text(text = "Quantity: ")
+                    IncrementalTextField(
+                        value = quantity?.toString() ?: "",
+                        onValueChange = { newValue ->
+                            quantity = newValue.toIntOrNull()
+                        },
+                        onIncrement = {
+                            quantity?.let {
+                                quantity = it + 1
+                            }
+                        },
+                        isIncrementEnabled = quantity != null,
+                        onDecrement = {
+                            quantity?.let {
+                                if (it > 1) {
+                                    quantity = it - 1
+                                }
+                            }
+                        },
+                        isDecrementEnabled = quantity != null && quantity!! > 1,
+                    )
                 }
             }
         },
@@ -167,7 +158,7 @@ fun ItemDetails(
                 Button(
                     onClick = {
                         quantity?.let {
-                            if (it > 0) {
+                            if (it != item.quantity && it > 0) {
                                 onQuantityChange(it)
                                 onDismiss()
                             } else {

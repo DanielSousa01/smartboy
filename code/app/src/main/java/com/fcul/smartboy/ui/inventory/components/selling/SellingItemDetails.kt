@@ -26,32 +26,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.domain.inventory.Item
+import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.ui.inventory.components.IncrementalTextField
 
 
 @Composable
-fun ItemDetails(
-    item: Item,
-    onUse: () -> Unit,
-    onReload: () -> Unit,
+fun SellingItemDetails(
+    inventoryItem: Item?,
+    item: SellingItem,
     onDismiss: () -> Unit,
     onRemove: () -> Unit,
     onQuantityChange: (Int) -> Unit,
-    onSell: (Int, Int) -> Unit,
+    onValueChange: (Int) -> Unit,
 ) {
     val context = LocalContext.current
-    var isSellingMenuOpen by remember { mutableStateOf(false) }
     var quantity: Int? by remember { mutableStateOf(item.quantity) }
-
-    if (isSellingMenuOpen)
-        SellingItem(
-            item = item,
-            onDismiss = { isSellingMenuOpen = false },
-            onConfirm = { quantity, price ->
-                onSell(quantity, price)
-                isSellingMenuOpen = false
-            },
-        )
+    var value: Int? by remember { mutableStateOf(item.valuePerUnit) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -72,12 +62,6 @@ fun ItemDetails(
                     )
                 }
 
-                Button(onClick = {
-                    isSellingMenuOpen = true
-                }) {
-                    Text("Sell")
-                }
-
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = "Close")
                 }
@@ -89,9 +73,9 @@ fun ItemDetails(
                     .padding(8.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceEvenly
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (item is Item.Weapon && item.ammoId != null) {
+                if (item is SellingItem.Weapon && item.ammoId != null) {
                     Card {
                         Text(text = "Ammo : ${item.ammoName}")
 
@@ -107,46 +91,60 @@ fun ItemDetails(
                                     .fillMaxWidth(),
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                Text(text = "${item.ammoLoaded} / ${item.ammoMax}")
-                            }
-                            Button(onClick = onReload) {
-                                Text("Reload")
+                                Text(text = "Max Ammo: ${item.ammoMax}")
                             }
                         }
                     }
                 }
-                Row(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Card {
-                            Text(text = "Quantity: ")
-                            IncrementalTextField(
-                                value = quantity?.toString() ?: "",
-                                onValueChange = { newValue ->
-                                    quantity = newValue.toIntOrNull()
-                                },
-                                onIncrement = {
-                                    quantity?.let {
-                                        quantity = it + 1
-                                    }
-                                },
-                                isIncrementEnabled = quantity != null,
-                                onDecrement = {
-                                    quantity?.let {
-                                        if (it > 1) {
-                                            quantity = it - 1
-                                        }
-                                    }
-                                },
-                                isDecrementEnabled = quantity != null && quantity!! > 1,
-                            )
-                        }
-                    }
+
+                Card {
+                    Text(text = "Quantity: ")
+                    IncrementalTextField(
+                        value = quantity?.toString() ?: "",
+                        onValueChange = { newValue ->
+                            quantity = newValue.toIntOrNull()
+                        },
+                        onIncrement = {
+                            quantity?.let {
+                                if (inventoryItem != null && inventoryItem.quantity + it <= it + 1)
+                                    quantity = it + 1
+                            }
+                        },
+                        isIncrementEnabled = quantity != null && inventoryItem != null
+                                && inventoryItem.quantity >= quantity!!,
+                        onDecrement = {
+                            quantity?.let {
+                                if (it > 1) {
+                                    quantity = it - 1
+                                }
+                            }
+                        },
+                        isDecrementEnabled = quantity != null && quantity!! > 1,
+                    )
+                }
+
+                Card {
+                    Text(text = "Value per Unit: ")
+                    IncrementalTextField(
+                        value = value?.toString() ?: "",
+                        onValueChange = { newValue ->
+                            value = newValue.toIntOrNull()
+                        },
+                        onIncrement = {
+                            value?.let {
+                                value = it + 1
+                            }
+                        },
+                        isIncrementEnabled = value != null,
+                        onDecrement = {
+                            value?.let {
+                                if (it > 0) {
+                                    value = it - 1
+                                }
+                            }
+                        },
+                        isDecrementEnabled = value != null && value!! > 0,
+                    )
                 }
             }
         },
@@ -163,13 +161,29 @@ fun ItemDetails(
                 ) {
                     Text("Remove")
                 }
+
                 Button(
                     onClick = {
-                        quantity?.let {
-                            if (it > 0) {
-                                onQuantityChange(it)
-                                onDismiss()
+                        var dismissible = true
+
+                        value?.let{
+                            if (it != item.valuePerUnit && it > 0) {
+                                onValueChange(it)
                             } else {
+                                dismissible = false
+                                Toast.makeText(
+                                    context,
+                                    "Value must be greater or equal to 0",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+
+                        quantity?.let {
+                            if (it != item.quantity && it > 0) {
+                                onQuantityChange(it)
+                            } else {
+                                dismissible = false
                                 Toast.makeText(
                                     context,
                                     "Quantity must be greater than 0",
@@ -177,26 +191,16 @@ fun ItemDetails(
                                 ).show()
                             }
                         }
+
+                        if (dismissible)
+                            onDismiss()
+
                     },
-                    enabled = quantity != null && item.quantity != quantity!! && quantity!! > 0
+                    enabled = quantity != null && item.quantity != quantity!! && quantity!! > 0 ||
+                            value != null && item.valuePerUnit != value!! && value!! >= 0
                 ) {
                     Text("Update")
                 }
-                if (item is Item.Weapon && item.ammoId != null && item.ammoLoaded != null || item is Item.Aid)
-                    Button(
-                        onClick = {
-                            if (item is Item.Aid && item.quantity > 0) {
-                                quantity = item.quantity - 1
-                                if (quantity == 0)
-                                    onDismiss()
-                            }
-                            onUse()
-                        },
-                        enabled = item is Item.Weapon && item.ammoId != null && item.ammoLoaded != null
-                                && item.ammoLoaded > 0 || item is Item.Aid && item.quantity > 0
-                    ) {
-                        Text("Use")
-                    }
             }
         },
     )

@@ -78,6 +78,7 @@ fun InventoryScreen(
 
                 1 -> {
                     Selling(
+                        inventoryItems = items,
                         sellingItems = sellingItems
                     )
                 }

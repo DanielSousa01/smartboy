@@ -19,10 +19,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.domain.inventory.Category
+import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.domain.inventory.SellingItem
 
 @Composable
 fun Selling(
+    inventoryItems: List<Item>,
     sellingItems: List<SellingItem>
 ) {
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
@@ -63,7 +65,10 @@ fun Selling(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
         ) {
             items(filteredItems) { sellingItem ->
-                SellingItemCard(item = sellingItem)
+                SellingItemCard(
+                    inventoryItem = inventoryItems.find { it.id == sellingItem.id },
+                    item = sellingItem
+                )
             }
         }
     }
