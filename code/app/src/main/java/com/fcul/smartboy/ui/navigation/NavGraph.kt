@@ -17,6 +17,7 @@ import com.fcul.smartboy.domain.navigation.Screen
 import com.fcul.smartboy.ui.cart.CartScreen
 import com.fcul.smartboy.ui.cart.CartsListScreen
 import com.fcul.smartboy.ui.cart.CartViewmodel
+import com.fcul.smartboy.ui.cart.ScanPaymentScreen
 import com.fcul.smartboy.ui.chat.ChatMessagesScreen
 import com.fcul.smartboy.ui.chat.ChatViewmodel
 import com.fcul.smartboy.ui.chat.ConversationsScreen
@@ -304,6 +305,15 @@ fun NavGraph(
                     onDismissError = viewModel::dismissError
                 )
             }
+        }
+        composable(Screen.ScanPayment.route) {
+            val viewModel: CartViewmodel = hiltViewModel()
+
+            ScanPaymentScreen(
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() },
+                onPaymentComplete = { navController.popBackStack() }
+            )
         }
         composable(Screen.Wallet.route) {
             val viewModel: WalletViewModel = hiltViewModel()

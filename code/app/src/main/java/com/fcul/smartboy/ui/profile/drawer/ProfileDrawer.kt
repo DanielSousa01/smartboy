@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
@@ -39,6 +40,7 @@ import com.fcul.smartboy.R
 fun ProfileDrawer(
     userName: String,
     onProfileClick: () -> Unit,
+    onWalletClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -71,6 +73,7 @@ fun ProfileDrawer(
             )
 
             DrawerFooter(
+                onWalletClick = onWalletClick,
                 onSettingsClick = onSettingsClick,
                 onLogoutClick = onLogoutClick
             )
@@ -98,7 +101,7 @@ fun DrawerTop(
             if (userPicture != null) {
                 AsyncImage(
                     model = userPicture,
-                    contentDescription = "Profile Picture",
+                    contentDescription = stringResource(R.string.profile_picture),
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape),
@@ -107,7 +110,7 @@ fun DrawerTop(
             } else {
                 Icon(
                     imageVector = Icons.Filled.AccountCircle,
-                    contentDescription = "Profile Icon",
+                    contentDescription = stringResource(R.string.profile_icon),
                     modifier = Modifier.size(64.dp)
                 )
             }
@@ -115,7 +118,7 @@ fun DrawerTop(
             Spacer(Modifier.height(12.dp))
 
             Text(
-                text = userName ?: "Guest",
+                text = userName ?: stringResource(R.string.guest),
                 style = MaterialTheme.typography.titleLarge
             )
         }
@@ -183,11 +186,11 @@ fun DrawerBody(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Waves,
-                        contentDescription = "Radiation Icon",
+                        contentDescription = stringResource(R.string.radiation_icon),
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
-                        text = "Radiation",
+                        text = stringResource(R.string.radiation),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -212,11 +215,11 @@ fun DrawerBody(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Shield,
-                        contentDescription = "Radiation Resistance Icon",
+                        contentDescription = stringResource(R.string.radiation_resistance_icon),
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
-                        text = "Rad Resistance",
+                        text = stringResource(R.string.rad_resistance_short),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -243,11 +246,11 @@ fun DrawerBody(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Paid,
-                        contentDescription = "Caps Icon",
+                        contentDescription = stringResource(R.string.caps_icon),
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
-                        text = "Caps",
+                        text = stringResource(R.string.caps),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -263,6 +266,7 @@ fun DrawerBody(
 
 @Composable
 fun DrawerFooter(
+    onWalletClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -271,8 +275,28 @@ fun DrawerFooter(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Wallet Button (Full Width)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+                .clickable { onWalletClick() }
+                .padding(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.AccountBalanceWallet,
+                contentDescription = stringResource(R.string.wallet_icon),
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Text(stringResource(R.string.wallet))
+        }
+
+        // Settings and Logout Row
         Row(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -287,10 +311,10 @@ fun DrawerFooter(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
-                    contentDescription = "Settings Icon",
+                    contentDescription = stringResource(R.string.settings_icon),
                     modifier = Modifier.padding(end = 8.dp)
                 )
-                Text("Settings")
+                Text(stringResource(R.string.settings))
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -303,10 +327,10 @@ fun DrawerFooter(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                    contentDescription = "Logout Icon",
+                    contentDescription = stringResource(R.string.logout_icon),
                     modifier = Modifier.padding(end = 8.dp)
                 )
-                Text("Logout")
+                Text(stringResource(R.string.logout))
             }
         }
     }

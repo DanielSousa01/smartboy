@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
@@ -34,6 +35,7 @@ sealed class Screen(
     object Cart : Screen("cart/{sellerId}", R.string.cart, Icons.Default.ShoppingCart) {
         fun createRoute(sellerId: String) = "cart/$sellerId"
     }
+    object ScanPayment : Screen("scan_payment", R.string.cart, Icons.Default.QrCodeScanner)
     object Wallet : Screen("wallet", R.string.wallet, Icons.Default.AccountBox)
     object Settings : Screen("settings", R.string.settings, Icons.Default.Settings)
 
@@ -47,6 +49,7 @@ sealed class Screen(
             Inventory,
             Carts,
             Cart,
+            ScanPayment,
             Wallet,
             Settings
         )

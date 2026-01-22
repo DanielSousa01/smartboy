@@ -145,6 +145,7 @@ class CartViewmodel @Inject constructor(
                 _carts.value += (sellerId to updatedCart)
 
                 Log.d("CartViewModel", "Added item to cart for seller: $sellerName")
+                Log.d("CartViewModel", "Cart ID: $cartId, UserId: $userId, SellerId: $sellerId")
             } catch (e: Exception) {
                 _error.value = "Failed to add item: ${e.message}"
                 Log.e("CartViewModel", "Failed to add item to cart", e)
@@ -323,10 +324,6 @@ class CartViewmodel @Inject constructor(
         _error.value = null
     }
 
-    /**
-     * Fetch selling item from seller and add to appropriate cart
-     * Called when QR code is scanned
-     */
     fun getSellingItem(sellerId: String, itemId: Long) {
         viewModelScope.launch {
             try {
@@ -354,10 +351,6 @@ class CartViewmodel @Inject constructor(
         }
     }
 
-    /**
-     * Check if all items in cart are still available from seller
-     * This should be called before generating QR code
-     */
     suspend fun checkItemsAvailability(sellerId: String): Boolean {
         val currentCart = _carts.value[sellerId] ?: return false
 
@@ -373,24 +366,34 @@ class CartViewmodel @Inject constructor(
         }
     }
 
-    /**
-     * Complete the purchase transaction
-     * This should be called when seller scans the QR code
-     */
-    suspend fun completePurchase(): Result<String> {
+    suspend fun completePurchase(buyerId: String, sellerId: String): Result<String> {
         return try {
-            val sellerId = _selectedSellerId.value
-                ?: return Result.failure(Exception("No seller selected"))
-            val currentCart = _carts.value[sellerId]
-            if (currentCart == null || currentCart.items.isEmpty()) {
-                return Result.failure(Exception("Cart is empty"))
-            }
-
-            val buyerId = auth.currentUser?.uid
+            val currentUserId = auth.currentUser?.uid
                 ?: return Result.failure(Exception("User not logged in"))
 
-            // 1. Check availability
-            if (!checkItemsAvailability(sellerId)) {
+            // Verify that current user is the seller
+            if (currentUserId != sellerId) {
+                return Result.failure(Exception("You are not the seller for this transaction"))
+            }
+            // Fetch the buyer's cart for this seller from the BUYER'S collection
+            val cartId = generateCartId(buyerId, sellerId)
+            val buyerCart = cartRepository.readFromUser(buyerId, cartId)
+
+            Log.d("CartViewModel", "Completing purchase for buyer $buyerId from seller $sellerId")
+            Log.d("CartViewModel", "Generated cart ID: $cartId")
+            Log.d("CartViewModel", "Buyer cart: $buyerCart")
+
+            if (buyerCart == null || buyerCart.items.isEmpty()) {
+                return Result.failure(Exception("Buyer's cart is empty or not found"))
+            }
+
+            // 1. Check availability - check the buyer's cart items against seller's inventory
+            val allItemsAvailable = buyerCart.items.all { cartItem ->
+                val sellerItem = sellingRepository.readFromUser(sellerId, cartItem.id)
+                sellerItem != null && sellerItem.quantity >= cartItem.quantity
+            }
+
+            if (!allItemsAvailable) {
                 return Result.failure(Exception("Some items are no longer available"))
             }
 
@@ -398,12 +401,12 @@ class CartViewmodel @Inject constructor(
             val buyerProfile = profileRepository.read(buyerId)
                 ?: return Result.failure(Exception("Buyer profile not found"))
 
-            if (buyerProfile.caps < currentCart.totalPrice) {
-                return Result.failure(Exception("Insufficient caps. Need ${currentCart.totalPrice}, have ${buyerProfile.caps}"))
+            if (buyerProfile.caps < buyerCart.totalPrice) {
+                return Result.failure(Exception("Insufficient caps. Need ${buyerCart.totalPrice}, have ${buyerProfile.caps}"))
             }
 
             // 3. Transfer items from seller's selling to buyer's inventory
-            currentCart.items.forEach { cartItem ->
+            buyerCart.items.forEach { cartItem ->
                 // Remove from seller's selling inventory using sellerId
                 val sellerItem = sellingRepository.readFromUser(sellerId, cartItem.id)
                 if (sellerItem != null) {
@@ -430,34 +433,31 @@ class CartViewmodel @Inject constructor(
                         buyerItem.copyItem(quantity = buyerItem.quantity + cartItem.quantity)
                     )
                 } else {
-                    // New item for buyer - convert SellingItem to Item
                     inventoryRepository.create(cartItem.toItem())
                 }
             }
 
             // 4. Transfer caps
-            profileRepository.deductCaps(buyerId, currentCart.totalPrice)
-            profileRepository.addCaps(sellerId, currentCart.totalPrice)
+            profileRepository.deductCaps(buyerId, buyerCart.totalPrice)
+            profileRepository.addCaps(sellerId, buyerCart.totalPrice)
 
             // 5. Log transaction
             val transaction = Transaction(
                 id = System.currentTimeMillis(),
                 date = Date(),
-                amount = currentCart.totalPrice.toFloat(),
+                amount = buyerCart.totalPrice.toFloat(),
                 userDestination = User(
                     userId = sellerId,
-                    username = currentCart.sellerName ?: "Unknown Seller"
+                    username = buyerCart.sellerName ?: "Unknown Seller"
                 )
             )
             transactionRepository.create(transaction)
 
-            // 6. Clear cart
-            val cartId = generateCartId(buyerId, sellerId)
-            val emptyCart = currentCart.copy(items = emptyList(), totalPrice = 0)
-            cartRepository.update(cartId, emptyCart)
-            _carts.value += (sellerId to emptyCart)
+            // 6. Clear buyer's cart in BUYER'S collection
+            val emptyCart = buyerCart.copy(items = emptyList(), totalPrice = 0)
+            cartRepository.updateForUser(buyerId, cartId, emptyCart)
 
-            Log.d("CartViewModel", "Purchase completed: ${currentCart.items.size} items for ${currentCart.totalPrice} caps")
+            Log.d("CartViewModel", "Purchase completed: ${buyerCart.items.size} items for ${buyerCart.totalPrice} caps")
             Result.success("Purchase completed successfully!")
 
         } catch (e: Exception) {

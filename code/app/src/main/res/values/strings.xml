@@ -72,4 +72,15 @@
     <string name="qr_scan_product">Scan product QR code</string>
     <string name="cart_clear">Clear Cart</string>
     <string name="cart_fail_load">Failed to load cart</string>
+    <string name="radiation">Radiation</string>
+    <string name="rad_resistance_short">Rad Resistance</string>
+    <string name="logout">Logout</string>
+    <string name="profile_picture">Profile Picture</string>
+    <string name="profile_icon">Profile Icon</string>
+    <string name="radiation_icon">Radiation Icon</string>
+    <string name="radiation_resistance_icon">Radiation Resistance Icon</string>
+    <string name="caps_icon">Caps Icon</string>
+    <string name="settings_icon">Settings Icon</string>
+    <string name="logout_icon">Logout Icon</string>
+    <string name="wallet_icon">Wallet Icon</string>
 </resources>

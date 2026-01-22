@@ -2,6 +2,7 @@ package com.fcul.smartboy.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -19,6 +20,7 @@ import com.fcul.smartboy.R
 fun TopBar(
     onMenuClick: () -> Unit,
     onShoppingCartClick: () -> Unit,
+    onScanPaymentClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
@@ -37,6 +39,12 @@ fun TopBar(
         },
         title = {},
         actions = {
+            IconButton(onClick = onScanPaymentClick) {
+                Icon(
+                    imageVector = Icons.Default.QrCodeScanner,
+                    contentDescription = "Scan Payment"
+                )
+            }
             IconButton(onClick = onShoppingCartClick) {
                 Icon(
                     imageVector = Icons.Default.ShoppingCart,

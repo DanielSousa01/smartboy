@@ -99,9 +99,6 @@ class SellingRepository @Inject constructor(
         return true
     }
 
-    /**
-     * Read a selling item from a specific user's inventory
-     */
     suspend fun readFromUser(userId: String, itemId: Long): SellingItem? {
         return try {
             val docRef = col.document(userId)
@@ -115,9 +112,6 @@ class SellingRepository @Inject constructor(
         }
     }
 
-    /**
-     * Update item quantity for a specific user
-     */
     suspend fun updateForUser(userId: String, itemId: Long, item: SellingItem): Boolean {
         return try {
             val docRef = col.document(userId)
@@ -132,9 +126,6 @@ class SellingRepository @Inject constructor(
         }
     }
 
-    /**
-     * Delete item from a specific user's selling inventory
-     */
     suspend fun deleteFromUser(userId: String, itemId: Long): Boolean {
         return try {
             val docRef = col.document(userId)

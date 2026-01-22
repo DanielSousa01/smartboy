@@ -1,5 +1,6 @@
 package com.fcul.smartboy.repository
 
+import android.util.Log
 import com.fcul.smartboy.domain.cart.Cart
 import com.fcul.smartboy.domain.cart.CartMetadata
 import com.fcul.smartboy.domain.inventory.SellingItem
@@ -81,7 +82,9 @@ class CartRepository @Inject constructor(
         val user = user ?: return -1
         
         val userId = document.userId ?: return -1
-        val id = userId.hashCode().toLong()
+        val sellerId = document.sellerId ?: return -1
+
+        val id = "$userId-$sellerId".hashCode().toLong()
 
         val docRef = col.document(user.uid)
             .collection(Path.CART.path)
@@ -182,4 +185,62 @@ class CartRepository @Inject constructor(
         cartRef.delete().awaitTask()
         return true
     }
+
+    suspend fun readFromUser(userId: String, cartId: Long): Cart? {
+        val cartRef = col.document(userId)
+            .collection(Path.CART.path)
+            .document(cartId.toString())
+
+        val metadata = cartRef.get().awaitTask()
+            .toObject(CartMetadata::class.java) ?: return null
+
+        val cartItemsSnapshot = cartRef
+            .collection(Path.CART_ITEMS.path)
+            .get().awaitTask()
+
+        val cartItems: List<SellingItem> = cartItemsSnapshot.documents.mapNotNull { doc ->
+            doc.toObject(SellingItemEntity::class.java)?.toSellingItem()
+        }
+
+        return Cart(
+            userId = metadata.userId,
+            userName = metadata.userName,
+            sellerId = metadata.sellerId,
+            sellerName = metadata.sellerName,
+            totalPrice = metadata.totalPrice,
+            items = cartItems
+        )
+    }
+
+    suspend fun updateForUser(userId: String, cartId: Long, cart: Cart): Boolean {
+        val cartRef = col.document(userId)
+            .collection(Path.CART.path)
+            .document(cartId.toString())
+
+        val entity = CartMetadata(
+            userId = cart.userId,
+            userName = cart.userName,
+            sellerId = cart.sellerId,
+            sellerName = cart.sellerName,
+            totalPrice = cart.items.fold(0) { acc, item -> acc + item.valuePerUnit * item.quantity }
+        )
+
+        cartRef.set(entity).awaitTask()
+
+        val cartItemsRef = cartRef
+            .collection(Path.CART_ITEMS.path)
+
+        cartItemsRef.get().awaitTask().documents.forEach { doc ->
+            doc.reference.delete().awaitTask()
+        }
+
+        cart.items.forEach { item ->
+            val itemEntity = item.toEntity()
+            cartItemsRef.document(itemEntity.id.toString())
+                .set(itemEntity).awaitTask()
+        }
+
+        return true
+    }
 }
+

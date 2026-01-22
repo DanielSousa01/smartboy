@@ -66,6 +66,12 @@ fun SmartBoyScaffold(
                         launchSingleTop = true
                     }
                 },
+                onWalletClick = {
+                    scope.launch { leftDrawerState.close() }
+                    navController.navigate(Screen.Wallet.route) {
+                        launchSingleTop = true
+                    }
+                },
                 onSettingsClick = {
                     scope.launch { leftDrawerState.close() }
                     navController.navigate(Screen.Settings.route) {
@@ -93,6 +99,13 @@ fun SmartBoyScaffold(
                         onShoppingCartClick = {
                             scope.launch {
                                 navController.navigate(Screen.Carts.route) {
+                                    launchSingleTop = true
+                                }
+                            }
+                        },
+                        onScanPaymentClick = {
+                            scope.launch {
+                                navController.navigate(Screen.ScanPayment.route) {
                                     launchSingleTop = true
                                 }
                             }
