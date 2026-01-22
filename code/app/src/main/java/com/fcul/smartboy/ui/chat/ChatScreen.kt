@@ -132,11 +132,6 @@ fun ConversationsScreen(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Text(
-                            stringResource(R.string.start_a_conversation),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
                 }
             } else {
@@ -322,18 +317,13 @@ fun ChatMessagesScreen(
                             modifier = Modifier.weight(1f)
                         )
                         TextButton(onClick = { onClearError() }) {
-                            Text("Dismiss")
+                            Text(stringResource(R.string.dismiss))
                         }
                     }
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                state = listState,
-            ) {
+            LazyColumn {
                 items(messages) { message ->
                     MessageItem(
                         message = message,
@@ -361,7 +351,7 @@ fun ChatMessagesScreen(
                     onClick = { imagePickerLauncher.launch("image/*") },
                     enabled = !isLoading
                 ) {
-                    Icon(Icons.Default.Image, contentDescription = "Attach Image")
+                    Icon(Icons.Default.Image, contentDescription = stringResource(R.string.cd_chat_attach_image))
                 }
 
                 OutlinedTextField(
@@ -377,7 +367,7 @@ fun ChatMessagesScreen(
                     onClick = { onSendMessage(userName) },
                     enabled = !isLoading && messageText.isNotBlank()
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.cd_chat_send))
                 }
             }
         }
@@ -434,8 +424,8 @@ fun MessageItem(
 
                 message.imageUrl?.let { url ->
                     AsyncImage(
-                        model = url,
-                        contentDescription = "Shared image",
+                        model = message.imageUrl,
+                        contentDescription = stringResource(R.string.cd_chat_shared_image),
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(max = 200.dp)

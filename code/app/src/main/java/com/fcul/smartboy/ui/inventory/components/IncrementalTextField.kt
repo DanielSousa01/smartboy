@@ -13,7 +13,9 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.fcul.smartboy.R
 
 @Composable
 fun IncrementalTextField(
@@ -36,7 +38,7 @@ fun IncrementalTextField(
         ) {
             Icon(
                 imageVector = Icons.Default.Remove,
-                contentDescription = "Decrease value"
+                contentDescription = stringResource(R.string.cd_cart_decrease_value)
             )
         }
         TextField(
@@ -53,7 +55,7 @@ fun IncrementalTextField(
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "Increase value"
+                contentDescription = stringResource(R.string.cd_cart_increase_value)
             )
         }
     }

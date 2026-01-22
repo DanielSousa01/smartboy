@@ -69,9 +69,9 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             viewModel.user.collect { user ->
                 if (user == null) {
-                    startActivity(
-                        Intent(this@MainActivity, AuthActivity::class.java)
-                    )
+                    // Navigate to AuthActivity with proper flags for smooth transition
+                    val intent = Intent(this@MainActivity, AuthActivity::class.java)
+                    startActivity(intent)
                     finish()
                 }
             }

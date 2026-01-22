@@ -31,11 +31,11 @@ fun RadiationAlertDialog(
         icon = {
             Icon(
                 imageVector = Icons.Default.Warning,
-                contentDescription = "Warning",
+                contentDescription = stringResource(R.string.cd_rad_warning),
                 tint = MaterialTheme.colorScheme.error
             )
         },
-        title = { Text("Radiation Zone Warning") },
+        title = { Text(stringResource(R.string.rad_zone_warning)) },
         text = {
             Column {
                 Text(stringResource(R.string.rad_alert_message_1))

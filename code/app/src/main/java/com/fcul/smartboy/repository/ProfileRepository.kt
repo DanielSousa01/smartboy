@@ -19,16 +19,16 @@ class ProfileRepository(
     private val database: FirebaseDatabase
 ) : CRUD<Profile, String> {
 
-    private val profilesRef get() = database.getReference(Path.USERS.path)
+    private val usersRef get() = database.getReference(Path.USERS.path)
 
     override suspend fun create(document: Profile): String {
-        profilesRef.child(document.userId).setValue(toMap(document)).await()
+        usersRef.child(document.userId).setValue(toMap(document)).await()
         Log.d(TAG, "Profile created for user: ${document.userId}")
         return document.userId
     }
 
     override suspend fun read(id: String): Profile? {
-        val snapshot = profilesRef.child(id).get().await()
+        val snapshot = usersRef.child(id).get().await()
         return if (snapshot.exists()) {
             fromSnapshot(snapshot)
         } else null
@@ -38,10 +38,10 @@ class ProfileRepository(
         when (data) {
             is Map<*, *> -> {
                 @Suppress("UNCHECKED_CAST")
-                profilesRef.child(id).updateChildren(data as Map<String, Any>).await()
+                usersRef.child(id).updateChildren(data as Map<String, Any>).await()
             }
 
-            is Profile -> profilesRef.child(id).setValue(toMap(data)).await()
+            is Profile -> usersRef.child(id).setValue(toMap(data)).await()
             else -> throw IllegalArgumentException("Unsupported update type: ${data::class}")
         }
         Log.d(TAG, "Profile updated for user: $id")
@@ -49,13 +49,13 @@ class ProfileRepository(
     }
 
     override suspend fun delete(id: String): Boolean {
-        profilesRef.child(id).removeValue().await()
+        usersRef.child(id).removeValue().await()
         Log.d(TAG, "Profile deleted for user: $id")
         return true
     }
 
     suspend fun updateSteps(userId: String, steps: Long): Boolean {
-        profilesRef.child(userId).child("steps").setValue(steps).await()
+        usersRef.child(userId).child("steps").setValue(steps).await()
         Log.d(TAG, "Updated steps for user $userId: $steps")
         return true
     }
@@ -71,7 +71,7 @@ class ProfileRepository(
     }
 
     suspend fun updateCaps(userId: String, caps: Int): Boolean {
-        profilesRef.child(userId).child("caps").setValue(caps).await()
+        usersRef.child(userId).child("caps").setValue(caps).await()
         Log.d(TAG, "Updated caps for user $userId: $caps")
         return true
     }
@@ -108,7 +108,7 @@ class ProfileRepository(
     }
 
     suspend fun updateRadiation(userId: String, radiation: Double): Boolean {
-        profilesRef.child(userId).child("radiation").setValue(radiation).await()
+        usersRef.child(userId).child("radiation").setValue(radiation).await()
         Log.d(TAG, "Updated radiation for user $userId: $radiation")
         return true
     }
@@ -137,13 +137,13 @@ class ProfileRepository(
         val preferencesMap = mapOf(
             "measurementUnit" to preferences.measurementUnit.name
         )
-        profilesRef.child(userId).child("preferences").setValue(preferencesMap).await()
+        usersRef.child(userId).child("preferences").setValue(preferencesMap).await()
         Log.d(TAG, "Updated preferences for user $userId: $preferences")
         return true
     }
 
     suspend fun updateMeasurementUnit(userId: String, unit: MeasurementUnit): Boolean {
-        profilesRef.child(userId).child("preferences").child("measurementUnit").setValue(unit.name)
+        usersRef.child(userId).child("preferences").child("measurementUnit").setValue(unit.name)
             .await()
         Log.d(TAG, "Updated measurement unit for user $userId: $unit")
         return true
@@ -177,7 +177,7 @@ class ProfileRepository(
                 "radiationResistance" to newResistance,
                 "radXExpiryTime" to expiryTime
             )
-            profilesRef.child(userId).updateChildren(updates).await()
+            usersRef.child(userId).updateChildren(updates).await()
 
             Log.d(
                 TAG,
@@ -190,7 +190,7 @@ class ProfileRepository(
 
     suspend fun updateRadiationResistance(userId: String, resistance: Double): Boolean {
         val cappedResistance = minOf(0.95, maxOf(0.0, resistance))
-        profilesRef.child(userId).child("radiationResistance").setValue(cappedResistance).await()
+        usersRef.child(userId).child("radiationResistance").setValue(cappedResistance).await()
         Log.d(TAG, "Updated radiation resistance for user $userId: $cappedResistance")
         return true
     }
@@ -216,7 +216,7 @@ class ProfileRepository(
                     "radiationResistance" to 0.0,
                     "radXExpiryTime" to 0L
                 )
-                profilesRef.child(userId).updateChildren(updates).await()
+                usersRef.child(userId).updateChildren(updates).await()
                 Log.d(TAG, "Rad-X effect expired, resistance reset to 0")
                 return true
             }
@@ -234,7 +234,7 @@ class ProfileRepository(
     }
 
     fun observeProfile(userId: String): Flow<Profile?> = callbackFlow {
-        val profileRef = profilesRef.child(userId)
+        val profileRef = usersRef.child(userId)
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -248,8 +248,15 @@ class ProfileRepository(
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Error observing profile: ${error.message}")
-                close(error.toException())
+                // Handle permission errors gracefully (happens when user signs out)
+                if (error.code == DatabaseError.PERMISSION_DENIED) {
+                    Log.w(TAG, "Permission denied for profile (user likely signed out), clearing profile")
+                    trySend(null)
+                    close()
+                } else {
+                    Log.e(TAG, "Error observing profile: ${error.message}")
+                    close(error.toException())
+                }
             }
         }
 

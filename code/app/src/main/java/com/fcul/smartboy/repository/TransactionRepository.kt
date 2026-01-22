@@ -14,17 +14,16 @@ class TransactionRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore
 ) : CRUD<Transaction, Long> {
-
     private val user: FirebaseUser?
         get() = auth.currentUser
 
-    private val col
+    private val usersCol
         get() = firestore.collection(Path.USERS.path)
 
     suspend fun getTransactions(): List<Transaction> {
         val user = user ?: return emptyList()
 
-        val transactionsSnapshot = col.document(user.uid)
+        val transactionsSnapshot = usersCol.document(user.uid)
             .collection(Path.TRANSACTIONS.path).get().awaitTask()
 
         return transactionsSnapshot.documents.mapNotNull { doc ->
@@ -36,10 +35,9 @@ class TransactionRepository @Inject constructor(
         val user = user ?: return -1
         val destinationUserId = document.userDestination.userId
 
-
         val transactionId = document.id
 
-        val sourceDocRef = col.document(user.uid)
+        val sourceDocRef = usersCol.document(user.uid)
             .collection(Path.TRANSACTIONS.path)
 
         val sourceTransactionEntity = document.copy(amount = -document.amount).toEntity()
@@ -47,13 +45,22 @@ class TransactionRepository @Inject constructor(
             .set(sourceTransactionEntity).awaitTask()
 
         document.toEntity()
-        val destinationDocRef = col.document(destinationUserId)
+        val destinationDocRef = usersCol.document(destinationUserId)
             .collection(Path.TRANSACTIONS.path)
         destinationDocRef.document(transactionId.toString())
             .set(document.toEntity()).awaitTask()
 
+        return transactionId
+    }
 
+    suspend fun createForUser(userId: String, transaction: Transaction): Long {
+        val transactionId = transaction.id
 
+        val docRef = usersCol.document(userId)
+            .collection(Path.TRANSACTIONS.path)
+            .document(transactionId.toString())
+
+        docRef.set(transaction.toEntity()).awaitTask()
 
         return transactionId
     }
@@ -69,6 +76,4 @@ class TransactionRepository @Inject constructor(
     override suspend fun delete(id: Long): Boolean {
         TODO("Not yet implemented")
     }
-
-
 }

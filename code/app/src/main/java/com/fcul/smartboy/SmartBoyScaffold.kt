@@ -79,7 +79,10 @@ fun SmartBoyScaffold(
                     }
                 },
                 onLogoutClick = {
-                    scope.launch { onSignOut() }
+                    scope.launch {
+                        leftDrawerState.close()
+                    }
+                    onSignOut()
                 }
             )
         },

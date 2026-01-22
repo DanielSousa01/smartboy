@@ -17,11 +17,10 @@ class SellingRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore
 ) : CRUD<SellingItem, Long> {
-
     private val user: FirebaseUser?
         get() = auth.currentUser
 
-    private val col
+    private val usersCol
         get() = firestore.collection(Path.USERS.path)
 
     fun observeSellingItems(): Flow<List<SellingItem>> = callbackFlow {
@@ -30,7 +29,7 @@ class SellingRepository @Inject constructor(
             return@callbackFlow
         }
 
-        val sellingRef = col.document(user.uid)
+        val sellingRef = usersCol.document(user.uid)
             .collection(Path.SELLING.path)
 
         val listener = sellingRef.addSnapshotListener { snapshot, error ->
@@ -52,7 +51,7 @@ class SellingRepository @Inject constructor(
     override suspend fun create(document: SellingItem): Long {
         val user = user ?: return -1
 
-        val docRef = col.document(user.uid)
+        val docRef = usersCol.document(user.uid)
             .collection(Path.SELLING.path)
             .document(document.id.toString())
 
@@ -65,7 +64,7 @@ class SellingRepository @Inject constructor(
     override suspend fun read(id: Long): SellingItem? {
         val user = user ?: return null
 
-        val docRef = col.document(user.uid)
+        val docRef = usersCol.document(user.uid)
             .collection(Path.SELLING.path)
 
         return docRef.document(id.toString()).get().awaitTask()
@@ -77,7 +76,7 @@ class SellingRepository @Inject constructor(
 
         val item = data as SellingItem
 
-        val docRef = col.document(user.uid)
+        val docRef = usersCol.document(user.uid)
             .collection(Path.SELLING.path)
             .document(id.toString())
 
@@ -91,7 +90,7 @@ class SellingRepository @Inject constructor(
     override suspend fun delete(id: Long): Boolean {
         val user = user ?: return false
 
-        val docRef = col.document(user.uid)
+        val docRef = usersCol.document(user.uid)
             .collection(Path.SELLING.path)
             .document(id.toString())
 
@@ -101,7 +100,7 @@ class SellingRepository @Inject constructor(
 
     suspend fun readFromUser(userId: String, itemId: Long): SellingItem? {
         return try {
-            val docRef = col.document(userId)
+            val docRef = usersCol.document(userId)
                 .collection(Path.SELLING.path)
                 .document(itemId.toString())
 
@@ -114,7 +113,7 @@ class SellingRepository @Inject constructor(
 
     suspend fun updateForUser(userId: String, itemId: Long, item: SellingItem): Boolean {
         return try {
-            val docRef = col.document(userId)
+            val docRef = usersCol.document(userId)
                 .collection(Path.SELLING.path)
                 .document(itemId.toString())
 
@@ -128,7 +127,7 @@ class SellingRepository @Inject constructor(
 
     suspend fun deleteFromUser(userId: String, itemId: Long): Boolean {
         return try {
-            val docRef = col.document(userId)
+            val docRef = usersCol.document(userId)
                 .collection(Path.SELLING.path)
                 .document(itemId.toString())
 

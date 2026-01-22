@@ -21,8 +21,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.route.ActiveRoute
 import com.fcul.smartboy.domain.route.RadiationData
@@ -83,26 +87,36 @@ fun MapScreen(
     val context = LocalContext.current
     var followUser by remember { mutableStateOf(true) }
 
-    // Permission state - check location AND activity recognition
-    val hasLocationPermission = remember(context) {
-        ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-    }
+    // Permission state - re-check when lifecycle resumes (after returning from settings)
+    var permissionCheckTrigger by remember { mutableIntStateOf(0) }
 
-    val hasActivityRecognition = remember(context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    val hasLocationPermission by remember {
+        derivedStateOf {
+            // Trigger re-check
+            permissionCheckTrigger
             ContextCompat.checkSelfPermission(
                 context,
-                Manifest.permission.ACTIVITY_RECOGNITION
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true // Not required for older Android versions
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    val hasActivityRecognition by remember {
+        derivedStateOf {
+            // Trigger re-check
+            permissionCheckTrigger
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACTIVITY_RECOGNITION
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true // Not required for older Android versions
+            }
         }
     }
 
@@ -257,6 +271,7 @@ fun MapScreen(
         }
 
         // Debug overlay
+        /*
         Surface(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -275,6 +290,7 @@ fun MapScreen(
                 modifier = Modifier.padding(8.dp)
             )
         }
+         */
 
         Box(
             modifier = Modifier

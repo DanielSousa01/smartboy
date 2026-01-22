@@ -24,7 +24,7 @@ class CartRepository @Inject constructor(
     private val user: FirebaseUser?
         get() = auth.currentUser
 
-    private val col get() = firestore.collection(Path.USERS.path)
+    private val usersCol get() = firestore.collection(Path.USERS.path)
 
     fun observeCarts(): Flow<List<Cart>> = callbackFlow {
         val user = user ?: run {
@@ -32,7 +32,7 @@ class CartRepository @Inject constructor(
             return@callbackFlow
         }
 
-        val cartsRef = col.document(user.uid)
+        val cartsRef = usersCol.document(user.uid)
             .collection(Path.CART.path)
 
         val listener = cartsRef.addSnapshotListener { snapshot, error ->
@@ -86,7 +86,7 @@ class CartRepository @Inject constructor(
 
         val id = "$userId-$sellerId".hashCode().toLong()
 
-        val docRef = col.document(user.uid)
+        val docRef = usersCol.document(user.uid)
             .collection(Path.CART.path)
             .document(id.toString())
 
@@ -115,7 +115,7 @@ class CartRepository @Inject constructor(
     override suspend fun read(id: Long): Cart? {
         val user = user ?: return null
 
-        val cartRef = col.document(user.uid)
+        val cartRef = usersCol.document(user.uid)
             .collection(Path.CART.path)
             .document(id.toString())
 
@@ -145,7 +145,7 @@ class CartRepository @Inject constructor(
 
         val cart = data as Cart
 
-        val cartRef = col.document(user.uid)
+        val cartRef = usersCol.document(user.uid)
             .collection(Path.CART.path)
             .document(id.toString())
 
@@ -178,7 +178,7 @@ class CartRepository @Inject constructor(
     override suspend fun delete(id: Long): Boolean {
         val user = user ?: return false
 
-        val cartRef = col.document(user.uid)
+        val cartRef = usersCol.document(user.uid)
             .collection(Path.CART.path)
             .document(id.toString())
 
@@ -187,7 +187,7 @@ class CartRepository @Inject constructor(
     }
 
     suspend fun readFromUser(userId: String, cartId: Long): Cart? {
-        val cartRef = col.document(userId)
+        val cartRef = usersCol.document(userId)
             .collection(Path.CART.path)
             .document(cartId.toString())
 
@@ -213,7 +213,7 @@ class CartRepository @Inject constructor(
     }
 
     suspend fun updateForUser(userId: String, cartId: Long, cart: Cart): Boolean {
-        val cartRef = col.document(userId)
+        val cartRef = usersCol.document(userId)
             .collection(Path.CART.path)
             .document(cartId.toString())
 
@@ -240,6 +240,27 @@ class CartRepository @Inject constructor(
                 .set(itemEntity).awaitTask()
         }
 
+        return true
+    }
+
+    suspend fun deleteForUser(userId: String, cartId: Long): Boolean {
+        val cartRef = usersCol.document(userId)
+            .collection(Path.CART.path)
+            .document(cartId.toString())
+
+        // Delete all cart items first
+        val cartItemsSnapshot = cartRef
+            .collection(Path.CART_ITEMS.path)
+            .get().awaitTask()
+
+        cartItemsSnapshot.documents.forEach { doc ->
+            doc.reference.delete().awaitTask()
+        }
+
+        // Delete the cart document
+        cartRef.delete().awaitTask()
+
+        Log.d("CartRepository", "Deleted cart $cartId from user $userId")
         return true
     }
 }

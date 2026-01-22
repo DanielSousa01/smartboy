@@ -20,7 +20,7 @@ class InventoryRepository @Inject constructor(
     private val user: FirebaseUser?
         get() = auth.currentUser
 
-    private val col
+    private val usersCol
         get() = firestore.collection(Path.USERS.path)
 
     fun observeInventory(): Flow<List<Item>> = callbackFlow {
@@ -29,7 +29,7 @@ class InventoryRepository @Inject constructor(
             return@callbackFlow
         }
 
-        val inventoryRef = col.document(user.uid)
+        val inventoryRef = usersCol.document(user.uid)
             .collection(Path.INVENTORY.path)
 
         val listener = inventoryRef.addSnapshotListener { snapshot, error ->
@@ -52,7 +52,7 @@ class InventoryRepository @Inject constructor(
         val user = user ?: return -1
         val id = document.id
 
-        val docRef = col.document(user.uid)
+        val docRef = usersCol.document(user.uid)
             .collection(Path.INVENTORY.path)
             .document(id.toString())
 
@@ -66,7 +66,7 @@ class InventoryRepository @Inject constructor(
     override suspend fun read(id: Long): Item? {
         val user = user ?: return null
 
-        val docRef = col.document(user.uid)
+        val docRef = usersCol.document(user.uid)
             .collection(Path.INVENTORY.path)
 
         return docRef.document(id.toString()).get().awaitTask()
@@ -77,7 +77,7 @@ class InventoryRepository @Inject constructor(
         val user = user ?: return false
         val item = data as Item
 
-        val docRef = col.document(user.uid)
+        val docRef = usersCol.document(user.uid)
             .collection(Path.INVENTORY.path)
             .document(id.toString())
 
@@ -90,11 +90,41 @@ class InventoryRepository @Inject constructor(
     override suspend fun delete(id: Long): Boolean {
         val user = user ?: return false
 
-        val docRef = col.document(user.uid)
+        val docRef = usersCol.document(user.uid)
             .collection(Path.INVENTORY.path)
             .document(id.toString())
 
         docRef.delete().awaitTask()
         return true
     }
+
+    suspend fun readFromUser(userId: String, itemId: Long): Item? {
+        val docRef = usersCol.document(userId)
+            .collection(Path.INVENTORY.path)
+            .document(itemId.toString())
+
+        val doc = docRef.get().awaitTask()
+        return doc.toObject(ItemEntity::class.java)?.toItem()
+    }
+
+    suspend fun createForUser(userId: String, item: Item): Long {
+        val docRef = usersCol.document(userId)
+            .collection(Path.INVENTORY.path)
+            .document(item.id.toString())
+
+        val entity = item.toEntity()
+        docRef.set(entity).awaitTask()
+        return item.id
+    }
+
+    suspend fun updateForUser(userId: String, itemId: Long, item: Item): Boolean {
+        val docRef = usersCol.document(userId)
+            .collection(Path.INVENTORY.path)
+            .document(itemId.toString())
+
+        val entity = item.toEntity()
+        docRef.set(entity).awaitTask()
+        return true
+    }
 }
+

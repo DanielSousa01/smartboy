@@ -45,6 +45,7 @@ class StepCounterService : Service(), SensorEventListener {
     private var sessionSteps: Long = 0
     private var lastSyncedSteps: Long = 0
     private var isInitialized = false
+    private var hasReachedGoalToday = false
 
     override fun onCreate() {
         super.onCreate()
@@ -152,10 +153,31 @@ class StepCounterService : Service(), SensorEventListener {
                 profileRepository.incrementSteps(userId, increment)
                 lastSyncedSteps = sessionSteps
                 Log.i(TAG, "Successfully synced steps. Total session steps: $sessionSteps")
+
+                // Check if goal reached and award caps
+                if (!hasReachedGoalToday && sessionSteps >= DAILY_STEP_GOAL) {
+                    hasReachedGoalToday = true
+                    profileRepository.addCaps(userId, GOAL_REWARD_CAPS)
+                    Log.i(TAG, "🎉 Daily step goal reached! Awarded $GOAL_REWARD_CAPS caps")
+                    showGoalReachedNotification()
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to sync steps to Firebase", e)
             }
         }
+    }
+
+    private fun showGoalReachedNotification() {
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("🎉 Step Goal Reached!")
+            .setContentText("You've earned $GOAL_REWARD_CAPS caps for reaching your daily goal!")
+            .setSmallIcon(android.R.drawable.ic_menu_directions)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(NOTIFICATION_ID + 1, notification)
     }
 
     private fun createNotificationChannel() {
@@ -199,7 +221,9 @@ class StepCounterService : Service(), SensorEventListener {
         private const val TAG = "StepCounterService"
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "step_counter_channel"
-        private const val SYNC_THRESHOLD = 10 // Sync every 10 steps
+        private const val SYNC_THRESHOLD = 10
+        private const val DAILY_STEP_GOAL = 10000L
+        private const val GOAL_REWARD_CAPS = 100 // Caps awarded for reaching daily goal
     }
 }
 

@@ -1,21 +1,36 @@
 package com.fcul.smartboy.ui.map.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.R
@@ -36,20 +51,58 @@ fun AddRadPointDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.rad_add_radiation_point)) },
+        icon = {
+            Icon(
+                imageVector = Icons.Default.RadioButtonChecked,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(32.dp)
+            )
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.rad_add_radiation_point),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
-            Column {
-                Text(
-                    text = stringResource(
-                        R.string.location_format,
-                        String.format(Locale.US, "%.6f", location.latitude),
-                        String.format(Locale.US, "%.6f", location.longitude)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Location Info Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Location",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(
+                                R.string.location_format,
+                                String.format(Locale.US, "%.6f", location.latitude),
+                                String.format(Locale.US, "%.6f", location.longitude)
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
+                // Radiation Level Input
                 OutlinedTextField(
                     value = radiationLevelText,
                     onValueChange = {
@@ -66,8 +119,7 @@ fun AddRadPointDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
+                // Radius Input
                 OutlinedTextField(
                     value = radiusText,
                     onValueChange = {
@@ -83,10 +135,25 @@ fun AddRadPointDialog(
                     } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // Info Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Text(
+                        text = "⚠️ This will create a radiation zone at this location",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
                     val radiationLevel = radiationLevelText.toDoubleOrNull()
                     val radius = radiusText.toDoubleOrNull()
@@ -96,22 +163,28 @@ fun AddRadPointDialog(
 
                     if (radiationLevel == null || radiationLevel <= 0) {
                         radiationLevelError = true
-                        return@TextButton
+                        return@Button
                     }
 
                     if (radius == null || radius <= 0) {
                         radiusError = true
-                        return@TextButton
+                        return@Button
                     }
 
                     onConfirm(radiationLevel, radius)
                 }
             ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.add))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            OutlinedButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
             }
         },

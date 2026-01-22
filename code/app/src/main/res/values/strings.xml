@@ -74,7 +74,7 @@
     <string name="cart_fail_load">Failed to load cart</string>
     <string name="radiation">Radiation</string>
     <string name="rad_resistance_short">Rad Resistance</string>
-    <string name="logout">Logout</string>
+    <string name="logout" translatable="false">Logout</string>
     <string name="profile_picture">Profile Picture</string>
     <string name="profile_icon">Profile Icon</string>
     <string name="radiation_icon">Radiation Icon</string>
@@ -83,4 +83,50 @@
     <string name="settings_icon">Settings Icon</string>
     <string name="logout_icon">Logout Icon</string>
     <string name="wallet_icon">Wallet Icon</string>
+
+    <!-- QR Scanner -->
+    <string name="qr_camera_permission_required">Camera permission required</string>
+    <string name="qr_grant_camera_permission">Grant Permission</string>
+
+    <!-- Sign In -->
+    <string name="auth_sign_in_google">Sign in with Google</string>
+    <string name="auth_sign_in_email">Sign in with Email</string>
+    <string name="auth_survive_wasteland">Survive the Wasteland</string>
+
+    <!-- Payment -->
+    <string name="payment_scan_qr">Scan Payment QR</string>
+    <string name="payment_processing">Processing payment…</string>
+    <string name="payment_try_again">Try Again</string>
+    <string name="payment_scan_qr_code">Scan Payment QR Code</string>
+
+    <!-- Cart -->
+    <string name="cart_scan_product_qr_code">Scan Product QR Code</string>
+    <string name="cart_ammo_name">Ammo : %1$s</string>
+    <string name="cart_max_ammo">Max Ammo: %1$d</string>
+    <string name="cart_available_quantity">Available Quantity: %1$d</string>
+    <string name="cart_quantity_label">Quantity: %1$d</string>
+    <string name="cart_value_per_unit">Value per Unit: %1$d</string>
+    <string name="cart_total_value">Total Value: %1$d</string>
+    <string name="cart_add_to_cart">Add to Cart</string>
+    <string name="cart_remove">Remove</string>
+    <string name="rad_zone_warning">Radiation Zone Warning</string>
+
+    <!-- Content Descriptions (for accessibility) -->
+    <string name="cd_payment_scan">Scan Payment</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_success">Success</string>
+    <string name="cd_error">Error</string>
+    <string name="cd_chat_attach_image">Attach Image</string>
+    <string name="cd_chat_send">Send</string>
+    <string name="cd_chat_shared_image">Shared image</string>
+    <string name="cd_rad_warning">Warning</string>
+    <string name="cd_cart_decrease_value">Decrease value</string>
+    <string name="cd_cart_increase_value">Increase value</string>
+    <string name="cd_cart_remove_item">Remove item</string>
+    <string name="cd_cart_decrease_quantity">Decrease quantity</string>
+    <string name="cd_cart_increase_quantity">Increase quantity</string>
+    <string name="cd_inventory_description">Description</string>
+    <string name="cd_inventory_quantity_icon">Quantity Icon</string>
+    <string name="cd_inventory_ammo_icon">Ammo Icon</string>
 </resources>
+

@@ -1,35 +1,44 @@
 package com.fcul.smartboy.ui.inventory.components.inventory
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.ui.inventory.components.IncrementalTextField
-import com.fcul.smartboy.ui.inventory.components.selling.SellingItem
-
+import com.fcul.smartboy.ui.inventory.components.selling.SellingItem as SellingItemDialog
 
 @Composable
 fun ItemDetails(
@@ -43,290 +52,339 @@ fun ItemDetails(
     onSellingItemQuantityChange: (Int) -> Unit,
     onSellingItemValueChange: (Int) -> Unit,
     onSell: (Int, Int) -> Unit,
-
-    ) {
-    val context = LocalContext.current
-
+) {
     var isSellingMenuOpen by remember { mutableStateOf(false) }
-    var quantity: Int? by remember { mutableStateOf(item.quantity) }
-    var sellingQuantity: Int? by remember { mutableStateOf(sellingItem?.quantity) }
-    var sellingValue: Int? by remember { mutableStateOf(sellingItem?.valuePerUnit) }
-    var tempItemQuantity by remember { mutableStateOf(item.quantity) }
+    var quantity by remember { mutableIntStateOf(item.quantity) }
+    var sellingQuantity by remember { mutableIntStateOf(sellingItem?.quantity ?: 0) }
+    var sellingValue by remember { mutableIntStateOf(sellingItem?.valuePerUnit ?: 0) }
+    var hasChanges by remember { mutableStateOf(false) }
 
-    if (isSellingMenuOpen)
-        SellingItem(
+    if (isSellingMenuOpen) {
+        SellingItemDialog(
             item = item,
             onDismiss = { isSellingMenuOpen = false },
-            onConfirm = { quantity, price ->
-                onSell(quantity, price)
+            onConfirm = { qty, price ->
+                onSell(qty, price)
                 isSellingMenuOpen = false
-            },
+            }
         )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(
-                modifier = Modifier
-                    .padding(end = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = item.name,
-                        style = MaterialTheme.typography.headlineMedium
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = item.category.displayName,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 if (sellingItem == null) {
-                    Button(onClick = {
-                        isSellingMenuOpen = true
-                    }) {
+                    OutlinedButton(
+                        onClick = { isSellingMenuOpen = true },
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Sell,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
                         Text("Sell")
                     }
                 }
 
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close")
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close)
+                    )
                 }
             }
         },
         text = {
             Column(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (sellingItem != null) {
-                    Card {
-                        Column(
-                            modifier = Modifier
-                                .padding(vertical = 8.dp)
-                                .fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(vertical = 8.dp)
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Start
-                            ) {
-                                Text(text = "Selling:")
-                            }
-
-                            IncrementalTextField(
-                                value = sellingQuantity?.toString() ?: "",
-                                onValueChange = { newValue ->
-                                    sellingQuantity = newValue.toIntOrNull()
-                                },
-                                onIncrement = {
-                                    sellingQuantity?.let {
-                                        if (tempItemQuantity > 0) {
-                                            sellingQuantity = it + 1
-                                            tempItemQuantity--
-                                        }
-                                    }
-                                },
-                                isIncrementEnabled = sellingQuantity != null && tempItemQuantity > 0,
-                                onDecrement = {
-                                    sellingQuantity?.let {
-                                        if (it > 0) {
-                                            sellingQuantity = it - 1
-                                            tempItemQuantity++
-                                        }
-                                    }
-                                },
-                                isDecrementEnabled = sellingQuantity != null && sellingQuantity!! > 0
-                            )
-
-                            Row(
-                                modifier = Modifier
-                                    .padding(vertical = 8.dp)
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Start
-                            ) {
-                                Text(text = "Value per Unit:")
-                            }
-
-                            IncrementalTextField(
-                                value = sellingValue?.toString() ?: "",
-                                onValueChange = { newValue ->
-                                    sellingValue = newValue.toIntOrNull()
-                                },
-                                onIncrement = {
-                                    sellingValue?.let {
-                                        sellingValue = it + 1
-                                    }
-                                },
-                                isIncrementEnabled = sellingValue != null,
-                                onDecrement = {
-                                    sellingValue?.let {
-                                        if (it > 0) {
-                                            sellingValue = it - 1
-                                        }
-                                    }
-                                },
-                                isDecrementEnabled = sellingValue != null && sellingValue!! > 0
-                            )
-                        }
-                    }
-                }
+                // Weapon ammo info
                 if (item is Item.Weapon && item.ammoId != null) {
-                    Card {
-                        Text(text = "Ammo : ${item.ammoName}")
-
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
                         Column(
                             modifier = Modifier
-                                .padding(vertical = 8.dp)
-                                .fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(vertical = 8.dp)
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text(text = "${item.ammoLoaded} / ${item.ammoMax}")
-                            }
-                            Button(onClick = onReload) {
-                                Text("Reload")
-                            }
-                        }
-                    }
-                }
-
-                Card {
-                    Text(text = "Quantity: ")
-                    IncrementalTextField(
-                        value = quantity?.toString() ?: "",
-                        onValueChange = { newValue ->
-                            quantity = newValue.toIntOrNull()
-                        },
-                        onIncrement = {
-                            quantity?.let {
-                                quantity = it + 1
-                            }
-                        },
-                        isIncrementEnabled = quantity != null,
-                        onDecrement = {
-                            quantity?.let {
-                                if (it > 1) {
-                                    quantity = it - 1
+                            Text(
+                                text = "Ammo: ${item.ammoName}",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "${item.ammoLoaded ?: 0} / ${item.ammoMax ?: 0}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            if ((item.ammoLoaded ?: 0) < (item.ammoMax ?: 0)) {
+                                Button(onClick = onReload) {
+                                    Text("Reload")
                                 }
                             }
-                        },
-                        isDecrementEnabled = quantity != null && quantity!! > 1,
+                        }
+                    }
+                }
+
+                // Selling information (if listed for sale)
+                if (sellingItem != null) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "Currently Listed for Sale",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            // Selling quantity
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "Selling Quantity",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                                IncrementalTextField(
+                                    value = sellingQuantity.toString(),
+                                    onValueChange = { newValue ->
+                                        newValue.toIntOrNull()?.let {
+                                            val maxSellable = item.quantity - (sellingItem.quantity - sellingQuantity)
+                                            if (it in 1..maxSellable) {
+                                                sellingQuantity = it
+                                                hasChanges = true
+                                            }
+                                        }
+                                    },
+                                    onIncrement = {
+                                        val maxSellable = item.quantity - (sellingItem.quantity - sellingQuantity)
+                                        if (sellingQuantity < maxSellable) {
+                                            sellingQuantity++
+                                            hasChanges = true
+                                        }
+                                    },
+                                    isIncrementEnabled = sellingQuantity < item.quantity,
+                                    onDecrement = {
+                                        if (sellingQuantity > 1) {
+                                            sellingQuantity--
+                                            hasChanges = true
+                                        }
+                                    },
+                                    isDecrementEnabled = sellingQuantity > 1
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // Selling price
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "Price per Unit (Caps)",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                                IncrementalTextField(
+                                    value = sellingValue.toString(),
+                                    onValueChange = { newValue ->
+                                        newValue.toIntOrNull()?.let {
+                                            if (it >= 0) {
+                                                sellingValue = it
+                                                hasChanges = true
+                                            }
+                                        }
+                                    },
+                                    onIncrement = {
+                                        sellingValue++
+                                        hasChanges = true
+                                    },
+                                    isIncrementEnabled = true,
+                                    onDecrement = {
+                                        if (sellingValue > 0) {
+                                            sellingValue--
+                                            hasChanges = true
+                                        }
+                                    },
+                                    isDecrementEnabled = sellingValue > 0
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Inventory quantity
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Inventory Quantity",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        IncrementalTextField(
+                            value = quantity.toString(),
+                            onValueChange = { newValue ->
+                                newValue.toIntOrNull()?.let {
+                                    if (it >= 1) {
+                                        quantity = it
+                                        hasChanges = true
+                                    }
+                                }
+                            },
+                            onIncrement = {
+                                quantity++
+                                hasChanges = true
+                            },
+                            isIncrementEnabled = true,
+                            onDecrement = {
+                                if (quantity > 1) {
+                                    quantity--
+                                    hasChanges = true
+                                }
+                            },
+                            isDecrementEnabled = quantity > 1
+                        )
+                    }
                 }
             }
         },
         confirmButton = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(
+                // Delete button
+                OutlinedButton(
                     onClick = {
                         onRemove()
                         onDismiss()
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null
                     )
-                ) {
-                    Text("Remove")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Delete")
                 }
-                Button(
-                    onClick = {
-                        var dismissible = true
 
-                        quantity?.let {
-                            if (it != item.quantity && it > 0) {
-                                onQuantityChange(it)
-                            } else if (it != quantity!! && it < 0) {
-                                dismissible = false
-                                Toast.makeText(
-                                    context,
-                                    "Quantity must be greater than 0",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-
-                        sellingValue?.let {
-                            if (sellingItem != null && it != sellingItem.valuePerUnit && it > 0) {
-                                onSellingItemValueChange(it)
-                            } else if (sellingItem != null && sellingItem.valuePerUnit != sellingValue!!
-                                && sellingValue!! < 0
-                            ) {
-                                dismissible = false
-
-                                Toast.makeText(
-                                    context,
-                                    "Value must be greater or equal to 0", Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-
-                        sellingQuantity?.let {
-                            if (sellingItem != null && it != sellingItem.quantity && it > 0 && tempItemQuantity >= 0) {
-                                onSellingItemQuantityChange(it)
-                            } else if (sellingItem != null && sellingItem.quantity != sellingQuantity!!
-                                && sellingQuantity!! < 0 && tempItemQuantity >= 0
-                            ) {
-                                dismissible = false
-
-                                Toast.makeText(
-                                    context,
-                                    "Quantity must be greater than 0", Toast.LENGTH_SHORT
-                                ).show()
-                            } else if (sellingItem != null && sellingItem.quantity != sellingQuantity!!
-                                && tempItemQuantity < 0
-                            ) {
-                                dismissible = false
-
-                                Toast.makeText(
-                                    context,
-                                    "You don't have enough items to sell",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-
-                        if (dismissible)
-                            onDismiss()
-                    },
-                    enabled = quantity != null && item.quantity != quantity!! && quantity!! > 0 ||
-                            sellingValue != null && sellingItem != null
-                            && sellingItem.valuePerUnit != sellingValue!! && sellingValue!! >= 0 ||
-                            sellingQuantity != null && sellingItem != null && sellingItem.quantity != sellingQuantity!!
-                            && sellingQuantity!! > 0 && tempItemQuantity >= 0
-                ) {
-                    Text("Update")
-                }
-                if (item is Item.Weapon && item.ammoId != null && item.ammoLoaded != null || item is Item.Aid)
+                // Update button (if changes made)
+                if (hasChanges) {
                     Button(
                         onClick = {
-                            if (item is Item.Aid && item.quantity > 0) {
-                                quantity = item.quantity - 1
-                                if (quantity == 0)
-                                    onDismiss()
+                            // Update inventory quantity
+                            if (quantity != item.quantity) {
+                                onQuantityChange(quantity)
                             }
-                            onUse()
+
+                            // Update selling info
+                            if (sellingItem != null) {
+                                if (sellingQuantity != sellingItem.quantity) {
+                                    onSellingItemQuantityChange(sellingQuantity)
+                                }
+                                if (sellingValue != sellingItem.valuePerUnit) {
+                                    onSellingItemValueChange(sellingValue)
+                                }
+                            }
+
+                            onDismiss()
                         },
-                        enabled = item is Item.Weapon && item.ammoId != null && item.ammoLoaded != null
-                                && item.ammoLoaded > 0 || item is Item.Aid && item.quantity > 0
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = null
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Save Changes")
+                    }
+                } else {
+                    // Close button when no changes
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Close")
+                    }
+                }
+
+                // Use button (for weapons and aid items)
+                if ((item is Item.Weapon && item.ammoId != null && (item.ammoLoaded ?: 0) > 0) ||
+                    (item is Item.Aid && item.quantity > 0)) {
+                    Button(
+                        onClick = {
+                            onUse()
+                            if (item is Item.Aid && quantity > 0) {
+                                quantity--
+                                if (quantity == 0) {
+                                    onDismiss()
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text("Use")
                     }
+                }
             }
-        },
+        }
     )
 }
+

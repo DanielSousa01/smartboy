@@ -29,7 +29,6 @@ fun CartScreen(
     qrCodeBitmap: Bitmap?,
     error: String?,
     onRemoveItem: (Long) -> Unit,
-    onUpdateQuantity: (Long, Int) -> Unit,
     onClearCart: () -> Unit,
     onGenerateQRCode: () -> Unit,
     onScanQRCode: () -> Unit,
@@ -54,7 +53,6 @@ fun CartScreen(
                     CartContent(
                         cart = currentCart,
                         onRemoveItem = onRemoveItem,
-                        onUpdateQuantity = onUpdateQuantity,
                         onClearCart = onClearCart,
                         onGenerateQRCode = onGenerateQRCode,
                         onScanQRCode = onScanQRCode
@@ -99,7 +97,6 @@ fun CartScreen(
 private fun CartContent(
     cart: Cart,
     onRemoveItem: (Long) -> Unit,
-    onUpdateQuantity: (Long, Int) -> Unit,
     onClearCart: () -> Unit,
     onGenerateQRCode: () -> Unit,
     onScanQRCode: () -> Unit
@@ -182,10 +179,7 @@ private fun CartContent(
                 items(cart.items, key = { it.id }) { item ->
                     CartItemCard(
                         item = item,
-                        onRemove = { onRemoveItem(item.id) },
-                        onQuantityChange = { newQuantity ->
-                            onUpdateQuantity(item.id, newQuantity)
-                        }
+                        onRemove = { onRemoveItem(item.id) }
                     )
                 }
             }

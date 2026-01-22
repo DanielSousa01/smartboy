@@ -20,8 +20,7 @@ import com.fcul.smartboy.domain.inventory.SellingItem
 @Composable
 fun CartItemCard(
     item: SellingItem,
-    onRemove: () -> Unit,
-    onQuantityChange: ((Int) -> Unit)? = null
+    onRemove: () -> Unit
 ) {
 
     Card(
@@ -51,7 +50,7 @@ fun CartItemCard(
                 IconButton(onClick = onRemove) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Remove item",
+                        contentDescription = stringResource(R.string.cd_cart_remove_item),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -68,7 +67,7 @@ fun CartItemCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Price and quantity controls
+            // Price and quantity (read-only to prevent race conditions)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -86,7 +85,7 @@ fun CartItemCard(
                     )
                     Icon(
                         painter = painterResource(id = R.drawable.capicon),
-                        contentDescription = "Caps",
+                        contentDescription = stringResource(R.string.caps),
                         tint = Color.Unspecified,
                         modifier = Modifier.size(20.dp)
                     )
@@ -97,41 +96,17 @@ fun CartItemCard(
                     )
                 }
 
-                // Quantity controls
-                if (onQuantityChange != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        IconButton(
-                            onClick = { onQuantityChange(item.quantity - 1) },
-                            enabled = item.quantity > 1
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Remove,
-                                contentDescription = "Decrease quantity"
-                            )
-                        }
-
-                        Text(
-                            text = "${item.quantity}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        IconButton(
-                            onClick = { onQuantityChange(item.quantity + 1) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Increase quantity"
-                            )
-                        }
-                    }
-                } else {
+                // Quantity display (read-only)
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
                     Text(
                         text = "Qty: ${item.quantity}",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 }
             }

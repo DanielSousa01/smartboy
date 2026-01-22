@@ -1,6 +1,7 @@
 package com.fcul.smartboy.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -9,6 +10,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -70,6 +74,23 @@ fun NavGraph(
             val selectedCheckpointMarker by viewModel.selectedCheckpointMarker.collectAsState()
             val otherActiveRoutes by viewModel.otherActiveRoutes.collectAsState()
             val navigationEvent by viewModel.navigationEvent.collectAsState()
+
+            val lifecycleOwner = LocalLifecycleOwner.current
+
+            // Reload location when screen becomes visible
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        if (currentLocation == null) {
+                            viewModel.loadInitialLocation()
+                        }
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                }
+            }
 
             // Handle navigation events
             LaunchedEffect(navigationEvent) {
@@ -295,7 +316,6 @@ fun NavGraph(
                     qrCodeBitmap = qrCodeBitmap,
                     error = error,
                     onRemoveItem = viewModel::removeItemFromCart,
-                    onUpdateQuantity = viewModel::updateItemQuantity,
                     onClearCart = viewModel::clearCart,
                     onGenerateQRCode = viewModel::generatePaymentQRCode,
                     onScanQRCode = {

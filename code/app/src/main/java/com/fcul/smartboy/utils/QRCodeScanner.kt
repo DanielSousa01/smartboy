@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
+import com.fcul.smartboy.R
 
 @Composable
 fun QRCodeScanner(
@@ -108,7 +110,7 @@ fun QRCodeScanner(
                     .align(Alignment.TopEnd)
                     .padding(16.dp)
             ) {
-                Text("Close")
+                Text(stringResource(R.string.close))
             }
         }
     } else {
@@ -117,9 +119,9 @@ fun QRCodeScanner(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("Permissão de câmara necessária")
+            Text(stringResource(R.string.qr_camera_permission_required))
             Button(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }) {
-                Text("Conceder Permissão")
+                Text(stringResource(R.string.qr_grant_camera_permission))
             }
         }
     }

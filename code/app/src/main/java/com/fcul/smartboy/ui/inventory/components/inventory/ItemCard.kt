@@ -4,12 +4,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,7 +24,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.domain.inventory.SellingItem
 
@@ -84,29 +95,53 @@ fun ItemCard(
                 )
             }
             if (item is Item.Weapon && item.ammoId != null) {
-                Row {
-                    if (item.ammoName != null) {
-                        Text(
-                            text = "Ammo Name : ${item.ammoName}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                    }
+                Row (
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ){
+                    Text(
+                        text = "${item.ammoLoaded}/${item.ammoMax}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp)
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.ammo),
+                        contentDescription = stringResource(R.string.cd_inventory_ammo_icon),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .padding(end = 4.dp)
+                    )
+                    Text(
+                        text = "${item.ammoName}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
                 }
             }
 
             Column(horizontalAlignment = Alignment.End) {
-                if (item is Item.Weapon && item.ammoId != null && item.ammoMax != null)
+                Row (
+                    verticalAlignment = Alignment.CenterVertically
+                ){
                     Text(
-                        text = "Ammo: ${item.ammoLoaded}/${item.ammoMax}",
+                        text = "${item.quantity}",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
-                Text(
-                    text = "Quantity: ${item.quantity}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
+                    VerticalDivider(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        thickness = 1.dp
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Inventory,
+                        contentDescription = stringResource(R.string.cd_inventory_description),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
         }

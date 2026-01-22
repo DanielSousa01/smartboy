@@ -11,17 +11,16 @@ import kotlinx.coroutines.tasks.await
 class RadiationRepository(
     private val firestore: FirebaseFirestore
 ) : CRUD<RadiationData, String>, IRadiationRepository {
-
-    private val col get() = firestore.collection(Path.RADIATION_DATA.path)
+    private val radiationCol get() = firestore.collection(Path.RADIATION_DATA.path)
 
     override suspend fun create(document: RadiationData): String {
         val id = document.id
-        col.document(id).set(toMap(document)).await()
+        radiationCol.document(id).set(toMap(document)).await()
         return id
     }
 
     override suspend fun read(id: String): RadiationData? {
-        val snap = col.document(id).get().await()
+        val snap = radiationCol.document(id).get().await()
         return if (snap.exists()) fromMap(snap.data) else null
     }
 
@@ -29,17 +28,17 @@ class RadiationRepository(
         when (data) {
             is Map<*, *> -> {
                 @Suppress("UNCHECKED_CAST")
-                col.document(id).update(data as Map<String, Any?>).await()
+                radiationCol.document(id).update(data as Map<String, Any?>).await()
             }
 
-            is RadiationData -> col.document(id).set(toMap(data)).await()
+            is RadiationData -> radiationCol.document(id).set(toMap(data)).await()
             else -> throw IllegalArgumentException("Unsupported update type: ${data::class}")
         }
         return true
     }
 
     override suspend fun delete(id: String): Boolean {
-        col.document(id).delete().await()
+        radiationCol.document(id).delete().await()
         return true
     }
 
@@ -51,16 +50,16 @@ class RadiationRepository(
     ): List<RadiationData> {
         val baseQuery = when {
             minLevel != null && maxLevel != null ->
-                col.whereGreaterThanOrEqualTo("radiationLevelInSv", minLevel)
+                radiationCol.whereGreaterThanOrEqualTo("radiationLevelInSv", minLevel)
                     .whereLessThanOrEqualTo("radiationLevelInSv", maxLevel)
 
             minLevel != null ->
-                col.whereGreaterThanOrEqualTo("radiationLevelInSv", minLevel)
+                radiationCol.whereGreaterThanOrEqualTo("radiationLevelInSv", minLevel)
 
             maxLevel != null ->
-                col.whereLessThanOrEqualTo("radiationLevelInSv", maxLevel)
+                radiationCol.whereLessThanOrEqualTo("radiationLevelInSv", maxLevel)
 
-            else -> col
+            else -> radiationCol
         }
 
         val snaps = baseQuery.get().await()

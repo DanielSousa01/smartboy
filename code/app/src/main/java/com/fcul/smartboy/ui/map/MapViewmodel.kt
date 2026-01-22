@@ -137,8 +137,6 @@ class MapViewmodel @Inject constructor(
     }
 
     fun loadInitialLocation() {
-        if (_currentLocation.value != null) return
-
         viewModelScope.launch {
             try {
                 locationClient.lastLocation.addOnSuccessListener { location ->
@@ -313,12 +311,25 @@ class MapViewmodel @Inject constructor(
 
         // Find which checkpoints are still ahead
         val closestCheckpointIndex = checkpoints.indexOfFirst { checkpoint ->
-            calculateDistance(currentLoc, checkpoint) < 50.0
+            calculateDistance(currentLoc, checkpoint) < CHECKPOINT_TRIGGER_DISTANCE
         }
 
         val remainingCheckpoints = if (closestCheckpointIndex >= 0) {
+            // User reached a checkpoint! Award caps
+            val userId = auth.currentUser?.uid
+            if (userId != null) {
+                viewModelScope.launch {
+                    try {
+                        profileRepository.addCaps(userId, CAPS_PER_CHECKPOINT)
+                        Log.i("MapViewmodel", "✅ Checkpoint reached! Awarded $CAPS_PER_CHECKPOINT caps")
+                    } catch (e: Exception) {
+                        Log.e("MapViewmodel", "Failed to award checkpoint caps", e)
+                    }
+                }
+            }
+
             // User is near a checkpoint, use remaining checkpoints from there
-            checkpoints.drop(closestCheckpointIndex)
+            checkpoints.drop(closestCheckpointIndex + 1)
         } else {
             // User is not near any checkpoint, recalculate to all checkpoints
             checkpoints
@@ -476,6 +487,40 @@ class MapViewmodel @Inject constructor(
     }
 
     fun endRoute() {
+        val userId = auth.currentUser?.uid
+
+        // Calculate rewards if user is authenticated and route was completed
+        if (userId != null && _traveledPath.value.isNotEmpty()) {
+            viewModelScope.launch {
+                try {
+                    // Calculate distance traveled in kilometers
+                    val distanceKm = calculateTotalDistance(_traveledPath.value) / 1000.0
+
+                    // Calculate total checkpoints reached (total - remaining)
+                    val totalCheckpoints = (_pendingCheckpoints.value.size).coerceAtLeast(0)
+
+                    // Calculate rewards
+                    val distanceReward = (distanceKm * CAPS_PER_KILOMETER).roundToLong().toInt()
+                    val checkpointReward = totalCheckpoints * CAPS_PER_CHECKPOINT
+                    val totalReward = ROUTE_COMPLETION_BASE_CAPS + distanceReward + checkpointReward
+
+                    // Award caps
+                    if (totalReward > 0) {
+                        profileRepository.addCaps(userId, totalReward)
+                        Log.i(
+                            "MapViewmodel",
+                            "🎉 Route completed! Awarded $totalReward caps " +
+                                    "(Base: $ROUTE_COMPLETION_BASE_CAPS, " +
+                                    "Distance: $distanceReward for ${distanceKm.roundToLong()}km, " +
+                                    "Checkpoints: $checkpointReward for $totalCheckpoints checkpoints)"
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e("MapViewmodel", "Failed to award route completion caps", e)
+                }
+            }
+        }
+
         _isRouteActive.value = false
         _traveledPath.value = emptyList()
         _remainingRoute.value = emptyList()
@@ -483,6 +528,16 @@ class MapViewmodel @Inject constructor(
         endActiveRouteInFirestore()
 
         Log.i("MapViewmodel", "Route ended and removed from Firestore")
+    }
+
+    private fun calculateTotalDistance(path: List<LatLng>): Double {
+        if (path.size < 2) return 0.0
+
+        var totalDistance = 0.0
+        for (i in 0 until path.size - 1) {
+            totalDistance += calculateDistance(path[i], path[i + 1])
+        }
+        return totalDistance
     }
 
     fun setPoint(location: LatLng) {
@@ -857,6 +912,15 @@ class MapViewmodel @Inject constructor(
             100.0 // Recalculate if user is >100m off route
         private const val ROUTE_RECALC_COOLDOWN = 10000L // Wait 10s between recalculations
         private const val RADX_DECAY_INTERVAL = 15000L // Decay Rad-X effect every 15 seconds
+
+        private const val LOCATION_UPDATE_INTERVAL = 5000L
+        private const val CHECKPOINT_TRIGGER_DISTANCE = 50.0
+        private const val RAD_ZONE_CHECK_DISTANCE = 100.0
+
+        // Reward constants
+        private const val ROUTE_COMPLETION_BASE_CAPS = 100 // Base reward for completing a route
+        private const val CAPS_PER_KILOMETER = 10 // Additional caps per km traveled
+        private const val CAPS_PER_CHECKPOINT = 25 // Caps for each checkpoint reached
     }
 }
 

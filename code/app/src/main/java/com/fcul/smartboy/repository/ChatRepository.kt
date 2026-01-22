@@ -16,14 +16,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
+import javax.inject.Inject
 
-class ChatRepository(
+class ChatRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val database: FirebaseDatabase,
     private val firestore: FirebaseFirestore,
     private val storage: FirebaseStorage
 ) {
-    private val messagesRef = database.getReference(Path.MESSAGES.path)
+    private val messagesRef get() = database.getReference(Path.MESSAGES.path)
 
     private fun getConversationId(userId1: String, userId2: String): String {
         val ids = listOf(userId1, userId2).sorted()

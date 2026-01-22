@@ -10,18 +10,17 @@ import kotlinx.coroutines.tasks.await
 class UserRepository(
     private val firestore: FirebaseFirestore
 ) : CRUD<User, String> {
-
-    private val usersCollection get() = firestore.collection(Path.USERS.path)
+    private val usersCol get() = firestore.collection(Path.USERS.path)
 
     override suspend fun create(document: User): String {
-        usersCollection.document(document.userId).set(toMap(document)).await()
+        usersCol.document(document.userId).set(toMap(document)).await()
         Log.d(TAG, "User created in Firestore: ${document.userId}")
         return document.userId
     }
 
     override suspend fun read(id: String): User? {
         return try {
-            val snapshot = usersCollection.document(id).get().await()
+            val snapshot = usersCol.document(id).get().await()
             if (snapshot.exists()) {
                 fromMap(id, snapshot.data)
             } else {
@@ -38,9 +37,9 @@ class UserRepository(
             when (data) {
                 is Map<*, *> -> {
                     @Suppress("UNCHECKED_CAST")
-                    usersCollection.document(id).update(data as Map<String, Any>).await()
+                    usersCol.document(id).update(data as Map<String, Any>).await()
                 }
-                is User -> usersCollection.document(id).set(toMap(data)).await()
+                is User -> usersCol.document(id).set(toMap(data)).await()
                 else -> throw IllegalArgumentException("Unsupported update type: ${data::class}")
             }
             Log.d(TAG, "User updated: $id")
@@ -53,7 +52,7 @@ class UserRepository(
 
     override suspend fun delete(id: String): Boolean {
         return try {
-            usersCollection.document(id).delete().await()
+            usersCol.document(id).delete().await()
             Log.d(TAG, "User deleted: $id")
             true
         } catch (e: Exception) {

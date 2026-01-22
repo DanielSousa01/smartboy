@@ -42,7 +42,7 @@ fun TopBar(
             IconButton(onClick = onScanPaymentClick) {
                 Icon(
                     imageVector = Icons.Default.QrCodeScanner,
-                    contentDescription = "Scan Payment"
+                    contentDescription = stringResource(R.string.cd_payment_scan)
                 )
             }
             IconButton(onClick = onShoppingCartClick) {

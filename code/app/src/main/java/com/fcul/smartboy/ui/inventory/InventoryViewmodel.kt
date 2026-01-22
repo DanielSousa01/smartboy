@@ -9,6 +9,7 @@ import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.repository.InventoryRepository
 import com.fcul.smartboy.repository.ProfileRepository
 import com.fcul.smartboy.repository.SellingRepository
+import com.fcul.smartboy.utils.SampleItems
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +35,6 @@ class InventoryViewmodel @Inject constructor(
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     init {
-        populateDatabase()
         observeInventory()
         observeSellingItems()
     }
@@ -310,42 +310,6 @@ class InventoryViewmodel @Inject constructor(
         private const val RADX_RESISTANCE_BOOST = 0.5 // 50% radiation resistance
         private const val RADX_DURATION_MS = 300000L // 5 minutes
     }
-
-    fun populateDatabase() {
-        viewModelScope.launch {
-            val samples = sampleItems()
-
-            samples.forEach { item ->
-                try {
-                    inventoryRepository.create(item)
-                } catch (e: Exception) {
-                    Log.e("InventorySeeder", "Erro ao adicionar ${item.name}: ${e.message}")
-                }
-            }
-        }
-    }
-}
-
-private fun sampleItems(): List<Item> {
-    return listOf(
-        Item.Weapon(id = 1, name = "Sword", quantity = 1, category = Category.WEAPONS),
-        Item.Weapon(
-            id = 2,
-            name = "Bow",
-            quantity = 1,
-            category = Category.WEAPONS,
-            ammoId = 6,
-            ammoName = "Arrow",
-            ammoMax = 1,
-            ammoLoaded = 0
-        ),
-        Item.Aid(id = 3, name = "Bandage", quantity = 5, category = Category.AID),
-        Item.Aid(id = 4, name = "Health Potion", quantity = 3, category = Category.AID),
-        Item.Weapon(id = 5, name = "Shield", quantity = 1, category = Category.WEAPONS),
-        Item.Ammo(id = 6, name = "Arrow", quantity = 1, category = Category.AMMO),
-        Item.Aid(id = 7, name = "RadAway", quantity = 3, category = Category.AID),
-        Item.Aid(id = 8, name = "Rad-X", quantity = 2, category = Category.AID),
-    )
 }
 
 

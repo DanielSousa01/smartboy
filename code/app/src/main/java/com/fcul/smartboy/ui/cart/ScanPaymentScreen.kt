@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.fcul.smartboy.R
 import com.fcul.smartboy.utils.QRCodeScanner
 import kotlinx.coroutines.launch
 
@@ -30,12 +32,12 @@ fun ScanPaymentScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Scan Payment QR") },
+                title = { Text(stringResource(R.string.payment_scan_qr)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.cd_back)
                         )
                     }
                 }
@@ -45,6 +47,11 @@ fun ScanPaymentScreen(
         if (showScanner) {
             QRCodeScanner(
                 onQRCodeScanned = { qrData ->
+                    // Prevent duplicate scans - ignore if already processing
+                    if (isProcessing) {
+                        return@QRCodeScanner
+                    }
+
                     showScanner = false
                     isProcessing = true
                     errorMessage = null
@@ -97,13 +104,13 @@ fun ScanPaymentScreen(
                     when {
                         isProcessing -> {
                             CircularProgressIndicator()
-                            Text("Processing payment...")
+                            Text(stringResource(R.string.payment_processing))
                         }
 
                         successMessage != null -> {
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
-                                contentDescription = "Success",
+                                contentDescription = stringResource(R.string.cd_success),
                                 modifier = Modifier.size(64.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
@@ -117,7 +124,7 @@ fun ScanPaymentScreen(
                         errorMessage != null -> {
                             Icon(
                                 imageVector = Icons.Default.Error,
-                                contentDescription = "Error",
+                                contentDescription = stringResource(R.string.cd_error),
                                 modifier = Modifier.size(64.dp),
                                 tint = MaterialTheme.colorScheme.error
                             )
@@ -132,13 +139,13 @@ fun ScanPaymentScreen(
                                     showScanner = true
                                 }
                             ) {
-                                Text("Try Again")
+                                Text(stringResource(R.string.payment_try_again))
                             }
                         }
 
                         else -> {
                             Text(
-                                text = "Scan buyer's payment QR code",
+                                text = stringResource(R.string.payment_scan_qr_code),
                                 style = MaterialTheme.typography.titleLarge
                             )
                             Spacer(modifier = Modifier.height(16.dp))
@@ -152,7 +159,7 @@ fun ScanPaymentScreen(
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Scan Payment QR Code")
+                                Text(stringResource(R.string.payment_scan_qr_code))
                             }
                         }
                     }

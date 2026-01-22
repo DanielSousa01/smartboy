@@ -163,7 +163,15 @@ class ActiveRouteRepository @Inject constructor(
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Error observing active routes: ${error.message}")
+                // Handle permission errors gracefully (happens when user signs out)
+                if (error.code == DatabaseError.PERMISSION_DENIED) {
+                    Log.w(TAG, "Permission denied for active routes (user likely signed out), returning empty list")
+                    trySend(emptyList())
+                    close()
+                } else {
+                    Log.e(TAG, "Error observing active routes: ${error.message}")
+                    close(error.toException())
+                }
             }
         }
 

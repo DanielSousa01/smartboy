@@ -52,6 +52,10 @@ class CartViewmodel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    // Track last processed transaction to prevent duplicates
+    private var lastProcessedTransaction: Pair<String, String>? = null
+    private var lastProcessedTimestamp: Long = 0
+
     init {
         loadAllCarts()
     }
@@ -119,12 +123,27 @@ class CartViewmodel @Inject constructor(
                 // Check if item already exists in cart
                 val existingItemIndex = cart.items.indexOfFirst { it.id == item.id }
 
+                val currentCartQuantity = if (existingItemIndex >= 0) {
+                    cart.items[existingItemIndex].quantity
+                } else {
+                    0
+                }
+
+                val newTotalQuantity = currentCartQuantity + 1
+
+                // Validate against available quantity
+                if (newTotalQuantity > item.quantity) {
+                    _error.value = "Cannot add more than ${item.quantity} of ${item.name} (already have $currentCartQuantity in cart)"
+                    Log.w("CartViewModel", "Attempted to add more than available: $newTotalQuantity > ${item.quantity}")
+                    return@launch
+                }
+
                 val updatedItems = if (existingItemIndex >= 0) {
                     // Update quantity of existing item
                     cart.items.toMutableList().apply {
                         val existingItem = this[existingItemIndex]
                         this[existingItemIndex] = existingItem.copyItem(
-                            quantity = existingItem.quantity + 1
+                            quantity = newTotalQuantity
                         )
                     }
                 } else {
@@ -144,7 +163,7 @@ class CartViewmodel @Inject constructor(
                 // Update local state
                 _carts.value += (sellerId to updatedCart)
 
-                Log.d("CartViewModel", "Added item to cart for seller: $sellerName")
+                Log.d("CartViewModel", "Added item to cart for seller: $sellerName (${newTotalQuantity}/${item.quantity})")
                 Log.d("CartViewModel", "Cart ID: $cartId, UserId: $userId, SellerId: $sellerId")
             } catch (e: Exception) {
                 _error.value = "Failed to add item: ${e.message}"
@@ -368,6 +387,20 @@ class CartViewmodel @Inject constructor(
 
     suspend fun completePurchase(buyerId: String, sellerId: String): Result<String> {
         return try {
+            // Prevent duplicate processing - check if this exact transaction was just processed
+            val currentTime = System.currentTimeMillis()
+            val transactionKey = Pair(buyerId, sellerId)
+
+            if (lastProcessedTransaction == transactionKey &&
+                (currentTime - lastProcessedTimestamp) < 3000) { // 3 second window
+                Log.w("CartViewModel", "Duplicate transaction detected, ignoring")
+                return Result.failure(Exception("Transaction already being processed"))
+            }
+
+            // Mark this transaction as being processed
+            lastProcessedTransaction = transactionKey
+            lastProcessedTimestamp = currentTime
+
             val currentUserId = auth.currentUser?.uid
                 ?: return Result.failure(Exception("User not logged in"))
 
@@ -424,16 +457,18 @@ class CartViewmodel @Inject constructor(
                     }
                 }
 
-                // Add to buyer's inventory
-                val buyerItem = inventoryRepository.read(cartItem.id)
+                // Add to BUYER's inventory (not seller's!)
+                val buyerItem = inventoryRepository.readFromUser(buyerId, cartItem.id)
                 if (buyerItem != null) {
-                    // Item exists, increase quantity
-                    inventoryRepository.update(
+                    // Item exists in buyer's inventory, increase quantity
+                    inventoryRepository.updateForUser(
+                        buyerId,
                         cartItem.id,
                         buyerItem.copyItem(quantity = buyerItem.quantity + cartItem.quantity)
                     )
                 } else {
-                    inventoryRepository.create(cartItem.toItem())
+                    // New item for buyer, create it
+                    inventoryRepository.createForUser(buyerId, cartItem.toItem())
                 }
             }
 
@@ -441,21 +476,37 @@ class CartViewmodel @Inject constructor(
             profileRepository.deductCaps(buyerId, buyerCart.totalPrice)
             profileRepository.addCaps(sellerId, buyerCart.totalPrice)
 
-            // 5. Log transaction
-            val transaction = Transaction(
-                id = System.currentTimeMillis(),
+            // 5. Log transactions for both buyer and seller
+            val timestamp = System.currentTimeMillis()
+
+            // Create transaction for BUYER (negative - they paid)
+            val buyerTransaction = Transaction(
+                id = timestamp,
                 date = Date(),
-                amount = buyerCart.totalPrice.toFloat(),
+                amount = -buyerCart.totalPrice.toFloat(), // Negative for buyer
                 userDestination = User(
                     userId = sellerId,
                     username = buyerCart.sellerName ?: "Unknown Seller"
                 )
             )
-            transactionRepository.create(transaction)
 
-            // 6. Clear buyer's cart in BUYER'S collection
-            val emptyCart = buyerCart.copy(items = emptyList(), totalPrice = 0)
-            cartRepository.updateForUser(buyerId, cartId, emptyCart)
+            // Create transaction for SELLER (positive - they received)
+            val sellerTransaction = Transaction(
+                id = timestamp,
+                date = Date(),
+                amount = buyerCart.totalPrice.toFloat(), // Positive for seller
+                userDestination = User(
+                    userId = buyerId,
+                    username = buyerCart.userName ?: "Unknown Buyer"
+                )
+            )
+
+            // Save both transactions to their respective collections
+            transactionRepository.createForUser(buyerId, buyerTransaction)
+            transactionRepository.createForUser(sellerId, sellerTransaction)
+
+            // 6. Delete buyer's cart from BUYER'S collection
+            cartRepository.deleteForUser(buyerId, cartId)
 
             Log.d("CartViewModel", "Purchase completed: ${buyerCart.items.size} items for ${buyerCart.totalPrice} caps")
             Result.success("Purchase completed successfully!")
