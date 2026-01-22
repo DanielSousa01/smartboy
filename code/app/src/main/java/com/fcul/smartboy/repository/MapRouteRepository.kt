@@ -1,27 +1,15 @@
 package com.fcul.smartboy.repository
 
 import android.util.Log
-import com.fcul.smartboy.domain.route.ActiveRoute
-import com.fcul.smartboy.domain.route.Checkpoint
 import com.fcul.smartboy.domain.route.MapRoute
 import com.fcul.smartboy.repository.base.CRUD
 import com.fcul.smartboy.repository.base.Path
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 class MapRouteRepository(
     private val user: FirebaseUser,
