@@ -20,7 +20,8 @@ import com.fcul.smartboy.domain.inventory.SellingItem
 @Composable
 fun CartItemCard(
     item: SellingItem,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onQuantityChange: (Int) -> Unit
 ) {
 
     Card(
@@ -67,7 +68,7 @@ fun CartItemCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Price and quantity (read-only to prevent race conditions)
+            // Price and quantity controls (with boundary validation)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -96,19 +97,45 @@ fun CartItemCard(
                     )
                 }
 
-                // Quantity display (read-only)
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    )
+                // Quantity controls with boundary validation
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "Qty: ${item.quantity}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
+                    IconButton(
+                        onClick = { onQuantityChange(item.quantity - 1) },
+                        enabled = item.quantity > 1
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Remove,
+                            contentDescription = stringResource(R.string.cd_cart_decrease_quantity)
+                        )
+                    }
+
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Text(
+                            text = "${item.quantity}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { onQuantityChange(item.quantity + 1) },
+                        enabled = true  // Boundary check will happen in ViewModel
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = stringResource(R.string.cd_cart_increase_quantity)
+                        )
+                    }
                 }
+            }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -147,5 +174,4 @@ fun CartItemCard(
             }
         }
     }
-}
 

@@ -29,6 +29,7 @@ fun CartScreen(
     qrCodeBitmap: Bitmap?,
     error: String?,
     onRemoveItem: (Long) -> Unit,
+    onUpdateQuantity: (Long, Int) -> Unit,
     onClearCart: () -> Unit,
     onGenerateQRCode: () -> Unit,
     onScanQRCode: () -> Unit,
@@ -53,6 +54,7 @@ fun CartScreen(
                     CartContent(
                         cart = currentCart,
                         onRemoveItem = onRemoveItem,
+                        onUpdateQuantity = onUpdateQuantity,
                         onClearCart = onClearCart,
                         onGenerateQRCode = onGenerateQRCode,
                         onScanQRCode = onScanQRCode
@@ -97,6 +99,7 @@ fun CartScreen(
 private fun CartContent(
     cart: Cart,
     onRemoveItem: (Long) -> Unit,
+    onUpdateQuantity: (Long, Int) -> Unit,
     onClearCart: () -> Unit,
     onGenerateQRCode: () -> Unit,
     onScanQRCode: () -> Unit
@@ -179,7 +182,10 @@ private fun CartContent(
                 items(cart.items, key = { it.id }) { item ->
                     CartItemCard(
                         item = item,
-                        onRemove = { onRemoveItem(item.id) }
+                        onRemove = { onRemoveItem(item.id) },
+                        onQuantityChange = { newQuantity ->
+                            onUpdateQuantity(item.id, newQuantity)
+                        }
                     )
                 }
             }
@@ -207,7 +213,7 @@ private fun CartContent(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "${cart.totalPrice} ${R.string.caps}",
+                            text = "${cart.totalPrice} ${stringResource(R.string.caps)}",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary

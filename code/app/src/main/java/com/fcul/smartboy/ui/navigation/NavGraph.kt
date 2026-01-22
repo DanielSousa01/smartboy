@@ -316,6 +316,7 @@ fun NavGraph(
                     qrCodeBitmap = qrCodeBitmap,
                     error = error,
                     onRemoveItem = viewModel::removeItemFromCart,
+                    onUpdateQuantity = viewModel::updateItemQuantity,
                     onClearCart = viewModel::clearCart,
                     onGenerateQRCode = viewModel::generatePaymentQRCode,
                     onScanQRCode = {

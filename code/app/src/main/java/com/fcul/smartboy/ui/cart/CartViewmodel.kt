@@ -214,6 +214,34 @@ class CartViewmodel @Inject constructor(
                 val currentCart = _carts.value[sellerId] ?: return@launch
                 val userId = auth.currentUser?.uid ?: return@launch
 
+                // Find the item being updated
+                val cartItem = currentCart.items.find { it.id == itemId }
+                if (cartItem == null) {
+                    _error.value = "Item not found in cart"
+                    return@launch
+                }
+
+                // Get the seller's current inventory for this item
+                val sellerItem = try {
+                    sellingRepository.readFromUser(sellerId, itemId)
+                } catch (e: Exception) {
+                    Log.e("CartViewModel", "Failed to get seller item", e)
+                    null
+                }
+
+                // Validate sellerItem is not null and quantity is within bounds
+                val sellerAvailable = sellerItem?.quantity ?: 0
+                if (sellerItem == null) {
+                    _error.value = "Item no longer available from seller"
+                    return@launch
+                }
+                if (newQuantity > sellerAvailable) {
+                    _error.value = "Cannot set quantity to $newQuantity. Seller only has $sellerAvailable available."
+                    Log.w("CartViewModel", "Quantity validation failed: $newQuantity > $sellerAvailable")
+                    return@launch
+                }
+
+                // Validation passed, update the quantity
                 val updatedItems = currentCart.items.map { item ->
                     if (item.id == itemId) {
                         item.copyItem(quantity = newQuantity)
@@ -232,7 +260,7 @@ class CartViewmodel @Inject constructor(
 
                 _carts.value += (sellerId to updatedCart)
 
-                Log.d("CartViewModel", "Updated item quantity: $itemId to $newQuantity")
+                Log.d("CartViewModel", "Updated item quantity: $itemId to $newQuantity (max: $sellerAvailable)")
             } catch (e: Exception) {
                 _error.value = "Failed to update quantity: ${e.message}"
                 Log.e("CartViewModel", "Failed to update item quantity", e)
@@ -521,4 +549,3 @@ class CartViewmodel @Inject constructor(
         return items.sumOf { it.valuePerUnit * it.quantity }
     }
 }
-
