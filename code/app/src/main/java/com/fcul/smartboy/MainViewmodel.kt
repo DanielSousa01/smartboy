@@ -17,13 +17,14 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val auth: FirebaseAuth,
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
 ) : ViewModel() {
     private val _user = MutableStateFlow(auth.currentUser)
     val user: StateFlow<FirebaseUser?> = _user.asStateFlow()
 
     private val _userProfile = MutableStateFlow<Profile?>(null)
     val userProfile: StateFlow<Profile?> = _userProfile.asStateFlow()
+
 
     init {
         auth.currentUser?.uid?.let { userId ->

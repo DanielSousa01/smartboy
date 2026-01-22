@@ -13,18 +13,20 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.domain.cart.Cart
-import com.fcul.smartboy.ui.cart.components.CartItemCard
+import com.fcul.smartboy.ui.cart.components.CartCard
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
-fun CartScreen(cart: Cart) {
-    var cart by remember { mutableStateOf(cart) }
+fun CartsScreen(
+    cartsState: StateFlow<List<Cart>>,
+    onViewCart: (String?) -> Unit,
+) {
+    val carts by cartsState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -33,7 +35,7 @@ fun CartScreen(cart: Cart) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = cart.userName?.let { "Cart for $it Items" } ?: "New Cart",
+            text = "Carts",
             style = MaterialTheme.typography.headlineLarge,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -48,12 +50,12 @@ fun CartScreen(cart: Cart) {
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
             ) {
-                if (cart.items.isNotEmpty()) {
-                    items(cart.items) { item ->
-                        CartItemCard(
-                            item = item,
-                            onRemove = {
-                                // Handle item removal
+                if (carts.isNotEmpty()) {
+                    items(carts) { cart ->
+                        CartCard(
+                            cart = cart,
+                            onCartDetailsClick = {
+                                onViewCart(cart.userId)
                             }
                         )
                     }
@@ -68,22 +70,30 @@ fun CartScreen(cart: Cart) {
                 }
             }
         }
-    }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Button(
-            onClick = {
-
-            },
-            modifier = Modifier.weight(1f)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+                .weight(.1f),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Add Item")
+            Button(
+                onClick = {
+                    onViewCart(null)
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Add Cart")
+            }
+
+            Button(
+                onClick = { /* Ação do segundo botão */ },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Confirm Sell")
+            }
         }
     }
-}
 
+}

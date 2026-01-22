@@ -1,7 +1,6 @@
 package com.fcul.smartboy.repository
 
 import android.net.Uri
-import com.fcul.smartboy.domain.chat.ChatUser
 import com.fcul.smartboy.domain.chat.Conversation
 import com.fcul.smartboy.domain.chat.Message
 import com.fcul.smartboy.repository.base.Path

@@ -39,7 +39,7 @@ class SellingRepository @Inject constructor(
             }
 
             val items = snapshot?.documents?.mapNotNull { doc ->
-                doc.toObject(SellingItemEntity::class.java)?.toItem()
+                doc.toObject(SellingItemEntity::class.java)?.toSellingItem()
             } ?: emptyList()
 
             trySend(items)
@@ -68,7 +68,7 @@ class SellingRepository @Inject constructor(
             .collection(Path.SELLING.path)
 
         return docRef.document(id.toString()).get().awaitTask()
-            .toObject(SellingItemEntity::class.java)?.toItem()
+            .toObject(SellingItemEntity::class.java)?.toSellingItem()
     }
 
     override suspend fun update(id: Long, data: Any): Boolean {

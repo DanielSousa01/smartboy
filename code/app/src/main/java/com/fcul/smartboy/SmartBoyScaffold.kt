@@ -20,7 +20,7 @@ import com.fcul.smartboy.ui.navigation.BottomTab
 import com.fcul.smartboy.ui.navigation.DrawerNavigation
 import com.fcul.smartboy.ui.navigation.NavGraph
 import com.fcul.smartboy.ui.navigation.TopBar
-import com.fcul.smartboy.ui.navigation.drawer.Drawer
+import com.fcul.smartboy.ui.profile.drawer.ProfileDrawer
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.launch
 
@@ -34,7 +34,6 @@ fun SmartBoyScaffold(
     val rightDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val leftDrawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-
 
     val currentRoute = navController
         .currentBackStackEntryAsState()
@@ -54,7 +53,7 @@ fun SmartBoyScaffold(
         rightDrawerState = rightDrawerState,
         leftDrawerState = leftDrawerState,
         leftDrawerContent = {
-            Drawer(
+            ProfileDrawer(
                 userName = user?.displayName ?: user?.email ?: stringResource(R.string.guest),
                 userPicture = user?.photoUrl?.toString(),
                 steps = userProfile?.steps ?: 0L,
@@ -78,7 +77,8 @@ fun SmartBoyScaffold(
                 }
             )
         },
-        rightDrawerContent = {}
+        rightDrawerContent = {
+        }
     ) {
         Scaffold(
             topBar = {
@@ -97,8 +97,9 @@ fun SmartBoyScaffold(
                         },
                         onShoppingCartClick = {
                             scope.launch {
-                                leftDrawerState.close()
-                                rightDrawerState.open()
+                                navController.navigate(Screen.Carts.route) {
+                                    launchSingleTop = true
+                                }
                             }
                         }
                     )

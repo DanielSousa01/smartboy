@@ -11,7 +11,7 @@ data class SellingItemEntity(
     val ammoLoaded: Int? = null,
     val valuePerUnit: Int = 0
 ) {
-    fun toItem(): SellingItem {
+    fun toSellingItem(): SellingItem {
         return when (val category = Category.valueOf(category)) {
             Category.WEAPONS -> SellingItem.Weapon(
                 id = id,

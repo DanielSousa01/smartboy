@@ -1,4 +1,4 @@
-package com.fcul.smartboy.ui.navigation.drawer
+package com.fcul.smartboy.ui.profile.drawer
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
@@ -37,7 +36,7 @@ import coil.compose.AsyncImage
 import com.fcul.smartboy.R
 
 @Composable
-fun Drawer(
+fun ProfileDrawer(
     userName: String,
     onProfileClick: () -> Unit,
     onSettingsClick: () -> Unit,

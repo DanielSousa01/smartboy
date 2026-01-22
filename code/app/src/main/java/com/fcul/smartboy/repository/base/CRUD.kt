@@ -1,5 +1,6 @@
 package com.fcul.smartboy.repository.base
 
+import com.fcul.smartboy.domain.cart.Cart
 import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -7,7 +8,7 @@ import kotlin.coroutines.resumeWithException
 
 interface CRUD<T, Y> {
     suspend fun create(document: T): Y
-    suspend fun read(id: Y): T?
+    suspend fun read(id: Y): Cart?
     suspend fun update(id: Y, data: Any): Boolean
     suspend fun delete(id: Y): Boolean
 

@@ -2,9 +2,8 @@ package com.fcul.smartboy.ui.navigation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -47,7 +46,7 @@ fun DrawerNavigation(
                         Column(
                             modifier = Modifier
                                 .padding(horizontal = 16.dp)
-                                .verticalScroll(rememberScrollState())
+                                .fillMaxHeight()
                         ) {
                             rightDrawerContent()
                         }
@@ -64,7 +63,7 @@ fun DrawerNavigation(
                             Column(
                                 modifier = Modifier
                                     .padding(horizontal = 16.dp)
-                                    .verticalScroll(rememberScrollState())
+                                    .fillMaxHeight()
                             ) {
                                 leftDrawerContent()
                             }

@@ -9,8 +9,11 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.fcul.smartboy.domain.cart.Cart
 import com.fcul.smartboy.domain.navigation.Screen
 import com.fcul.smartboy.ui.cart.CartScreen
+import com.fcul.smartboy.ui.cart.CartViewmodel
+import com.fcul.smartboy.ui.cart.CartsScreen
 import com.fcul.smartboy.ui.chat.ChatMessagesScreen
 import com.fcul.smartboy.ui.chat.ChatViewmodel
 import com.fcul.smartboy.ui.chat.ConversationsScreen
@@ -132,7 +135,31 @@ fun NavGraph(
                 onSellingItemValueChange = viewModel::changeSellingItemValue
             )
         }
-        composable(Screen.Cart.route) { CartScreen() }
+        composable(Screen.Carts.route) {
+            val viewModel: CartViewmodel = hiltViewModel()
+
+            CartsScreen(
+                cartsState = viewModel.carts,
+                onViewCart = { cartId ->
+                    navController.navigate(
+                        Screen.Cart.createRoute(cartId)
+                    )
+                }
+            )
+        }
+        composable(Screen.Cart.route) {
+            val cartId = it.arguments?.getString("cartId")
+            val viewModel: CartViewmodel = hiltViewModel()
+
+            val cart = if (cartId != null) {
+                viewModel.getCart(cartId)
+            } else {
+                Cart()
+            }
+
+            CartScreen(cart)
+
+        }
         composable(Screen.Wallet.route) { WalletScreen() }
         composable(Screen.Profile.route) {
             val viewmodel: ProfileViewmodel = hiltViewModel()
