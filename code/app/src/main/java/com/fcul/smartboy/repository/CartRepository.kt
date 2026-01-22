@@ -79,6 +79,7 @@ class CartRepository @Inject constructor(
 
     override suspend fun create(document: Cart): Long {
         val user = user ?: return -1
+        
         val userId = document.userId ?: return -1
         val id = userId.hashCode().toLong()
 
