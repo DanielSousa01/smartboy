@@ -20,7 +20,8 @@ class InventoryRepository @Inject constructor(
     private val user: FirebaseUser?
         get() = auth.currentUser
 
-    private val col get() = firestore.collection(Path.USERS.path)
+    private val col
+        get() = firestore.collection(Path.USERS.path)
 
     fun observeInventory(): Flow<List<Item>> = callbackFlow {
         val user = user ?: run {

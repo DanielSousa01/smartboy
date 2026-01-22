@@ -46,13 +46,6 @@ class StepCounterService : Service(), SensorEventListener {
     private var lastSyncedSteps: Long = 0
     private var isInitialized = false
 
-    companion object {
-        private const val TAG = "StepCounterService"
-        private const val NOTIFICATION_ID = 1001
-        private const val CHANNEL_ID = "step_counter_channel"
-        private const val SYNC_THRESHOLD = 10 // Sync every 10 steps
-    }
-
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "StepCounterService onCreate() called")
@@ -201,5 +194,12 @@ class StepCounterService : Service(), SensorEventListener {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    companion object {
+        private const val TAG = "StepCounterService"
+        private const val NOTIFICATION_ID = 1001
+        private const val CHANNEL_ID = "step_counter_channel"
+        private const val SYNC_THRESHOLD = 10 // Sync every 10 steps
+    }
 }
 

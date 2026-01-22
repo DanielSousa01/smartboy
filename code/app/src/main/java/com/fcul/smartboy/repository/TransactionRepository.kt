@@ -8,8 +8,9 @@ import com.fcul.smartboy.repository.base.Path
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import javax.inject.Inject
 
-class TransactionRepository(
+class TransactionRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore
 ) : CRUD<Transaction, Long> {
@@ -17,7 +18,8 @@ class TransactionRepository(
     private val user: FirebaseUser?
         get() = auth.currentUser
 
-    private val col get() = firestore.collection(Path.USERS.path)
+    private val col
+        get() = firestore.collection(Path.USERS.path)
 
     suspend fun getTransactions(): List<Transaction> {
         val user = user ?: return emptyList()
@@ -32,7 +34,7 @@ class TransactionRepository(
 
     override suspend fun create(document: Transaction): Long {
         val user = user ?: return -1
-        val destinationUserId = document.userDestination.id
+        val destinationUserId = document.userDestination.userId
 
 
         val transactionId = document.id

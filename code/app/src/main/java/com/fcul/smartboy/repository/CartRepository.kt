@@ -57,6 +57,8 @@ class CartRepository @Inject constructor(
                                 Cart(
                                     userId = metadata.userId,
                                     userName = metadata.userName,
+                                    sellerId = metadata.sellerId,
+                                    sellerName = metadata.sellerName,
                                     totalPrice = metadata.totalPrice,
                                     items = cartItems
                                 )
@@ -77,7 +79,8 @@ class CartRepository @Inject constructor(
 
     override suspend fun create(document: Cart): Long {
         val user = user ?: return -1
-        val id = document.userId.toLong()
+        val userId = document.userId ?: return -1
+        val id = userId.hashCode().toLong()
 
         val docRef = col.document(user.uid)
             .collection(Path.CART.path)
@@ -86,6 +89,8 @@ class CartRepository @Inject constructor(
         val entity = CartMetadata(
             userId = document.userId,
             userName = document.userName,
+            sellerId = document.sellerId,
+            sellerName = document.sellerName,
             totalPrice = document.totalPrice
         )
 
@@ -110,8 +115,8 @@ class CartRepository @Inject constructor(
             .collection(Path.CART.path)
             .document(id.toString())
 
-        val cart = cartRef.get().awaitTask()
-            .toObject(Cart::class.java) ?: return null
+        val metadata = cartRef.get().awaitTask()
+            .toObject(CartMetadata::class.java) ?: return null
 
         val cartItemsSnapshot = cartRef
             .collection(Path.CART_ITEMS.path)
@@ -122,9 +127,11 @@ class CartRepository @Inject constructor(
         }
 
         return Cart(
-            userId = cart.userId,
-            userName = cart.userName,
-            totalPrice = cart.totalPrice,
+            userId = metadata.userId,
+            userName = metadata.userName,
+            sellerId = metadata.sellerId,
+            sellerName = metadata.sellerName,
+            totalPrice = metadata.totalPrice,
             items = cartItems
         )
     }
@@ -141,6 +148,8 @@ class CartRepository @Inject constructor(
         val entity = CartMetadata(
             userId = cart.userId,
             userName = cart.userName,
+            sellerId = cart.sellerId,
+            sellerName = cart.sellerName,
             totalPrice = cart.items.fold(0) { acc, item -> acc + item.valuePerUnit * item.quantity }
         )
 

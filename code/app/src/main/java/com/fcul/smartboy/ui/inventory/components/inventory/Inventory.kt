@@ -51,45 +51,52 @@ fun Inventory(
 
             if (categoryItems.isNotEmpty()) {
                 items(categoryItems) { invItem ->
-                    if (invItem is Item.Weapon && invItem.ammoId != null) {
-                        ItemCard(
-                            item = invItem,
-                            sellingItem = sellingItems.find { it.id == invItem.id },
-                            onUse = onUnload,
-                            onReload = onReload,
-                            onQuantityChange = onQuantityChange,
-                            onSellingItemQuantityChange = onSellingItemQuantityChange,
-                            onSellingItemValueChange = onSellingItemValueChange,
-                            onRemove = onRemove,
-                            onSell = onSell
-                        )
-                    } else if (invItem is Item.Aid) {
-                        ItemCard(
-                            item = invItem,
-                            sellingItem = sellingItems.find { it.id == invItem.id },
-                            onUse = {
-                                val newQuantity = invItem.quantity - 1
-                                if (newQuantity > 0)
-                                    onQuantityChange(invItem.id, invItem.quantity - 1)
-                                else
-                                    onRemove(invItem.id)
-                            },
-                            onQuantityChange = onQuantityChange,
-                            onSellingItemQuantityChange = onSellingItemQuantityChange,
-                            onSellingItemValueChange = onSellingItemValueChange,
-                            onRemove = onRemove,
-                            onSell = onSell
-                        )
-                    } else {
-                        ItemCard(
-                            item = invItem,
-                            sellingItem = sellingItems.find { it.id == invItem.id },
-                            onQuantityChange = onQuantityChange,
-                            onSellingItemQuantityChange = onSellingItemQuantityChange,
-                            onSellingItemValueChange = onSellingItemValueChange,
-                            onRemove = onRemove,
-                            onSell = onSell
-                        )
+                    when (invItem) {
+                        is Item.Weapon if invItem.ammoId != null -> {
+                            ItemCard(
+                                item = invItem,
+                                sellingItem = sellingItems.find { it.id == invItem.id },
+                                onUse = onUnload,
+                                onReload = onReload,
+                                onQuantityChange = onQuantityChange,
+                                onSellingItemQuantityChange = onSellingItemQuantityChange,
+                                onSellingItemValueChange = onSellingItemValueChange,
+                                onRemove = onRemove,
+                                onSell = onSell
+                            )
+                        }
+
+                        is Item.Aid -> {
+                            ItemCard(
+                                item = invItem,
+                                sellingItem = sellingItems.find { it.id == invItem.id },
+                                onUse = {
+                                    val newQuantity = invItem.quantity - 1
+                                    if (newQuantity > 0)
+                                        onQuantityChange(invItem.id, invItem.quantity - 1)
+                                    else
+                                        onRemove(invItem.id)
+                                    onUseItem(invItem.id)
+                                },
+                                onQuantityChange = onQuantityChange,
+                                onSellingItemQuantityChange = onSellingItemQuantityChange,
+                                onSellingItemValueChange = onSellingItemValueChange,
+                                onRemove = onRemove,
+                                onSell = onSell
+                            )
+                        }
+
+                        else -> {
+                            ItemCard(
+                                item = invItem,
+                                sellingItem = sellingItems.find { it.id == invItem.id },
+                                onQuantityChange = onQuantityChange,
+                                onSellingItemQuantityChange = onSellingItemQuantityChange,
+                                onSellingItemValueChange = onSellingItemValueChange,
+                                onRemove = onRemove,
+                                onSell = onSell
+                            )
+                        }
                     }
 
                 }

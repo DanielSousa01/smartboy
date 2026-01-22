@@ -8,7 +8,7 @@ import kotlin.coroutines.resumeWithException
 
 interface CRUD<T, Y> {
     suspend fun create(document: T): Y
-    suspend fun read(id: Y): Cart?
+    suspend fun read(id: Y): T?
     suspend fun update(id: Y, data: Any): Boolean
     suspend fun delete(id: Y): Boolean
 

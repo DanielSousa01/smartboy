@@ -18,7 +18,6 @@ import com.fcul.smartboy.R
 @Composable
 fun TopBar(
     onMenuClick: () -> Unit,
-    onDestinationChange: () -> Unit,
     onShoppingCartClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {

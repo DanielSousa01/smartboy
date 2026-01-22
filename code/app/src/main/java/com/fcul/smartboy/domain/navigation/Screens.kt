@@ -24,14 +24,13 @@ sealed class Screen(
         fun createRoute(userId: String, userName: String) = "chat_messages/$userId/$userName"
     }
 
-    object Inventory : Screen("inventory", R.string.inventory, Icons.Default.Star)
-    object Carts : Screen("carts", R.string.cart, Icons.Default.ShoppingCart)
-    object Cart :
-        Screen("cart/{cartId}", R.string.cart, Icons.Default.ShoppingCart) {
-
-        fun createRoute(cartId: String?) = "cart/${cartId ?: ""}"
+    object UserDetails :
+        Screen("user_details/{userId}", R.string.user_details, Icons.Default.AccountBox) {
+        fun createRoute(userId: String) = "user_details/$userId"
     }
 
+    object Inventory : Screen("inventory", R.string.inventory, Icons.Default.Star)
+    object Cart : Screen("cart", R.string.cart, Icons.Default.ShoppingCart)
     object Wallet : Screen("wallet", R.string.wallet, Icons.Default.AccountBox)
     object Settings : Screen("settings", R.string.settings, Icons.Default.Settings)
 
@@ -41,8 +40,8 @@ sealed class Screen(
             Profile,
             Chat,
             ChatMessages,
+            UserDetails,
             Inventory,
-            Carts,
             Cart,
             Wallet,
             Settings

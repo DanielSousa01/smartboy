@@ -1,43 +1,103 @@
 package com.fcul.smartboy.ui.wallet
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.transaction.Transaction
-import com.fcul.smartboy.domain.user.User
-import java.util.Date
-import java.util.UUID
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
 fun WalletScreen(
-    transactions: List<Transaction> = sampleTransactions()
+    transactions: List<Transaction>,
+    isLoading: Boolean,
+    error: String?
 ) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(stringResource(R.string.transactions))
-
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.Start
-
+    Scaffold { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
-            transactions.forEach {
-                TransactionEntry(it)
+            when {
+                isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                error != null -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Error loading transactions",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                transactions.isEmpty() -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "No transactions yet",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Your transaction history will appear here",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                else -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.transactions),
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(transactions, key = { it.id }) { transaction ->
+                                TransactionEntry(transaction)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -54,63 +114,60 @@ private fun TransactionEntry(transaction: Transaction) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                if (transaction.amount >= 0) {
-                    Text(stringResource(R.string.receive_caps))
-                } else {
-                    Text(stringResource(R.string.send_caps))
-                }
-                Text(transaction.userDestination.name)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (transaction.amount >= 0) {
+                        stringResource(R.string.receive_caps)
+                    } else {
+                        stringResource(R.string.send_caps)
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = transaction.userDestination.username,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = formatDate(transaction.date),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
+
             Column(horizontalAlignment = Alignment.End) {
-                val absAmount = kotlin.math.abs(transaction.amount)
-                val amountText =
-                    (if (transaction.amount >= 0) "+$absAmount" else "-$absAmount") + " " + stringResource(
-                        R.string.caps
-                    )
-                Text(amountText)
-                Text(transaction.date.toString())
+                val absAmount = kotlin.math.abs(transaction.amount).toInt()
+                val amountColor = if (transaction.amount >= 0) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                }
+
+                Text(
+                    text = if (transaction.amount >= 0) "+$absAmount" else "-$absAmount",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = amountColor
+                )
+                Text(
+                    text = stringResource(R.string.caps),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
 }
 
-
-private fun sampleTransactions(): List<Transaction> {
-    val now = System.currentTimeMillis()
-    return listOf(
-        Transaction(
-            id = 1,
-            amount = -250f,
-            userDestination = User(id = UUID.randomUUID().toString(), name = "Merchant Raul"),
-            date = Date(now - 3 * 60 * 60 * 1000)
-        ),
-        Transaction(
-            id = 2,
-            amount = 1200f,
-            userDestination = User(id = UUID.randomUUID().toString(), name = "Explorer's Guild"),
-            date = Date(now - 1 * 24 * 60 * 60 * 1000)
-        ),
-        Transaction(
-            id = 3,
-            amount = -75f,
-            userDestination = User(id = UUID.randomUUID().toString(), name = "Ana"),
-            date = Date(now - 2 * 24 * 60 * 60 * 1000)
-        ),
-        Transaction(
-            id = 4,
-            amount = 300f,
-            userDestination = User(id = UUID.randomUUID().toString(), name = "Auction House"),
-            date = Date(now - 5 * 24 * 60 * 60 * 1000)
-        ),
-        Transaction(
-            id = 5,
-            amount = -999f,
-            userDestination = User(id = UUID.randomUUID().toString(), name = "Scrap Shop"),
-            date = Date(now - 7 * 24 * 60 * 60 * 1000)
-        )
-    )
+private fun formatDate(date: java.util.Date): String {
+    val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+    return dateFormat.format(date)
 }
+

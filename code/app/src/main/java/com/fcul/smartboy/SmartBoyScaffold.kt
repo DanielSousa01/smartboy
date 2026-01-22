@@ -90,14 +90,9 @@ fun SmartBoyScaffold(
                                 leftDrawerState.open()
                             }
                         },
-                        onDestinationChange = {
-                            navController.navigate(Screen.Wallet.route) {
-                                launchSingleTop = true
-                            }
-                        },
                         onShoppingCartClick = {
                             scope.launch {
-                                navController.navigate(Screen.Carts.route) {
+                                navController.navigate(Screen.Cart.route) {
                                     launchSingleTop = true
                                 }
                             }

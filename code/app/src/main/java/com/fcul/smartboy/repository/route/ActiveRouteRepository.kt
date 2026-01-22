@@ -3,6 +3,7 @@ package com.fcul.smartboy.repository.route
 import android.location.Location
 import android.util.Log
 import com.fcul.smartboy.domain.route.ActiveRoute
+import com.fcul.smartboy.utils.MeasurementUtils.calculateDistance
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -20,22 +21,6 @@ class ActiveRouteRepository @Inject constructor(
     private val database: FirebaseDatabase
 ) {
     private val activeRoutesRef = database.getReference("active_routes")
-
-    companion object {
-        private const val TAG = "ActiveRouteRepository"
-
-        private fun calculateDistance(point1: LatLng, point2: LatLng): Double {
-            val results = FloatArray(1)
-            Location.distanceBetween(
-                point1.latitude,
-                point1.longitude,
-                point2.latitude,
-                point2.longitude,
-                results
-            )
-            return results[0].toDouble()
-        }
-    }
 
     suspend fun saveActiveRoute(route: ActiveRoute): Result<String> {
         return try {
@@ -248,5 +233,9 @@ class ActiveRouteRepository @Inject constructor(
             Log.e(TAG, "Failed to fetch active routes", e)
             Result.failure(e)
         }
+    }
+
+    companion object {
+        private const val TAG = "ActiveRouteRepository"
     }
 }

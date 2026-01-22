@@ -5,6 +5,7 @@ import com.fcul.smartboy.repository.InventoryRepository
 import com.fcul.smartboy.repository.MapRouteRepository
 import com.fcul.smartboy.repository.ProfileRepository
 import com.fcul.smartboy.repository.SellingRepository
+import com.fcul.smartboy.repository.UserRepository
 import com.fcul.smartboy.repository.radiation.RadiationRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
@@ -82,6 +83,14 @@ object RepositoryModule {
         database: FirebaseDatabase
     ): ProfileRepository {
         return ProfileRepository(database)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        firestore: FirebaseFirestore
+    ): UserRepository {
+        return UserRepository(firestore)
     }
 }
 

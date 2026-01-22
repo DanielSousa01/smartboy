@@ -13,7 +13,7 @@ data class Transaction(
         id = id,
         date = date,
         amount = amount,
-        userDestinationId = userDestination.id,
-        userName = userDestination.name
+        userDestinationId = userDestination.userId,
+        userName = userDestination.username
     )
 }

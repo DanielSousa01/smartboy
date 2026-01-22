@@ -26,8 +26,8 @@ import kotlinx.coroutines.flow.StateFlow
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun InventoryScreen(
-    itemsState: StateFlow<List<Item>>,
-    sellingItemsState: StateFlow<List<SellingItem>>,
+    items: List<Item>,
+    sellingItems: List<SellingItem>,
     userId: String?,
     onUnload: (Long) -> Unit,
     onReload: (Long) -> Unit,
@@ -39,8 +39,6 @@ fun InventoryScreen(
     onSellingItemValueChange: (Long, Int) -> Unit,
     onSell: (Long, Int, Int) -> Unit
 ) {
-    val items by itemsState.collectAsState()
-    val sellingItems by sellingItemsState.collectAsState()
 
     val itemsByCategory: Map<Category, List<Item>> = items.groupBy { it.category }
     var selectedTab by remember { mutableStateOf(InventoryTab.INVENTORY) }

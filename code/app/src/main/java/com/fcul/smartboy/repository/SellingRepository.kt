@@ -21,7 +21,8 @@ class SellingRepository @Inject constructor(
     private val user: FirebaseUser?
         get() = auth.currentUser
 
-    private val col get() = firestore.collection(Path.USERS.path)
+    private val col
+        get() = firestore.collection(Path.USERS.path)
 
     fun observeSellingItems(): Flow<List<SellingItem>> = callbackFlow {
         val user = user ?: run {
@@ -96,5 +97,54 @@ class SellingRepository @Inject constructor(
 
         docRef.delete().awaitTask()
         return true
+    }
+
+    /**
+     * Read a selling item from a specific user's inventory
+     */
+    suspend fun readFromUser(userId: String, itemId: Long): SellingItem? {
+        return try {
+            val docRef = col.document(userId)
+                .collection(Path.SELLING.path)
+                .document(itemId.toString())
+
+            docRef.get().awaitTask()
+                .toObject(SellingItemEntity::class.java)?.toSellingItem()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Update item quantity for a specific user
+     */
+    suspend fun updateForUser(userId: String, itemId: Long, item: SellingItem): Boolean {
+        return try {
+            val docRef = col.document(userId)
+                .collection(Path.SELLING.path)
+                .document(itemId.toString())
+
+            val entity = item.toEntity()
+            docRef.set(entity).awaitTask()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Delete item from a specific user's selling inventory
+     */
+    suspend fun deleteFromUser(userId: String, itemId: Long): Boolean {
+        return try {
+            val docRef = col.document(userId)
+                .collection(Path.SELLING.path)
+                .document(itemId.toString())
+
+            docRef.delete().awaitTask()
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.fcul.smartboy.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -9,11 +10,9 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.fcul.smartboy.domain.cart.Cart
 import com.fcul.smartboy.domain.navigation.Screen
 import com.fcul.smartboy.ui.cart.CartScreen
 import com.fcul.smartboy.ui.cart.CartViewmodel
-import com.fcul.smartboy.ui.cart.CartsScreen
 import com.fcul.smartboy.ui.chat.ChatMessagesScreen
 import com.fcul.smartboy.ui.chat.ChatViewmodel
 import com.fcul.smartboy.ui.chat.ConversationsScreen
@@ -21,10 +20,14 @@ import com.fcul.smartboy.ui.inventory.InventoryScreen
 import com.fcul.smartboy.ui.inventory.InventoryViewmodel
 import com.fcul.smartboy.ui.map.MapScreen
 import com.fcul.smartboy.ui.map.MapViewmodel
+import com.fcul.smartboy.ui.map.NavigationEvent
 import com.fcul.smartboy.ui.profile.ProfileScreen
 import com.fcul.smartboy.ui.profile.ProfileViewmodel
 import com.fcul.smartboy.ui.settings.SettingsScreen
+import com.fcul.smartboy.ui.userdetails.UserDetailsScreen
+import com.fcul.smartboy.ui.userdetails.UserDetailsViewModel
 import com.fcul.smartboy.ui.wallet.WalletScreen
+import com.fcul.smartboy.ui.wallet.WalletViewModel
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
@@ -60,6 +63,18 @@ fun NavGraph(
             val selectedRadiationMarker by viewModel.selectedRadiationMarker.collectAsState()
             val selectedCheckpointMarker by viewModel.selectedCheckpointMarker.collectAsState()
             val otherActiveRoutes by viewModel.otherActiveRoutes.collectAsState()
+            val navigationEvent by viewModel.navigationEvent.collectAsState()
+
+            // Handle navigation events
+            LaunchedEffect(navigationEvent) {
+                when (val event = navigationEvent) {
+                    is NavigationEvent.NavigateToUserDetails -> {
+                        navController.navigate(Screen.UserDetails.createRoute(event.userId))
+                        viewModel.clearNavigationEvent()
+                    }
+                    null -> { /* No event */ }
+                }
+            }
 
             MapScreen(
                 currentLocation = currentLocation,
@@ -86,6 +101,7 @@ fun NavGraph(
                 onEndRoute = viewModel::endRoute,
                 onClearPendingCheckpoints = viewModel::clearPendingCheckpoints,
                 onClearSelectedCheckpoint = viewModel::clearSelectedCheckpoint,
+                onUserMarkerClick = viewModel::onUserClick
             )
         }
         composable(Screen.Chat.route) {
@@ -110,19 +126,63 @@ fun NavGraph(
             val userName = backStackEntry.arguments?.getString("userName") ?: "User"
             val viewModel: ChatViewmodel = hiltViewModel()
 
+            val messages by viewModel.messages.collectAsState()
+            val messageText by viewModel.messageText.collectAsState()
+            val isLoading by viewModel.isLoading.collectAsState()
+            val error by viewModel.error.collectAsState()
+            val userCaps by viewModel.userCaps.collectAsState()
+
             ChatMessagesScreen(
-                viewModel = viewModel,
+                messages = messages,
+                messageText = messageText,
                 userId = userId,
                 userName = userName,
+                isLoading = isLoading,
+                error = error,
+                userCaps = userCaps,
+                onSendImage = viewModel::sendImageMessage,
+                onStartChat = viewModel::startChat,
+                onClearError = viewModel::clearError,
+                onSendMessage = viewModel::sendMessage,
+                onUpdateMessageText = viewModel::updateMessageText,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.UserDetails.route) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            val viewModel: UserDetailsViewModel = hiltViewModel()
+
+            val profile by viewModel.profile.collectAsState()
+            val sellingItems by viewModel.sellingItems.collectAsState()
+            val isLoading by viewModel.isLoading.collectAsState()
+            val error by viewModel.error.collectAsState()
+
+            LaunchedEffect(userId) {
+                viewModel.loadUserProfile(userId)
+            }
+
+            UserDetailsScreen(
+                profile = profile,
+                sellingItems = sellingItems,
+                isLoading = isLoading,
+                error = error,
+                onSendMessage = { targetUserId ->
+                    val userName = profile?.username ?: "User"
+                    navController.navigate(
+                        Screen.ChatMessages.createRoute(targetUserId, userName)
+                    )
+                },
                 onBackClick = { navController.popBackStack() }
             )
         }
         composable(Screen.Inventory.route) {
             val viewModel: InventoryViewmodel = hiltViewModel()
+            val items by viewModel.items.collectAsState()
+            val sellingItems by viewModel.sellingItems.collectAsState()
 
             InventoryScreen(
-                itemsState = viewModel.items,
-                sellingItemsState = viewModel.sellingItems,
+                items = items,
+                sellingItems = sellingItems,
                 userId = user?.uid,
                 onUnload = viewModel::unloadAmmo,
                 onReload = viewModel::reloadAmmo,
@@ -135,32 +195,45 @@ fun NavGraph(
                 onSellingItemValueChange = viewModel::changeSellingItemValue
             )
         }
-        composable(Screen.Carts.route) {
+        composable(Screen.Cart.route) {
             val viewModel: CartViewmodel = hiltViewModel()
 
-            CartsScreen(
-                cartsState = viewModel.carts,
-                onViewCart = { cartId ->
-                    navController.navigate(
-                        Screen.Cart.createRoute(cartId)
-                    )
-                }
+            val currentCart by viewModel.currentCart.collectAsState()
+            val isLoading by viewModel.isLoading.collectAsState()
+            val qrCodeBitmap by viewModel.qrCodeBitmap.collectAsState()
+            val error by viewModel.error.collectAsState()
+
+            CartScreen(
+                currentCart = currentCart,
+                isLoading = isLoading,
+                qrCodeBitmap = qrCodeBitmap,
+                error = error,
+                onRemoveItem = viewModel::removeItemFromCart,
+                onUpdateQuantity = viewModel::updateItemQuantity,
+                onClearCart = viewModel::clearCart,
+                onGenerateQRCode = viewModel::generatePaymentQRCode,
+                onScanQRCode = {
+                    // TODO: Implement QR code scanner for adding products
+                    // This should open a QR scanner that scans product codes
+                    // and adds them to the cart
+                },
+                onDismissQRCode = viewModel::dismissQRCode,
+                onDismissError = viewModel::dismissError
             )
         }
-        composable(Screen.Cart.route) {
-            val cartId = it.arguments?.getString("cartId")
-            val viewModel: CartViewmodel = hiltViewModel()
+        composable(Screen.Wallet.route) {
+            val viewModel: WalletViewModel = hiltViewModel()
 
-            val cart = if (cartId != null) {
-                viewModel.getCart(cartId)
-            } else {
-                Cart()
-            }
+            val transactions by viewModel.transactions.collectAsState()
+            val isLoading by viewModel.isLoading.collectAsState()
+            val error by viewModel.error.collectAsState()
 
-            CartScreen(cart)
-
+            WalletScreen(
+                transactions = transactions,
+                isLoading = isLoading,
+                error = error
+            )
         }
-        composable(Screen.Wallet.route) { WalletScreen() }
         composable(Screen.Profile.route) {
             val viewmodel: ProfileViewmodel = hiltViewModel()
 

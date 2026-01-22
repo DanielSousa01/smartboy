@@ -213,16 +213,20 @@ fun ConversationItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatMessagesScreen(
-    viewModel: ChatViewmodel,
+    messages: List<Message>,
+    messageText: String,
+    isLoading: Boolean,
+    error: String?,
+    userCaps: Int,
     userId: String,
     userName: String,
+    onSendImage: (Uri, String) -> Unit,
+    onStartChat: (String) -> Unit,
+    onClearError: () -> Unit,
+    onSendMessage: (String) -> Unit,
+    onUpdateMessageText: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
-    val messages by viewModel.messages.collectAsState()
-    val messageText by viewModel.messageText.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val userCaps by viewModel.userCaps.collectAsState()
 
     val listState = rememberLazyListState()
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -230,11 +234,11 @@ fun ChatMessagesScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.sendImageMessage(it, userName) }
+        uri?.let { onSendImage(it, userName) }
     }
 
     LaunchedEffect(userId) {
-        viewModel.startChat(userId)
+        onStartChat(userId)
     }
 
     LaunchedEffect(messages.size) {
@@ -317,7 +321,7 @@ fun ChatMessagesScreen(
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             modifier = Modifier.weight(1f)
                         )
-                        TextButton(onClick = { viewModel.clearError() }) {
+                        TextButton(onClick = { onClearError() }) {
                             Text("Dismiss")
                         }
                     }
@@ -362,7 +366,7 @@ fun ChatMessagesScreen(
 
                 OutlinedTextField(
                     value = messageText,
-                    onValueChange = { viewModel.updateMessageText(it) },
+                    onValueChange = { onUpdateMessageText(it) },
                     modifier = Modifier.weight(1f),
                     placeholder = { Text(stringResource(R.string.send_message_to) + " $userName...") },
                     maxLines = 3,
@@ -370,7 +374,7 @@ fun ChatMessagesScreen(
                 )
 
                 IconButton(
-                    onClick = { viewModel.sendMessage(userName) },
+                    onClick = { onSendMessage(userName) },
                     enabled = !isLoading && messageText.isNotBlank()
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")

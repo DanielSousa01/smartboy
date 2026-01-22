@@ -35,6 +35,7 @@ fun GoogleMapComponent(
     onMapClick: (LatLng) -> Unit,
     onRadiationMarkerClick: (RadiationData) -> Unit,
     onCheckpointMarkerClick: (LatLng) -> Unit,
+    onUserMarkerClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     GoogleMap(
@@ -78,7 +79,7 @@ fun GoogleMapComponent(
             Marker(
                 state = state,
                 title = "☢️ Radiation Zone",
-                snippet = "Level: ${rad.radiationLevelInSv} Sv\nRadius: ${rad.radius} m\n⚠️ Danger: -${(rad.radiationLevelInSv * 10).roundToLong()} steps every 5s",
+                snippet = "Level: ${rad.radiationLevelInMSv} MSv\nRadius: ${rad.radius} m\n⚠️ Danger: -${(rad.radiationLevelInMSv * 10).roundToLong()} steps every 5s",
                 icon = BitmapDescriptorFactory.defaultMarker(
                     if (isSelected) BitmapDescriptorFactory.HUE_YELLOW
                     else BitmapDescriptorFactory.HUE_RED
@@ -176,7 +177,11 @@ fun GoogleMapComponent(
                     title = "${route.userName}'s Checkpoint ${index + 1}",
                     snippet = "Selling route - Tap to view details",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET),
-                    alpha = 0.7f
+                    alpha = 0.7f,
+                    onClick = {
+                        onUserMarkerClick(route.userId)
+                        true
+                    }
                 )
             }
 

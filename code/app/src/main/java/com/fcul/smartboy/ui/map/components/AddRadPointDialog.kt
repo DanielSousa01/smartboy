@@ -15,8 +15,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.fcul.smartboy.R
 import com.google.android.gms.maps.model.LatLng
 import java.util.Locale
 
@@ -29,22 +31,20 @@ fun AddRadPointDialog(
 ) {
     var radiationLevelText by remember { mutableStateOf("") }
     var radiusText by remember { mutableStateOf("") }
-    var radiationLevelError by remember { mutableStateOf<String?>(null) }
-    var radiusError by remember { mutableStateOf<String?>(null) }
+    var radiationLevelError by remember { mutableStateOf(false) }
+    var radiusError by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Radiation Point") },
+        title = { Text(stringResource(R.string.add_radiation_point)) },
         text = {
             Column {
                 Text(
-                    text = "Location: ${
-                        String.format(
-                            Locale.US,
-                            "%.6f",
-                            location.latitude
-                        )
-                    }, ${String.format(Locale.US, "%.6f", location.longitude)}",
+                    text = stringResource(
+                        R.string.location_format,
+                        String.format(Locale.US, "%.6f", location.latitude),
+                        String.format(Locale.US, "%.6f", location.longitude)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -54,13 +54,15 @@ fun AddRadPointDialog(
                     value = radiationLevelText,
                     onValueChange = {
                         radiationLevelText = it
-                        radiationLevelError = null
+                        radiationLevelError = false
                     },
-                    label = { Text("Radiation Level (Sv)") },
-                    placeholder = { Text("e.g., 0.05") },
+                    label = { Text(stringResource(R.string.radiation_level_msv)) },
+                    placeholder = { Text(stringResource(R.string.radiation_level_placeholder)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    isError = radiationLevelError != null,
-                    supportingText = radiationLevelError?.let { { Text(it) } },
+                    isError = radiationLevelError,
+                    supportingText = if (radiationLevelError) {
+                        { Text(stringResource(R.string.error_valid_positive_number)) }
+                    } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -70,13 +72,15 @@ fun AddRadPointDialog(
                     value = radiusText,
                     onValueChange = {
                         radiusText = it
-                        radiusError = null
+                        radiusError = false
                     },
-                    label = { Text("Radius (meters)") },
-                    placeholder = { Text("e.g., 100") },
+                    label = { Text(stringResource(R.string.radius_meters)) },
+                    placeholder = { Text(stringResource(R.string.radius_placeholder)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    isError = radiusError != null,
-                    supportingText = radiusError?.let { { Text(it) } },
+                    isError = radiusError,
+                    supportingText = if (radiusError) {
+                        { Text(stringResource(R.string.error_valid_positive_number)) }
+                    } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -84,36 +88,33 @@ fun AddRadPointDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    // Validate inputs
                     val radiationLevel = radiationLevelText.toDoubleOrNull()
                     val radius = radiusText.toDoubleOrNull()
 
-                    var hasError = false
+                    radiationLevelError = false
+                    radiusError = false
 
                     if (radiationLevel == null || radiationLevel <= 0) {
-                        radiationLevelError = "Please enter a valid positive number"
-                        hasError = true
+                        radiationLevelError = true
+                        return@TextButton
                     }
 
                     if (radius == null || radius <= 0) {
-                        radiusError = "Please enter a valid positive number"
-                        hasError = true
+                        radiusError = true
+                        return@TextButton
                     }
 
-                    if (!hasError && radiationLevel != null && radius != null) {
-                        onConfirm(radiationLevel, radius)
-                    }
+                    onConfirm(radiationLevel, radius)
                 }
             ) {
-                Text("Add")
+                Text(stringResource(R.string.add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         },
         modifier = modifier
     )
 }
-

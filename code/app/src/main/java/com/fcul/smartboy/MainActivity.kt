@@ -147,6 +147,7 @@ class MainActivity : ComponentActivity() {
         // Stop the service when activity is destroyed
         try {
             stopService(Intent(this, StepCounterService::class.java))
+            Log.d("MainActivity", "StepCounterService stopped")
         } catch (e: Exception) {
             Log.e("MainActivity", "Error stopping service: ${e.message}")
         }

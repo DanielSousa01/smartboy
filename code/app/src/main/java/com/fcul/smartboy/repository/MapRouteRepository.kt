@@ -18,10 +18,6 @@ class MapRouteRepository(
     private val storage: FirebaseStorage
 ) : CRUD<MapRoute, Long> {
 
-    companion object {
-        private const val TAG = "MapRouteRepository"
-    }
-
     private val routesCol get() = firestore.collection(Path.ROUTES.path)
 
     // ============= Completed Routes (CRUD Implementation) =============
@@ -124,5 +120,9 @@ class MapRouteRepository(
         } catch (e: Exception) {
             null
         }
+    }
+
+    companion object {
+        private const val TAG = "MapRouteRepository"
     }
 }

@@ -32,35 +32,25 @@ class ProfileViewmodel @Inject constructor(
     }
 
     private fun observeProfile() {
-        val userId = auth.currentUser?.uid ?: return
+        val user = auth.currentUser ?: return
 
         viewModelScope.launch {
-            profileRepository.observeProfile(userId).collect { profile ->
+            profileRepository.observeProfile(user.uid).collect { profile ->
                 if (profile != null) {
                     _profile.value = profile
-                } else {
-                    val newProfile = Profile(userId = userId, steps = 0, caps = 0)
-                    profileRepository.create(newProfile)
-                    _profile.value = newProfile
                 }
             }
         }
     }
 
     fun loadProfile() {
-        val userId = auth.currentUser?.uid ?: return
+        val user = auth.currentUser ?: return
 
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val userProfile = profileRepository.read(userId)
-                if (userProfile == null) {
-                    val newProfile = Profile(userId = userId, steps = 0, caps = 0)
-                    profileRepository.create(newProfile)
-                    _profile.value = newProfile
-                } else {
-                    _profile.value = userProfile
-                }
+                val userProfile = profileRepository.read(user.uid)
+                _profile.value = userProfile
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = "Failed to load profile: ${e.message}"

@@ -1,8 +1,13 @@
 package com.fcul.smartboy.ui.map
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location.distanceBetween
+import android.os.Build
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -95,6 +100,10 @@ class MapViewmodel @Inject constructor(
     private val _isRouteActive = MutableStateFlow(false)
     val isRouteActive: StateFlow<Boolean> = _isRouteActive
 
+    // Navigation events
+    private val _navigationEvent = MutableStateFlow<NavigationEvent?>(null)
+    val navigationEvent: StateFlow<NavigationEvent?> = _navigationEvent
+
     private val enteredZones = mutableSetOf<String>()
     private val activeRadiationZones = mutableMapOf<String, RadiationData>()
     private var lastRadiationUpdate = System.currentTimeMillis()
@@ -106,6 +115,15 @@ class MapViewmodel @Inject constructor(
         observeActiveRoutes()
         startRadXDecayTimer()
         observeUserProfile()
+    }
+
+    fun onUserClick(userId: String) {
+        Log.d("MapViewmodel", "User marker clicked: $userId")
+        _navigationEvent.value = NavigationEvent.NavigateToUserDetails(userId)
+    }
+
+    fun clearNavigationEvent() {
+        _navigationEvent.value = null
     }
 
     private fun observeUserProfile() {
@@ -344,7 +362,7 @@ class MapViewmodel @Inject constructor(
                     activeRadiationZones[zoneId] = radSpot
                     Log.w(
                         "MapViewmodel",
-                        "Entered radiation zone: $zoneId (${radSpot.radiationLevelInSv} Sv)"
+                        "Entered radiation zone: $zoneId (${radSpot.radiationLevelInMSv} mSv)"
                     )
                 }
             }
@@ -373,7 +391,7 @@ class MapViewmodel @Inject constructor(
 
                     // Calculate total radiation from all active zones
                     val rawRadiation = activeRadiationZones.values.sumOf {
-                        it.radiationLevelInSv * RADIATION_MULTIPLIER
+                        it.radiationLevelInMSv * RADIATION_MULTIPLIER
                     }
 
                     // Apply radiation resistance (Rad-X effect)
@@ -475,7 +493,7 @@ class MapViewmodel @Inject constructor(
         _selectedRadiationMarker.value = radiationData
         Log.d(
             "MapViewmodel",
-            "Radiation marker selected: ${radiationData.radiationLevelInSv} Sv at ${radiationData.location}"
+            "Radiation marker selected: ${radiationData.radiationLevelInMSv} Sv at ${radiationData.location}"
         )
     }
 
@@ -496,7 +514,7 @@ class MapViewmodel @Inject constructor(
                 val radData = RadiationData(
                     id = UUID.randomUUID().toString(),
                     location = location,
-                    radiationLevelInSv = radiationLevel,
+                    radiationLevelInMSv = radiationLevel,
                     radius = radius,
                     timestamp = System.currentTimeMillis()
                 )
@@ -512,12 +530,55 @@ class MapViewmodel @Inject constructor(
         val zoneId = radData.id
 
         if (enteredZones.add(zoneId)) {
-            Log.w("MapViewmodel", "USER ENTERED RADIATION ZONE")
-            Log.w("MapViewmodel", "Location: ${radData.location}")
-            Log.w("MapViewmodel", "Radiation Level: ${radData.radiationLevelInSv} Sv")
-            Log.w("MapViewmodel", "Radius: ${radData.radius}m")
-
             _radiationAlert.value = radData
+
+            // Trigger vibration with intensity based on radiation level
+            triggerRadiationVibration(radData.radiationLevelInMSv)
+        }
+    }
+
+    private fun triggerRadiationVibration(radiationLevelInMSv: Double) {
+        try {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+                vibratorManager?.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            }
+
+            vibrator?.let {
+                // Calculate vibration intensity based on radiation level
+                // 0-0.1 mSv = Low (128), 0.1-1.0 mSv = Medium (192), >1.0 mSv = High (255)
+                val amplitude = when {
+                    radiationLevelInMSv < 0.1 -> 128
+                    radiationLevelInMSv < 1.0 -> 192
+                    else -> 255
+                }
+
+                val vibrateDuration = when {
+                    radiationLevelInMSv < 0.1 -> 300L
+                    radiationLevelInMSv < 1.0 -> 500L
+                    else -> 700L
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val pattern = longArrayOf(0, vibrateDuration, 200, vibrateDuration)
+                    val amplitudes = intArrayOf(0, amplitude, 0, amplitude)
+                    val effect = VibrationEffect.createWaveform(pattern, amplitudes, -1)
+                    it.vibrate(effect)
+
+                    Log.d("MapViewmodel", "Vibration triggered: ${radiationLevelInMSv}mSv -> amplitude=$amplitude, duration=${vibrateDuration}ms")
+                } else {
+                    // Fallback for older devices (can't control amplitude)
+                    @Suppress("DEPRECATION")
+                    it.vibrate(longArrayOf(0, vibrateDuration, 200, vibrateDuration), -1)
+
+                    Log.d("MapViewmodel", "Vibration triggered (legacy): ${radiationLevelInMSv}mSv -> duration=${vibrateDuration}ms")
+                }
+            } ?: Log.w("MapViewmodel", "Vibrator not available")
+        } catch (e: Exception) {
+            Log.e("MapViewmodel", "Failed to trigger vibration", e)
         }
     }
 
@@ -799,3 +860,6 @@ class MapViewmodel @Inject constructor(
     }
 }
 
+sealed class NavigationEvent {
+    data class NavigateToUserDetails(val userId: String) : NavigationEvent()
+}

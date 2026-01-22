@@ -82,7 +82,7 @@ class RadiationRepository(
             "lat" to d.location.latitude,
             "lng" to d.location.longitude
         ),
-        "radiationLevelInSv" to d.radiationLevelInSv,
+        "radiationLevelInMSv" to d.radiationLevelInMSv,
         "radius" to d.radius,
         "timestamp" to d.timestamp
     )
@@ -106,7 +106,7 @@ class RadiationRepository(
         return RadiationData(
             id = data["id"] as String,
             location = LatLng(lat, lng),
-            radiationLevelInSv = (data["radiationLevelInSv"] as? Double) ?: 0.0,
+            radiationLevelInMSv = (data["radiationLevelInMSv"] as? Double) ?: 0.0,
             radius = radius,
             timestamp = (data["timestamp"] as? Long) ?: 0L
         )

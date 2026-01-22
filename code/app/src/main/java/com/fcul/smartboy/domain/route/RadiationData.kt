@@ -5,7 +5,7 @@ import com.google.android.gms.maps.model.LatLng
 data class RadiationData(
     val id: String,
     val location: LatLng,
-    val radiationLevelInSv: Double,
+    val radiationLevelInMSv: Double,
     val radius: Double,
     val timestamp: Long
 )

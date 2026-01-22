@@ -21,10 +21,6 @@ class ProfileRepository(
 
     private val profilesRef get() = database.getReference(Path.USERS.path)
 
-    companion object {
-        private const val TAG = "ProfileRepository"
-    }
-
     override suspend fun create(document: Profile): String {
         profilesRef.child(document.userId).setValue(toMap(document)).await()
         Log.d(TAG, "Profile created for user: ${document.userId}")
@@ -266,6 +262,7 @@ class ProfileRepository(
 
     private fun toMap(d: Profile): Map<String, Any?> = mapOf(
         "userId" to d.userId,
+        "username" to d.username,
         "caps" to d.caps,
         "steps" to d.steps,
         "distance" to d.distance,
@@ -280,6 +277,7 @@ class ProfileRepository(
     private fun fromSnapshot(snapshot: DataSnapshot): Profile? {
         return try {
             val userId = snapshot.child("userId").getValue(String::class.java) ?: return null
+            val username = snapshot.child("username").getValue(String::class.java) ?: "Unknown"
             val caps = snapshot.child("caps").getValue(Long::class.java)?.toInt() ?: 0
             val steps = snapshot.child("steps").getValue(Long::class.java) ?: 0L
             val distance = snapshot.child("distance").getValue(Double::class.java) ?: 0.0
@@ -301,6 +299,7 @@ class ProfileRepository(
 
             Profile(
                 userId = userId,
+                username = username,
                 caps = caps,
                 steps = steps,
                 distance = distance,
@@ -313,5 +312,9 @@ class ProfileRepository(
             Log.e(TAG, "Error parsing profile from snapshot", e)
             null
         }
+    }
+
+    companion object {
+        private const val TAG = "ProfileRepository"
     }
 }

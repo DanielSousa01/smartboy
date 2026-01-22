@@ -1,6 +1,8 @@
 package com.fcul.smartboy.utils
 
+import android.location.Location
 import com.fcul.smartboy.domain.user.MeasurementUnit
+import com.google.android.gms.maps.model.LatLng
 import java.util.Locale
 
 /**
@@ -64,5 +66,17 @@ object MeasurementUtils {
                 }
             }
         }
+    }
+
+    fun calculateDistance(point1: LatLng, point2: LatLng): Double {
+        val results = FloatArray(1)
+        Location.distanceBetween(
+            point1.latitude,
+            point1.longitude,
+            point2.latitude,
+            point2.longitude,
+            results
+        )
+        return results[0].toDouble()
     }
 }

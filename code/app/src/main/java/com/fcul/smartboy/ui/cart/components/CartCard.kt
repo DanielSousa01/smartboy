@@ -37,7 +37,7 @@ fun CartCard(
         ) {
             Column {
                 Text(
-                    text = cart.userName,
+                    text = cart.userName ?: "Guest",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(vertical = 4.dp)
                 )

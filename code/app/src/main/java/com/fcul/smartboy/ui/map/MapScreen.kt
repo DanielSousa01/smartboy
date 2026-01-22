@@ -77,6 +77,7 @@ fun MapScreen(
     onClearPendingCheckpoints: () -> Unit,
     onClearSelectedCheckpoint: () -> Unit,
     onEndRoute: () -> Unit,
+    onUserMarkerClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -240,6 +241,7 @@ fun MapScreen(
             },
             onRadiationMarkerClick = onRadiationMarkerClick,
             onCheckpointMarkerClick = onCheckpointMarkerClick,
+            onUserMarkerClick = onUserMarkerClick,
             modifier = Modifier.fillMaxSize(),
         )
 

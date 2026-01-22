@@ -11,7 +11,7 @@
     <string name="dismiss">Fechar</string>
     <string name="steps_today">Passos dados hoje</string>
     <string name="goal">Objetivo</string>
-    <string name="steps">passos</string>
+    <string name="steps">Passos</string>
     <string name="radiation_exposure">Exposição à radiação</string>
     <string name="no_items_in_category">Nenhuns itens nesta categoria</string>
     <string name="messages">Mensagens</string>
@@ -42,4 +42,19 @@
     <string name="open_settings">Abrir definições</string>
     <string name="radiation_resistance">Resistencia a radiacao</string>
     <string name="active_rad_x">Efeito Rad-X ativo</string>
+    <string name="radiation_alert">Alerta de radiacao</string>
+    <string name="radiation_alert_message_1">Entrou numa zona de radiacao</string>
+    <string name="radiation_alert_message_2">Nivel:</string>
+    <string name="radiation_alert_message_3">Raio:</string>
+    <string name="add_radiation_point">Adicionar ponto de radiacao</string>
+    <string name="radiation_level_msv">Nivel de radiacao</string>
+    <string name="radius_meters">Radio (metros)</string>
+    <string name="error_valid_positive_number">Por favor insira um valor valido</string>
+    <string name="add">Adicionar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="user_details">Detalhes do utilizador</string>
+    <string name="send_message">Enviar mensagem</string>
+    <string name="level">Nivel</string>
+    <string name="loading_user">A carregar utilizador...</string>
+    <string name="error_loading_user">Erro ao carregar dados de utilizador</string>
 </resources>
