@@ -4,6 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -12,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.fcul.smartboy.domain.navigation.Screen
 import com.fcul.smartboy.ui.cart.CartScreen
+import com.fcul.smartboy.ui.cart.CartsListScreen
 import com.fcul.smartboy.ui.cart.CartViewmodel
 import com.fcul.smartboy.ui.chat.ChatMessagesScreen
 import com.fcul.smartboy.ui.chat.ChatViewmodel
@@ -28,6 +32,7 @@ import com.fcul.smartboy.ui.userdetails.UserDetailsScreen
 import com.fcul.smartboy.ui.userdetails.UserDetailsViewModel
 import com.fcul.smartboy.ui.wallet.WalletScreen
 import com.fcul.smartboy.ui.wallet.WalletViewModel
+import com.fcul.smartboy.utils.QRCodeScanner
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
@@ -195,31 +200,110 @@ fun NavGraph(
                 onSellingItemValueChange = viewModel::changeSellingItemValue
             )
         }
-        composable(Screen.Cart.route) {
+        composable(Screen.Carts.route) {
             val viewModel: CartViewmodel = hiltViewModel()
 
-            val currentCart by viewModel.currentCart.collectAsState()
+            val carts by viewModel.carts.collectAsState()
+            val isLoading by viewModel.isLoading.collectAsState()
+
+            var showScanner by remember { mutableStateOf(false) }
+
+            if (showScanner) {
+                QRCodeScanner(
+                    onQRCodeScanned = { qrData ->
+                        try {
+                            val parts = qrData.split("/")
+                            if (parts.size == 2) {
+                                val sellerId = parts[0]
+                                val itemId = parts[1].toLongOrNull()
+
+                                if (itemId != null) {
+                                    // Add item to cart (creates cart if doesn't exist)
+                                    viewModel.getSellingItem(sellerId, itemId)
+                                    // Navigate to the seller's cart
+                                    navController.navigate(Screen.Cart.createRoute(sellerId))
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // Invalid QR format
+                        }
+                        showScanner = false
+                    },
+                    onClose = {
+                        showScanner = false
+                    }
+                )
+            } else {
+                CartsListScreen(
+                    carts = carts,
+                    isLoading = isLoading,
+                    onCartSelected = { sellerId ->
+                        navController.navigate(Screen.Cart.createRoute(sellerId))
+                    },
+                    onScanProduct = {
+                        showScanner = true
+                    },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+        }
+        composable(Screen.Cart.route) { backStackEntry ->
+            val sellerId = backStackEntry.arguments?.getString("sellerId") ?: return@composable
+            val viewModel: CartViewmodel = hiltViewModel()
+
+            // Select this cart
+            LaunchedEffect(sellerId) {
+                viewModel.selectCart(sellerId)
+            }
+
+            val carts by viewModel.carts.collectAsState()
+            val selectedCart = carts[sellerId]
             val isLoading by viewModel.isLoading.collectAsState()
             val qrCodeBitmap by viewModel.qrCodeBitmap.collectAsState()
             val error by viewModel.error.collectAsState()
 
-            CartScreen(
-                currentCart = currentCart,
-                isLoading = isLoading,
-                qrCodeBitmap = qrCodeBitmap,
-                error = error,
-                onRemoveItem = viewModel::removeItemFromCart,
-                onUpdateQuantity = viewModel::updateItemQuantity,
-                onClearCart = viewModel::clearCart,
-                onGenerateQRCode = viewModel::generatePaymentQRCode,
-                onScanQRCode = {
-                    // TODO: Implement QR code scanner for adding products
-                    // This should open a QR scanner that scans product codes
-                    // and adds them to the cart
-                },
-                onDismissQRCode = viewModel::dismissQRCode,
-                onDismissError = viewModel::dismissError
-            )
+            var showScanner by remember { mutableStateOf(false) }
+
+            if (showScanner) {
+                QRCodeScanner(
+                    onQRCodeScanned = { qrData ->
+                        // Parse QR code format: sellerId/itemId
+                        try {
+                            val parts = qrData.split("/")
+                            if (parts.size == 2) {
+                                val scannedSellerId = parts[0]
+                                val itemId = parts[1].toLongOrNull()
+
+                                if (itemId != null) {
+                                    viewModel.getSellingItem(scannedSellerId, itemId)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // Invalid QR format
+                        }
+                        showScanner = false
+                    },
+                    onClose = {
+                        showScanner = false
+                    }
+                )
+            } else {
+                CartScreen(
+                    currentCart = selectedCart,
+                    isLoading = isLoading,
+                    qrCodeBitmap = qrCodeBitmap,
+                    error = error,
+                    onRemoveItem = viewModel::removeItemFromCart,
+                    onUpdateQuantity = viewModel::updateItemQuantity,
+                    onClearCart = viewModel::clearCart,
+                    onGenerateQRCode = viewModel::generatePaymentQRCode,
+                    onScanQRCode = {
+                        showScanner = true
+                    },
+                    onDismissQRCode = viewModel::dismissQRCode,
+                    onDismissError = viewModel::dismissError
+                )
+            }
         }
         composable(Screen.Wallet.route) {
             val viewModel: WalletViewModel = hiltViewModel()

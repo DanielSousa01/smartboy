@@ -3,14 +3,6 @@ package com.fcul.smartboy.ui.cart
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -19,22 +11,16 @@ import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.cart.Cart
-import com.fcul.smartboy.domain.cart.ProductId
-import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.ui.cart.components.CartItemCard
-import com.fcul.smartboy.ui.cart.components.CartItemDetails
-import com.fcul.smartboy.utils.QRCodeScanner
 
 @Composable
 fun CartScreen(
@@ -48,61 +34,8 @@ fun CartScreen(
     onGenerateQRCode: () -> Unit,
     onScanQRCode: () -> Unit,
     onDismissQRCode: () -> Unit,
-    onDismissError: () -> Unit,
-//    getSellingItem: (String, Long) -> SellingItem?
+    onDismissError: () -> Unit
 ) {
-    var readQR by remember { mutableStateOf(false) }
-    var selectedItem by remember { mutableStateOf<SellingItem?>(null) }
-
-//    if (readQR) {
-//        QRCodeScanner(
-//            onQRCodeScanned = { value ->
-//                Log.d("QRCodeScanner", "Scanned QR Code: $value")
-//                val productId = parseSellingId(value)
-//                val item = getSellingItem(productId.userId, productId.productId)
-//                readQR = false
-//
-//                if (item != null) {
-//                    selectedItem = item
-//                }
-//            },
-//            onClose = {
-//                readQR = false
-//            }
-//        )
-//    } else {
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(bottom = 16.dp)
-//                .weight(1f),
-//            horizontalArrangement = Arrangement.spacedBy(8.dp)
-//        ) {
-//            LazyColumn(
-//                modifier = Modifier.fillMaxSize(),
-//                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
-//            ) {
-//                if (cart.items.isNotEmpty()) {
-//                    items(cart.items) { item ->
-//                        CartItemCard(
-//                            item = item,
-//                            onRemove = {
-//                                // Handle item removal
-//                            }
-//                        )
-//                    }
-//                } else {
-//                    item {
-//                        Text(
-//                            text = "No carts available",
-//                            style = MaterialTheme.typography.bodyMedium,
-//                            modifier = Modifier.padding(vertical = 4.dp)
-//                        )
-//                    }
-//                }
-//            }
-//        }
-
 
     Scaffold { paddingValues ->
         Box(
@@ -130,79 +63,36 @@ fun CartScreen(
 
                 else -> {
                     Text(
-                        text = "Failed to load cart",
+                        text = stringResource(R.string.cart_fail_load),
                         modifier = Modifier.align(Alignment.Center)
                     )
-
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = cart.userName?.let { "Cart for $it Items" } ?: "New Cart",
-                            style = MaterialTheme.typography.headlineLarge,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                        if (selectedItem != null) {
-                            CartItemDetails(
-                                item = selectedItem!!,
-                                buyingView = true,
-                                onDismiss = { selectedItem = null },
-                                onAddToCart = {},
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Button(
-                                onClick = {
-                                    readQR = true
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Add Item")
-                            }
-                        }
-                    }
-                }
-
-                // QR Code Dialog
-                qrCodeBitmap?.let { bitmap ->
-                    QRCodeDialog(
-                        bitmap = bitmap,
-                        totalPrice = currentCart?.totalPrice ?: 0,
-                        onDismiss = onDismissQRCode
-                    )
-                }
-
-                        // Error Snackbar
-                        error ?. let { errorMessage ->
-                    Snackbar(
-                        modifier = Modifier.padding(16.dp),
-                        action = {
-                            TextButton(onClick = onDismissError) {
-                                Text("Dismiss")
-                            }
-                        }
-                    ) {
-                        Text(errorMessage)
-                    }
                 }
             }
         }
     }
-}
 
-private fun parseSellingId(id: String): ProductId {
-    val values = id.split("/")
-    return ProductId(values[0], values[1].toLong())
+    // QR Code Dialog
+    qrCodeBitmap?.let { bitmap ->
+        QRCodeDialog(
+            bitmap = bitmap,
+            totalPrice = currentCart?.totalPrice ?: 0,
+            onDismiss = onDismissQRCode
+        )
+    }
+
+    // Error Snackbar
+    error?.let { errorMessage ->
+        Snackbar(
+            modifier = Modifier.padding(16.dp),
+            action = {
+                TextButton(onClick = onDismissError) {
+                    Text(stringResource(R.string.dismiss))
+                }
+            }
+        ) {
+            Text(errorMessage)
+        }
+    }
 }
 
 @Composable
@@ -226,7 +116,7 @@ private fun CartContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Shopping Cart",
+                text = stringResource(R.string.cart),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -235,7 +125,7 @@ private fun CartContent(
                 IconButton(onClick = onClearCart) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Clear cart"
+                        contentDescription = stringResource(R.string.cart_clear)
                     )
                 }
             }
@@ -254,7 +144,7 @@ private fun CartContent(
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Scan Product QR Code")
+            Text(stringResource(R.string.qr_scan_product))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -272,13 +162,13 @@ private fun CartContent(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Your cart is empty",
+                        text = stringResource(R.string.cart_empty),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Browse the marketplace to add items",
+                        text = stringResource(R.string.browse_marketplace),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -323,7 +213,7 @@ private fun CartContent(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "${cart.totalPrice} Caps",
+                            text = "${cart.totalPrice} ${R.string.caps}",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -350,7 +240,7 @@ private fun CartContent(
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Generate Payment QR Code")
+                        Text(stringResource(R.string.qr_generate_payment))
                     }
                 }
             }
@@ -375,7 +265,7 @@ private fun QRCodeDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Payment QR Code",
+                    text = stringResource(R.string.qr_payment),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -383,7 +273,7 @@ private fun QRCodeDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Show this QR code to the seller",
+                    text = stringResource(R.string.qr_show),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -393,7 +283,7 @@ private fun QRCodeDialog(
                 // QR Code
                 Image(
                     bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Payment QR Code",
+                    contentDescription = stringResource(R.string.qr_payment),
                     modifier = Modifier.size(300.dp)
                 )
 
@@ -415,7 +305,7 @@ private fun QRCodeDialog(
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = "$totalPrice Caps",
+                            text = "$totalPrice ${stringResource(R.string.caps)}",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -426,7 +316,7 @@ private fun QRCodeDialog(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 TextButton(onClick = onDismiss) {
-                    Text("Close")
+                    Text(stringResource(R.string.close))
                 }
             }
         }

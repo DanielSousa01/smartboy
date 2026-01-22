@@ -36,7 +36,7 @@ fun AddRadPointDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.add_radiation_point)) },
+        title = { Text(stringResource(R.string.rad_add_radiation_point)) },
         text = {
             Column {
                 Text(
@@ -56,12 +56,12 @@ fun AddRadPointDialog(
                         radiationLevelText = it
                         radiationLevelError = false
                     },
-                    label = { Text(stringResource(R.string.radiation_level_msv)) },
-                    placeholder = { Text(stringResource(R.string.radiation_level_placeholder)) },
+                    label = { Text(stringResource(R.string.rad_level_msv)) },
+                    placeholder = { Text(stringResource(R.string.rad_level_placeholder)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = radiationLevelError,
                     supportingText = if (radiationLevelError) {
-                        { Text(stringResource(R.string.error_valid_positive_number)) }
+                        { Text(stringResource(R.string.rad_error_valid_positive_number)) }
                     } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -74,12 +74,12 @@ fun AddRadPointDialog(
                         radiusText = it
                         radiusError = false
                     },
-                    label = { Text(stringResource(R.string.radius_meters)) },
-                    placeholder = { Text(stringResource(R.string.radius_placeholder)) },
+                    label = { Text(stringResource(R.string.rad_radius_meters)) },
+                    placeholder = { Text(stringResource(R.string.rad_radius_placeholder)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = radiusError,
                     supportingText = if (radiusError) {
-                        { Text(stringResource(R.string.error_valid_positive_number)) }
+                        { Text(stringResource(R.string.rad_error_valid_positive_number)) }
                     } else null,
                     modifier = Modifier.fillMaxWidth()
                 )

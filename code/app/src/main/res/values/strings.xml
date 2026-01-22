@@ -12,7 +12,7 @@
     <string name="steps_today">Steps today</string>
     <string name="goal">Goal</string>
     <string name="steps">Steps</string>
-    <string name="radiation_exposure">Radiation exposure</string>
+    <string name="rad_exposure">Radiation exposure</string>
     <string name="no_items_in_category">No items in this category</string>
     <string name="messages">Messages</string>
     <string name="sign_in_failed">There was an error signing in</string>
@@ -35,27 +35,27 @@
     <string name="metric">Metric (km, m)</string>
     <string name="imperial">Imperial (mi, ft)</string>
     <string name="preferences">Preferences</string>
-    <string name="create_rad">Create RAD</string>
+    <string name="rad_create">Create RAD</string>
     <string name="create_checkpoint">Create checkpoint</string>
     <string name="end_route">End route</string>
     <string name="clear_checkpoints">Clear checkpoints</string>
     <string name="start_route">Start route</string>
     <string name="clear_selected_checkpoint">Clear selected checkpoint</string>
     <string name="open_settings">Open settings</string>
-    <string name="radiation_resistance">Radiation resistance</string>
-    <string name="active_rad_x">Active Rad-X Effect</string>
-    <string name="radiation_alert">Radiation Alert</string>
-    <string name="radiation_alert_message_1">You have entered a radiation zone!</string>
-    <string name="radiation_alert_message_2">Level:</string>
-    <string name="radiation_alert_message_3">Radius</string>
+    <string name="rad_resistance">Radiation resistance</string>
+    <string name="rad_active_rad_x">Active Rad-X Effect</string>
+    <string name="rad_alert">Radiation Alert</string>
+    <string name="rad_alert_message_1">You have entered a radiation zone!</string>
+    <string name="rad_alert_message_2">Level:</string>
+    <string name="rad_alert_message_3">Radius</string>
     <string name="confirm" translatable="false">OK</string>
-    <string name="add_radiation_point">Add Radiation Point</string>
+    <string name="rad_add_radiation_point">Add Radiation Point</string>
     <string name="location_format" translatable="false">Location: %1$s, %2$s</string>
-    <string name="radiation_level_msv">Radiation Level (mSv)</string>
-    <string name="radiation_level_placeholder" translatable="false">e.g., 0.05</string>
-    <string name="radius_meters">Radius (meters)</string>
-    <string name="radius_placeholder" translatable="false">e.g., 100</string>
-    <string name="error_valid_positive_number">Please enter a valid positive number</string>
+    <string name="rad_level_msv">Radiation Level (mSv)</string>
+    <string name="rad_level_placeholder" translatable="false">e.g., 0.05</string>
+    <string name="rad_radius_meters">Radius (meters)</string>
+    <string name="rad_radius_placeholder" translatable="false">e.g., 100</string>
+    <string name="rad_error_valid_positive_number">Please enter a valid positive number</string>
     <string name="add">Add</string>
     <string name="cancel">Cancel</string>
     <string name="user_details">User Details</string>
@@ -63,4 +63,13 @@
     <string name="level">Level</string>
     <string name="loading_user">Loading user…</string>
     <string name="error_loading_user">Error loading user data</string>
+    <string name="close">Close</string>
+    <string name="qr_payment">Payment QR Code</string>
+    <string name="qr_show">Show this QR code to the seller</string>
+    <string name="qr_generate_payment">Generate Payment QR Code</string>
+    <string name="browse_marketplace">Browse the marketplace to add items</string>
+    <string name="cart_empty">Your cart is empty</string>
+    <string name="qr_scan_product">Scan product QR code</string>
+    <string name="cart_clear">Clear Cart</string>
+    <string name="cart_fail_load">Failed to load cart</string>
 </resources>

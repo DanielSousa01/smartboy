@@ -54,10 +54,10 @@ fun FloatingMenu(
             icon = {
                 Icon(
                     Icons.Default.Add,
-                    contentDescription = stringResource(R.string.create_rad)
+                    contentDescription = stringResource(R.string.rad_create)
                 )
             },
-            text = { Text(stringResource(R.string.create_rad)) },
+            text = { Text(stringResource(R.string.rad_create)) },
             onClick = { closeAnd(onAddRadPoint) }
         )
         if (isRouteActive) {

@@ -38,10 +38,10 @@ fun RadiationAlertDialog(
         title = { Text("Radiation Zone Warning") },
         text = {
             Column {
-                Text(stringResource(R.string.radiation_alert_message_1))
+                Text(stringResource(R.string.rad_alert_message_1))
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.radiation_alert_message_2) + radiationAlert.radiationLevelInMSv + "MSv")
-                Text(stringResource(R.string.radiation_alert_message_3) + radiationAlert.radius + "m")
+                Text(stringResource(R.string.rad_alert_message_2) + radiationAlert.radiationLevelInMSv + "MSv")
+                Text(stringResource(R.string.rad_alert_message_3) + radiationAlert.radius + "m")
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(

@@ -30,7 +30,10 @@ sealed class Screen(
     }
 
     object Inventory : Screen("inventory", R.string.inventory, Icons.Default.Star)
-    object Cart : Screen("cart", R.string.cart, Icons.Default.ShoppingCart)
+    object Carts : Screen("carts", R.string.cart, Icons.Default.ShoppingCart)
+    object Cart : Screen("cart/{sellerId}", R.string.cart, Icons.Default.ShoppingCart) {
+        fun createRoute(sellerId: String) = "cart/$sellerId"
+    }
     object Wallet : Screen("wallet", R.string.wallet, Icons.Default.AccountBox)
     object Settings : Screen("settings", R.string.settings, Icons.Default.Settings)
 
@@ -42,6 +45,7 @@ sealed class Screen(
             ChatMessages,
             UserDetails,
             Inventory,
+            Carts,
             Cart,
             Wallet,
             Settings

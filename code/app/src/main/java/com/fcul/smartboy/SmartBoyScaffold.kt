@@ -92,7 +92,7 @@ fun SmartBoyScaffold(
                         },
                         onShoppingCartClick = {
                             scope.launch {
-                                navController.navigate(Screen.Cart.route) {
+                                navController.navigate(Screen.Carts.route) {
                                     launchSingleTop = true
                                 }
                             }

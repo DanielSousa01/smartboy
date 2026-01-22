@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.R
@@ -22,15 +23,6 @@ fun CartItemCard(
     onRemove: () -> Unit,
     onQuantityChange: ((Int) -> Unit)? = null
 ) {
-    var isItemDetailsOpen by remember { mutableStateOf(false) }
-
-    if (isItemDetailsOpen) {
-        CartItemDetails(
-            item = item,
-            onRemove = onRemove,
-            onDismiss = { isItemDetailsOpen = false }
-        )
-    }
 
     Card(
         modifier = Modifier
@@ -172,7 +164,7 @@ fun CartItemCard(
                     )
                     Icon(
                         painter = painterResource(id = R.drawable.capicon),
-                        contentDescription = "Caps",
+                        contentDescription = stringResource(R.string.caps),
                         tint = Color.Unspecified,
                         modifier = Modifier.size(20.dp)
                     )

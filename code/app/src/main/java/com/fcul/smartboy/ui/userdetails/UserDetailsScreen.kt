@@ -161,7 +161,7 @@ fun UserDetailsContent(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     StatRow(
-                        label = stringResource(R.string.radiation_exposure),
+                        label = stringResource(R.string.rad_exposure),
                         value = String.format(Locale.US, "%.2f Sv", profile.radiation)
                     )
                 }

@@ -221,7 +221,7 @@ fun ProfileScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.radiation_exposure),
+                    text = stringResource(R.string.rad_exposure),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -252,10 +252,10 @@ fun ProfileScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Shield,
-                            contentDescription = stringResource(R.string.radiation_resistance),
+                            contentDescription = stringResource(R.string.rad_resistance),
                         )
                         Text(
-                            text = stringResource(R.string.radiation_resistance),
+                            text = stringResource(R.string.rad_resistance),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -267,7 +267,7 @@ fun ProfileScreen(
                         color = MaterialTheme.colorScheme.tertiary
                     )
                     Text(
-                        text = stringResource(R.string.active_rad_x),
+                        text = stringResource(R.string.rad_active_rad_x),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
                     )
