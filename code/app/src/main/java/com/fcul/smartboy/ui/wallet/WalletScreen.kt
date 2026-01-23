@@ -12,15 +12,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.transaction.Transaction
-import java.text.SimpleDateFormat
-import java.util.Locale
+import com.fcul.smartboy.ui.common.ErrorSnackbar
+import com.fcul.smartboy.ui.wallet.components.TransactionEntry
 
 @Composable
 fun WalletScreen(
     transactions: List<Transaction>,
     isLoading: Boolean,
-    error: String?
+    error: WalletError?,
+    onDismissError: () -> Unit,
 ) {
+    val errorMessage = when (error) {
+        is WalletError.FailedToLoadTransactions -> stringResource(R.string.error_wallet_failed_to_load_transactions)
+        else -> null
+    }
+
     Scaffold { paddingValues ->
         Box(
             modifier = Modifier
@@ -32,26 +38,6 @@ fun WalletScreen(
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
-                }
-
-                error != null -> {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Error loading transactions",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
                 }
 
                 transactions.isEmpty() -> {
@@ -100,74 +86,10 @@ fun WalletScreen(
                 }
             }
         }
+
+        ErrorSnackbar(
+            errorMessage = errorMessage,
+            onDismissError = onDismissError
+        )
     }
 }
-
-@Composable
-private fun TransactionEntry(transaction: Transaction) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = if (transaction.amount >= 0) {
-                        stringResource(R.string.receive_caps)
-                    } else {
-                        stringResource(R.string.send_caps)
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = transaction.userDestination.username,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = formatDate(transaction.date),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                val absAmount = kotlin.math.abs(transaction.amount).toInt()
-                val amountColor = if (transaction.amount >= 0) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                }
-
-                Text(
-                    text = if (transaction.amount >= 0) "+$absAmount" else "-$absAmount",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = amountColor
-                )
-                Text(
-                    text = stringResource(R.string.caps),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-private fun formatDate(date: java.util.Date): String {
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
-    return dateFormat.format(date)
-}
-

@@ -1,6 +1,5 @@
-package com.fcul.smartboy.ui.map
+package com.fcul.smartboy.ui.map.vm
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location.distanceBetween
 import android.os.Build
@@ -17,11 +16,13 @@ import com.fcul.smartboy.data.api.RoutesRepository.RouteResult
 import com.fcul.smartboy.domain.route.ActiveRoute
 import com.fcul.smartboy.domain.route.RadiationData
 import com.fcul.smartboy.domain.route.RouteInfo
+import com.fcul.smartboy.domain.user.MeasurementUnit
 import com.fcul.smartboy.domain.user.Profile
 import com.fcul.smartboy.repository.ProfileRepository
 import com.fcul.smartboy.repository.radiation.RadiationRepository
 import com.fcul.smartboy.repository.route.ActiveRouteRepository
 import com.fcul.smartboy.utils.MeasurementUtils
+import com.fcul.smartboy.utils.MeasurementUtils.formatDuration
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -32,6 +33,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.maps.android.PolyUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -40,7 +42,7 @@ import javax.inject.Inject
 import kotlin.math.roundToLong
 
 @HiltViewModel
-class MapViewmodel @Inject constructor(
+class MapViewModel @Inject constructor(
     private val radiationRepository: RadiationRepository,
     private val profileRepository: ProfileRepository,
     private val routesRepository: RoutesRepository,
@@ -118,7 +120,7 @@ class MapViewmodel @Inject constructor(
     }
 
     fun onUserClick(userId: String) {
-        Log.d("MapViewmodel", "User marker clicked: $userId")
+        Log.d(TAG, "User marker clicked: $userId")
         _navigationEvent.value = NavigationEvent.NavigateToUserDetails(userId)
     }
 
@@ -131,7 +133,7 @@ class MapViewmodel @Inject constructor(
         viewModelScope.launch {
             profileRepository.observeProfile(userId).collect { profile ->
                 _userProfile.value = profile
-                Log.d("MapViewmodel", "User profile updated: preferences=${profile?.preferences}")
+                Log.d(TAG, "User profile updated: preferences=${profile?.preferences}")
             }
         }
     }
@@ -142,7 +144,7 @@ class MapViewmodel @Inject constructor(
                 locationClient.lastLocation.addOnSuccessListener { location ->
                     if (location != null) {
                         Log.d(
-                            "MapViewmodel",
+                            TAG,
                             "Got last location: ${location.latitude}, ${location.longitude}"
                         )
                         updateCurrentLocation(
@@ -150,35 +152,35 @@ class MapViewmodel @Inject constructor(
                         )
                     } else {
                         Log.w(
-                            "MapViewmodel",
+                            TAG,
                             "Last location is null, location updates should provide location"
                         )
                     }
                 }.addOnFailureListener { e ->
-                    Log.e("MapViewmodel", "Failed to get last location: ${e.message}")
+                    Log.e(TAG, "Failed to get last location: ${e.message}")
                 }
             } catch (e: SecurityException) {
-                Log.e("MapViewmodel", "Location permission not granted", e)
+                Log.e(TAG, "Location permission not granted", e)
             }
         }
     }
 
     fun startLocationUpdates() {
         if (locationCallback != null) {
-            Log.d("MapViewmodel", "Location updates already started")
+            Log.d(TAG, "Location updates already started")
             return
         }
 
         val request = LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
-            3000L
-        ).setMinUpdateIntervalMillis(1500L).build()
+            LOCATION_UPDATE_INTERVAL
+        ).setMinUpdateIntervalMillis(LOCATION_MIN_UPDATE_INTERVAL_TIME).build()
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 result.lastLocation?.let { location ->
                     Log.d(
-                        "MapViewmodel",
+                        TAG,
                         "Location update: ${location.latitude}, ${location.longitude}"
                     )
                     updateCurrentLocation(
@@ -189,14 +191,14 @@ class MapViewmodel @Inject constructor(
         }
 
         try {
-            Log.d("MapViewmodel", "Starting location updates...")
+            Log.d(TAG, "Starting location updates...")
             locationClient.requestLocationUpdates(
                 request,
                 locationCallback!!,
                 Looper.getMainLooper()
             )
         } catch (e: SecurityException) {
-            Log.e("MapViewmodel", "Location permission not granted", e)
+            Log.e(TAG, "Location permission not granted", e)
             locationCallback = null
         }
     }
@@ -211,14 +213,14 @@ class MapViewmodel @Inject constructor(
     private fun startRadXDecayTimer() {
         viewModelScope.launch {
             while (true) {
-                kotlinx.coroutines.delay(RADX_DECAY_INTERVAL)
+                delay(RADX_DECAY_INTERVAL)
 
                 val userId = auth.currentUser?.uid
                 if (userId != null) {
                     try {
                         profileRepository.decayRadXEffect(userId)
                     } catch (e: Exception) {
-                        Log.e("MapViewmodel", "Failed to decay Rad-X effect: ${e.message}")
+                        Log.e(TAG, "Failed to decay Rad-X effect: ${e.message}")
                     }
                 }
             }
@@ -246,7 +248,7 @@ class MapViewmodel @Inject constructor(
                 val spots = radiationRepository.filter(loc, radiusMeters)
                 _radSpots.value = spots
             } catch (e: Exception) {
-                Log.e("MapViewmodel", "Failed to load radiation spots: ${e.message}")
+                Log.e(TAG, "Failed to load radiation spots: ${e.message}")
             }
         }
     }
@@ -268,25 +270,25 @@ class MapViewmodel @Inject constructor(
         }
 
         // Check if user has deviated too far from the route
-        if (minDistance > MAX_ROUTE_DEVIATION_METERS) {
+        if (minDistance > ROUTE_MAX_DEVIATION_METERS) {
             val currentTime = System.currentTimeMillis()
             val timeSinceLastRecalc = currentTime - lastRouteRecalculation
 
             if (timeSinceLastRecalc >= ROUTE_RECALC_COOLDOWN) {
-                Log.w("MapViewmodel", "User deviated ${minDistance}m from route, recalculating...")
+                Log.w(TAG, "User deviated ${minDistance}m from route, recalculating...")
                 lastRouteRecalculation = currentTime
                 recalculateRouteFromCurrentLocation()
                 return
             } else {
                 Log.d(
-                    "MapViewmodel",
+                    TAG,
                     "User off route but cooldown active (${timeSinceLastRecalc}ms < ${ROUTE_RECALC_COOLDOWN}ms)"
                 )
             }
         }
 
         // If user is close to the route (within threshold), update the drawing
-        if (minDistance <= MAX_ROUTE_DEVIATION_METERS) {
+        if (minDistance <= ROUTE_MAX_DEVIATION_METERS) {
             // Traveled path: all points from start up to current position + current location
             val traveled = fullRoute.take(closestIndex + 1).toMutableList()
             traveled.add(currentLocation)
@@ -298,7 +300,7 @@ class MapViewmodel @Inject constructor(
             _remainingRoute.value = remaining
 
             Log.d(
-                "MapViewmodel",
+                TAG,
                 "Route drawing: ${traveled.size} traveled, ${remaining.size} remaining (${minDistance}m from route)"
             )
         }
@@ -311,7 +313,7 @@ class MapViewmodel @Inject constructor(
 
         // Find which checkpoints are still ahead
         val closestCheckpointIndex = checkpoints.indexOfFirst { checkpoint ->
-            calculateDistance(currentLoc, checkpoint) < CHECKPOINT_TRIGGER_DISTANCE
+            calculateDistance(currentLoc, checkpoint) < ROUTE_CHECKPOINT_TRIGGER_DISTANCE
         }
 
         val remainingCheckpoints = if (closestCheckpointIndex >= 0) {
@@ -321,9 +323,9 @@ class MapViewmodel @Inject constructor(
                 viewModelScope.launch {
                     try {
                         profileRepository.addCaps(userId, CAPS_PER_CHECKPOINT)
-                        Log.i("MapViewmodel", "✅ Checkpoint reached! Awarded $CAPS_PER_CHECKPOINT caps")
+                        Log.i(TAG, "✅ Checkpoint reached! Awarded $CAPS_PER_CHECKPOINT caps")
                     } catch (e: Exception) {
-                        Log.e("MapViewmodel", "Failed to award checkpoint caps", e)
+                        Log.e(TAG, "Failed to award checkpoint caps", e)
                     }
                 }
             }
@@ -336,14 +338,14 @@ class MapViewmodel @Inject constructor(
         }
 
         if (remainingCheckpoints.isEmpty()) {
-            Log.i("MapViewmodel", "All checkpoints reached, ending route")
+            Log.i(TAG, "All checkpoints reached, ending route")
             endRoute()
             return
         }
 
         // Recalculate route from current location
         Log.i(
-            "MapViewmodel",
+            TAG,
             "Recalculating route from current location to ${remainingCheckpoints.size} checkpoints"
         )
         fetchRoutePolyline(
@@ -372,7 +374,7 @@ class MapViewmodel @Inject constructor(
                     // Just entered this zone
                     activeRadiationZones[zoneId] = radSpot
                     Log.w(
-                        "MapViewmodel",
+                        TAG,
                         "Entered radiation zone: $zoneId (${radSpot.radiationLevelInMSv} mSv)"
                     )
                 }
@@ -383,7 +385,7 @@ class MapViewmodel @Inject constructor(
         val zonesToRemove = activeRadiationZones.keys.filter { it !in currentZoneIds }
         zonesToRemove.forEach { zoneId ->
             activeRadiationZones.remove(zoneId)
-            Log.i("MapViewmodel", "Left radiation zone: $zoneId")
+            Log.i(TAG, "Left radiation zone: $zoneId")
         }
     }
 
@@ -424,19 +426,19 @@ class MapViewmodel @Inject constructor(
 
                     if (resistance > 0) {
                         Log.w(
-                            "MapViewmodel",
+                            TAG,
                             "Radiation damage: +${actualRadiation} Sv (${rawRadiation} reduced by ${resistance * 100}%), -${stepsToDeduct} steps"
                         )
                     } else {
                         Log.w(
-                            "MapViewmodel",
+                            TAG,
                             "Radiation damage: +${actualRadiation} Sv, -${stepsToDeduct} steps"
                         )
                     }
 
                     lastRadiationUpdate = currentTime
                 } catch (e: Exception) {
-                    Log.e("MapViewmodel", "Failed to apply radiation damage", e)
+                    Log.e(TAG, "Failed to apply radiation damage", e)
                 }
             }
         }
@@ -446,11 +448,11 @@ class MapViewmodel @Inject constructor(
     fun addPendingCheckpoint() {
         val selected = _selectedPoint.value
         if (selected == null) {
-            Log.w("MapViewmodel", "No point selected to add as checkpoint")
+            Log.w(TAG, "No point selected to add as checkpoint")
             return
         }
         _pendingCheckpoints.value += selected
-        Log.i("MapViewmodel", "Checkpoint added, total: ${_pendingCheckpoints.value.size}")
+        Log.i(TAG, "Checkpoint added, total: ${_pendingCheckpoints.value.size}")
     }
 
     fun clearPendingCheckpoints() {
@@ -464,26 +466,26 @@ class MapViewmodel @Inject constructor(
         if (selectedMarker != null) {
             _pendingCheckpoints.value = _pendingCheckpoints.value.filter { it != selectedMarker }
             _selectedCheckpointMarker.value = null
-            Log.d("MapViewmodel", "Removed checkpoint: $selectedMarker")
+            Log.d(TAG, "Removed checkpoint: $selectedMarker")
         } else {
-            Log.w("MapViewmodel", "No checkpoint selected to remove")
+            Log.w(TAG, "No checkpoint selected to remove")
         }
     }
 
     fun startRoute() {
         if (_pendingCheckpoints.value.size < 2) {
-            Log.e("MapViewmodel", "Need at least 2 checkpoints to start route")
+            Log.e(TAG, "Need at least 2 checkpoints to start route")
             return
         }
 
-        Log.i("MapViewmodel", "Starting route with ${_pendingCheckpoints.value.size} checkpoints")
+        Log.i(TAG, "Starting route with ${_pendingCheckpoints.value.size} checkpoints")
         fetchRouteForPendingCheckpoints()
 
         _isRouteActive.value = true
 
         saveActiveRouteToFirestore()
 
-        Log.i("MapViewmodel", "Route activated and saved to Firestore")
+        Log.i(TAG, "Route activated and saved to Firestore")
     }
 
     fun endRoute() {
@@ -508,7 +510,7 @@ class MapViewmodel @Inject constructor(
                     if (totalReward > 0) {
                         profileRepository.addCaps(userId, totalReward)
                         Log.i(
-                            "MapViewmodel",
+                            TAG,
                             "🎉 Route completed! Awarded $totalReward caps " +
                                     "(Base: $ROUTE_COMPLETION_BASE_CAPS, " +
                                     "Distance: $distanceReward for ${distanceKm.roundToLong()}km, " +
@@ -516,7 +518,7 @@ class MapViewmodel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
-                    Log.e("MapViewmodel", "Failed to award route completion caps", e)
+                    Log.e(TAG, "Failed to award route completion caps", e)
                 }
             }
         }
@@ -527,7 +529,7 @@ class MapViewmodel @Inject constructor(
         clearPendingCheckpoints()
         endActiveRouteInFirestore()
 
-        Log.i("MapViewmodel", "Route ended and removed from Firestore")
+        Log.i(TAG, "Route ended and removed from Firestore")
     }
 
     private fun calculateTotalDistance(path: List<LatLng>): Double {
@@ -547,20 +549,20 @@ class MapViewmodel @Inject constructor(
     fun onRadiationMarkerClick(radiationData: RadiationData) {
         _selectedRadiationMarker.value = radiationData
         Log.d(
-            "MapViewmodel",
+            TAG,
             "Radiation marker selected: ${radiationData.radiationLevelInMSv} Sv at ${radiationData.location}"
         )
     }
 
     fun onCheckpointMarkerClick(checkpoint: LatLng) {
         _selectedCheckpointMarker.value = checkpoint
-        Log.d("MapViewmodel", "Checkpoint marker selected: $checkpoint")
+        Log.d(TAG, "Checkpoint marker selected: $checkpoint")
     }
 
     fun clearMarkerSelection() {
         _selectedRadiationMarker.value = null
         _selectedCheckpointMarker.value = null
-        Log.d("MapViewmodel", "Marker selection cleared")
+        Log.d(TAG, "Marker selection cleared")
     }
 
     fun createRadPoint(location: LatLng, radiationLevel: Double, radius: Double) {
@@ -576,7 +578,7 @@ class MapViewmodel @Inject constructor(
                 radiationRepository.create(radData)
                 loadRadSpots()
             } catch (e: Exception) {
-                Log.e("MapViewmodel", "Failed to create radiation point: ${e.message}")
+                Log.e(TAG, "Failed to create radiation point: ${e.message}")
             }
         }
     }
@@ -598,7 +600,7 @@ class MapViewmodel @Inject constructor(
                 val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
                 vibratorManager?.defaultVibrator
             } else {
-                @Suppress("DEPRECATION")
+                @Suppress(TAG)
                 context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
             }
 
@@ -606,15 +608,15 @@ class MapViewmodel @Inject constructor(
                 // Calculate vibration intensity based on radiation level
                 // 0-0.1 mSv = Low (128), 0.1-1.0 mSv = Medium (192), >1.0 mSv = High (255)
                 val amplitude = when {
-                    radiationLevelInMSv < 0.1 -> 128
-                    radiationLevelInMSv < 1.0 -> 192
-                    else -> 255
+                    radiationLevelInMSv < RAD_LOW_THRESHOLD -> VIBRATION_LOW_AMPLITUDE
+                    radiationLevelInMSv < RAD_MEDIUM_THRESHOLD -> VIBRATION_MEDIUM_AMPLITUDE
+                    else -> VIBRATION_HIGH_AMPLITUDE
                 }
 
                 val vibrateDuration = when {
-                    radiationLevelInMSv < 0.1 -> 300L
-                    radiationLevelInMSv < 1.0 -> 500L
-                    else -> 700L
+                    radiationLevelInMSv < RAD_LOW_THRESHOLD -> VIBRATION_LOW_DURATION
+                    radiationLevelInMSv < RAD_MEDIUM_THRESHOLD -> VIBRATION_MEDIUM_DURATION
+                    else -> VIBRATION_HIGH_DURATION
                 }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -623,17 +625,17 @@ class MapViewmodel @Inject constructor(
                     val effect = VibrationEffect.createWaveform(pattern, amplitudes, -1)
                     it.vibrate(effect)
 
-                    Log.d("MapViewmodel", "Vibration triggered: ${radiationLevelInMSv}mSv -> amplitude=$amplitude, duration=${vibrateDuration}ms")
+                    Log.d(TAG, "Vibration triggered: ${radiationLevelInMSv}mSv -> amplitude=$amplitude, duration=${vibrateDuration}ms")
                 } else {
                     // Fallback for older devices (can't control amplitude)
                     @Suppress("DEPRECATION")
                     it.vibrate(longArrayOf(0, vibrateDuration, 200, vibrateDuration), -1)
 
-                    Log.d("MapViewmodel", "Vibration triggered (legacy): ${radiationLevelInMSv}mSv -> duration=${vibrateDuration}ms")
+                    Log.d(TAG, "Vibration triggered (legacy): ${radiationLevelInMSv}mSv -> duration=${vibrateDuration}ms")
                 }
-            } ?: Log.w("MapViewmodel", "Vibrator not available")
+            } ?: Log.w(TAG, "Vibrator not available")
         } catch (e: Exception) {
-            Log.e("MapViewmodel", "Failed to trigger vibration", e)
+            Log.e(TAG, "Failed to trigger vibration", e)
         }
     }
 
@@ -671,22 +673,22 @@ class MapViewmodel @Inject constructor(
                     origin
                 }
 
-                Log.d("MapViewmodel", "========================================")
-                Log.d("MapViewmodel", "fetchRoutePolyline called")
+                Log.d(TAG, "========================================")
+                Log.d(TAG, "fetchRoutePolyline called")
                 Log.d(
-                    "MapViewmodel",
+                    TAG,
                     "Origin: ${actualOrigin.latitude}, ${actualOrigin.longitude} (current location: $useCurrentLocationAsOrigin)"
                 )
                 Log.d(
-                    "MapViewmodel",
+                    TAG,
                     "Destination: ${destination.latitude}, ${destination.longitude}"
                 )
-                Log.d("MapViewmodel", "Waypoints: ${waypoints.size}")
+                Log.d(TAG, "Waypoints: ${waypoints.size}")
                 Log.d(
-                    "MapViewmodel",
+                    TAG,
                     "API Key: ${if (apiKey.isBlank()) "EMPTY/BLANK" else "Present (${apiKey.take(10)}...)"}"
                 )
-                Log.d("MapViewmodel", "========================================")
+                Log.d(TAG, "========================================")
 
                 if (apiKey.isBlank()) {
                     // Fallback: use checkpoints as polyline (straight lines)
@@ -698,11 +700,11 @@ class MapViewmodel @Inject constructor(
                     return@launch
                 }
 
-                Log.i("MapViewmodel", "Calling Google Routes API (Compute Routes)...")
+                Log.i(TAG, "Calling Google Routes API (Compute Routes)...")
 
                 // Get user's measurement preference
                 val measurementUnit = _userProfile.value?.preferences?.measurementUnit
-                    ?: com.fcul.smartboy.domain.user.MeasurementUnit.METRIC
+                    ?: MeasurementUnit.METRIC
 
                 val result = routesRepository.computeRoute(
                     apiKey = apiKey,
@@ -718,30 +720,20 @@ class MapViewmodel @Inject constructor(
                         val decodedPolyline = PolyUtil.decode(result.encodedPolyline)
                         _routePolyline.value = decodedPolyline
 
-                        Log.i("MapViewmodel", "Route computed: ${decodedPolyline.size} points")
+                        Log.i(TAG, "Route computed: ${decodedPolyline.size} points")
 
                         // Format distance based on user's measurement preference
                         val measurementUnit = _userProfile.value?.preferences?.measurementUnit
-                            ?: com.fcul.smartboy.domain.user.MeasurementUnit.METRIC
+                            ?: MeasurementUnit.METRIC
 
                         val distanceText = MeasurementUtils.formatDistance(
                             result.distanceMeters.toDouble(),
                             measurementUnit
                         )
 
-                        // Format duration
-                        val durationMins = result.durationSeconds / 60
-                        val durationText = if (durationMins >= 60) {
-                            val hours = durationMins / 60
-                            val mins = durationMins % 60
-                            "${hours}h ${mins}m"
-                        } else {
-                            "$durationMins min"
-                        }
-
                         _routeInfo.value = RouteInfo(
                             distance = distanceText,
-                            duration = durationText,
+                            duration = formatDuration(result.durationSeconds),
                             distanceMeters = result.distanceMeters,
                             durationSeconds = result.durationSeconds
                         )
@@ -750,7 +742,7 @@ class MapViewmodel @Inject constructor(
                     }
 
                     is RouteResult.Error -> {
-                        Log.e("MapViewmodel", "Routes API error: ${result.message}")
+                        Log.e(TAG, "Routes API error: ${result.message}")
 
                         // Fallback to checkpoints
                         val allPoints = mutableListOf(actualOrigin)
@@ -762,8 +754,8 @@ class MapViewmodel @Inject constructor(
                 }
 
             } catch (e: Exception) {
-                Log.e("MapViewmodel", "Route fetch error: ${e.message}", e)
-                Log.e("MapViewmodel", "Using fallback: straight lines")
+                Log.e(TAG, "Route fetch error: ${e.message}", e)
+                Log.e(TAG, "Using fallback: straight lines")
 
                 // Fallback: use checkpoints directly
                 val checkpoints = _pendingCheckpoints.value
@@ -781,7 +773,7 @@ class MapViewmodel @Inject constructor(
             // Start with empty traveled path, full route as remaining
             _traveledPath.value = listOf(route.first())
             _remainingRoute.value = route
-            Log.d("MapViewmodel", "Route drawing initialized: ${route.size} points")
+            Log.d(TAG, "Route drawing initialized: ${route.size} points")
         }
     }
 
@@ -804,13 +796,13 @@ class MapViewmodel @Inject constructor(
                 useCurrentLocationAsOrigin = true
             )
         } else {
-            Log.w("MapViewmodel", "Need at least 2 checkpoints to fetch route")
+            Log.w(TAG, "Need at least 2 checkpoints to fetch route")
         }
     }
 
     override fun onCleared() {
         super.onCleared()
-        Log.d("MapViewmodel", "ViewModel cleared, stopping location updates")
+        Log.d(TAG, "ViewModel cleared, stopping location updates")
         stopLocationUpdates()
 
         // Clean up active route if user closes app
@@ -829,11 +821,11 @@ class MapViewmodel @Inject constructor(
                 activeRouteRepository.observeActiveRoutes(
                     excludeUserId = currentUserId,
                     userLocation = location,
-                    radiusKm = 10.0  // Only show routes within 10km
+                    radiusKm = ROUTE_FETCH_RADIUS_METERS  // Only show routes within 10km
                 ).collect { routes ->
                     _otherActiveRoutes.value = routes
                     Log.d(
-                        "MapViewmodel",
+                        TAG,
                         "Updated other active routes: ${routes.size} routes within 10km"
                     )
                 }
@@ -848,7 +840,7 @@ class MapViewmodel @Inject constructor(
         val checkpoints = _pendingCheckpoints.value
 
         if (checkpoints.size < 2) {
-            Log.w("MapViewmodel", "Cannot save route with less than 2 checkpoints")
+            Log.w(TAG, "Cannot save route with less than 2 checkpoints")
             return
         }
 
@@ -865,9 +857,9 @@ class MapViewmodel @Inject constructor(
 
         viewModelScope.launch {
             activeRouteRepository.saveActiveRoute(activeRoute).onSuccess {
-                Log.i("MapViewmodel", "Active route saved to Firestore")
+                Log.i(TAG, "Active route saved to Firestore")
             }.onFailure { e ->
-                Log.e("MapViewmodel", "Failed to save active route", e)
+                Log.e(TAG, "Failed to save active route", e)
             }
         }
     }
@@ -877,7 +869,7 @@ class MapViewmodel @Inject constructor(
 
         viewModelScope.launch {
             activeRouteRepository.updateCurrentLocation(userId, location).onFailure { e ->
-                Log.e("MapViewmodel", "Failed to update route location", e)
+                Log.e(TAG, "Failed to update route location", e)
             }
         }
     }
@@ -887,9 +879,9 @@ class MapViewmodel @Inject constructor(
 
         viewModelScope.launch {
             activeRouteRepository.endActiveRoute(userId).onSuccess {
-                Log.i("MapViewmodel", "Active route removed from Firestore")
+                Log.i(TAG, "Active route removed from Firestore")
             }.onFailure { e ->
-                Log.e("MapViewmodel", "Failed to end active route", e)
+                Log.e(TAG, "Failed to end active route", e)
             }
         }
     }
@@ -905,25 +897,38 @@ class MapViewmodel @Inject constructor(
     }
 
     companion object {
+        private const val ROUTE_MAX_DEVIATION_METERS =
+            100.0 // Recalculate if user is >100m off route
+        private const val ROUTE_CHECKPOINT_TRIGGER_DISTANCE = 50.0
+        private const val ROUTE_FETCH_RADIUS_METERS = 10000.0
+        private const val ROUTE_RECALC_COOLDOWN = 10000L // Wait 10s between recalculations
+
+        private const val RADX_DECAY_INTERVAL = 15000L // Decay Rad-X effect every 15 seconds
+
         private const val RADIATION_UPDATE_INTERVAL = 5000L
         private const val RADIATION_MULTIPLIER = 0.1
         private const val STEPS_DEDUCTION_PER_SV = 10L
-        private const val MAX_ROUTE_DEVIATION_METERS =
-            100.0 // Recalculate if user is >100m off route
-        private const val ROUTE_RECALC_COOLDOWN = 10000L // Wait 10s between recalculations
-        private const val RADX_DECAY_INTERVAL = 15000L // Decay Rad-X effect every 15 seconds
 
-        private const val LOCATION_UPDATE_INTERVAL = 5000L
-        private const val CHECKPOINT_TRIGGER_DISTANCE = 50.0
-        private const val RAD_ZONE_CHECK_DISTANCE = 100.0
+        private const val RAD_LOW_THRESHOLD = 0.1
+        private const val RAD_MEDIUM_THRESHOLD = 1.0
+
+        private const val VIBRATION_LOW_DURATION = 300L
+        private const val VIBRATION_MEDIUM_DURATION = 500L
+        private const val VIBRATION_HIGH_DURATION = 700L
+
+        private const val VIBRATION_LOW_AMPLITUDE = 128
+        private const val VIBRATION_MEDIUM_AMPLITUDE = 192
+        private const val VIBRATION_HIGH_AMPLITUDE = 255
+
+        private const val LOCATION_MIN_UPDATE_INTERVAL_TIME = 1500L
+        private const val LOCATION_UPDATE_INTERVAL = 3000L
 
         // Reward constants
         private const val ROUTE_COMPLETION_BASE_CAPS = 100 // Base reward for completing a route
         private const val CAPS_PER_KILOMETER = 10 // Additional caps per km traveled
         private const val CAPS_PER_CHECKPOINT = 25 // Caps for each checkpoint reached
+
+        private const val TAG = "MapViewmodel"
     }
 }
 
-sealed class NavigationEvent {
-    data class NavigateToUserDetails(val userId: String) : NavigationEvent()
-}

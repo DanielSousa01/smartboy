@@ -22,11 +22,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.user.Profile
+import com.fcul.smartboy.ui.common.ErrorSnackbar
+import com.fcul.smartboy.ui.profile.vm.ProfileError
 import com.fcul.smartboy.utils.MeasurementUtils
 import com.google.firebase.auth.FirebaseUser
 
@@ -35,9 +38,15 @@ fun ProfileScreen(
     profile: Profile?,
     user: FirebaseUser?,
     isLoading: Boolean = false,
-    error: String? = null,
+    error: ProfileError?,
+    onDismissError: () -> Unit,
     onRefresh: () -> Unit
 ) {
+    val context = LocalContext.current
+    val errorMessage = when (error) {
+        is ProfileError.FailedToLoadProfile -> context.getString(R.string.error_profile_failed_to_load)
+        else -> null
+    }
 
     Column(
         modifier = Modifier
@@ -80,21 +89,6 @@ fun ProfileScreen(
                     text = user?.email ?: "",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                )
-            }
-        }
-
-        error?.let {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Text(
-                    text = it,
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
         }
@@ -274,6 +268,11 @@ fun ProfileScreen(
                 }
             }
         }
+
+        ErrorSnackbar(
+            errorMessage = errorMessage,
+            onDismissError = onDismissError
+        )
     }
 }
 

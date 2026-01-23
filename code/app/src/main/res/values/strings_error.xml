@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_cart_empty">Your cart is empty.</string>
+    <string name="error_cart_items_unavailable">Some items in your cart are no longer available.</string>
+    <string name="error_profile_load_failed">Failed to load your profile. Please try again.</string>
+    <string name="error_cart_insufficient_caps">Insufficient caps. You need %1$d caps but have %2$d.</string>
+    <string name="error_cart_item_not_found">Item not found in cart.</string>
+    <string name="error_cart_item_quantity_exceeded">Cannot add more than %2$d of %1$s.</string>
+    <string name="error_cart_failed_to_add_item">Failed to add item to cart. Please try again.</string>
+    <string name="error_cart_failed_to_remove_item">Failed to remove item from cart. Please try again.</string>
+    <string name="error_cart_failed_to_update_quantity">Failed to update item quantity. Please try again.</string>
+    <string name="error_cart_failed_to_clear_cart">Failed to clear cart. Please try again.</string>
+    <string name="error_cart_failed_to_generate_qr_code">Failed to generate QR code. Please try again.</string>
+    <string name="error_failed_to_check_availability">Failed to check item availability. Please try again.</string>
+    <string name="error_cart_failed_to_fetch_and_add_item">Failed to fetch and add item. Please try again.</string>
+
+    <string name="error_chat_message_send_failed">Failed to send message. Please try again.</string>
+    <string name="error_chat_conversation_load_failed">Failed to load chat history. Please try again.</string>
+    <string name="error_chat_connection_lost">Chat connection lost. Reconnecting</string>
+    <string name="error_chat_image_upload_failed">Failed to upload image. Please try again.</string>
+    <string name="error_chat_message_load_failed">Failed to load message. Please try again.</string>
+
+    <string name="error_generic">An unexpected error occurred. Please try again.</string>
+
+    <string name="error_inventory_item_not_found">Item not found in inventory.</string>
+    <string name="error_inventory_quantity_zero">Cannot use item: quantity is zero.</string>
+    <string name="error_inventory_item_fail_to_use">Failed to use item. Please try again.</string>
+    <string name="error_inventory_failed_to_observe_inventory">Failed to load inventory. Please try again.</string>
+    <string name="error_inventory_failed_to_observe_selling_items">Failed to load selling items. Please try again.</string>
+    <string name="error_inventory_failed_to_add_item">Failed to add item to inventory. Please try again.</string>
+    <string name="error_inventory_failed_to_remove_item">Failed to remove item from inventory. Please try again.</string>
+    <string name="error_inventory_failed_to_update_item">Failed to update item. Please try again.</string>
+    <string name="error_inventory_failed_to_sell_item">Failed to sell item. Please try again.</string>
+    <string name="error_inventory_generic">An unexpected error occurred in inventory. Please try again.</string>
+
+    <string name="error_profile_failed_to_load">Failed to load profile.</string>
+    <string name="error_profile_update_preferences">Failed to update preferences.</string>
+    <string name="error_profile_failed_to_load_selling_items">Failed to load selling items.</string>
+
+    <string name="error_wallet_failed_to_load_transactions">Failed to load transactions.</string>
+</resources>

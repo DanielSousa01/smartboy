@@ -29,6 +29,7 @@ class CartRepository @Inject constructor(
     fun observeCarts(): Flow<List<Cart>> = callbackFlow {
         val user = user ?: run {
             close()
+            Log.e(TAG, "observeCarts: No authenticated user found.")
             return@callbackFlow
         }
 
@@ -38,6 +39,7 @@ class CartRepository @Inject constructor(
         val listener = cartsRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
+                Log.e(TAG, "observeCarts: Error observing carts", error)
                 return@addSnapshotListener
             }
 
@@ -260,8 +262,12 @@ class CartRepository @Inject constructor(
         // Delete the cart document
         cartRef.delete().awaitTask()
 
-        Log.d("CartRepository", "Deleted cart $cartId from user $userId")
+        Log.d(TAG, "Deleted cart $cartId from user $userId")
         return true
+    }
+
+    companion object {
+        private const val TAG = "CartRepository"
     }
 }
 

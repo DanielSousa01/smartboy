@@ -25,13 +25,11 @@ object RepositoryModule {
     @Singleton
     fun provideMapRouteRepository(
         auth: FirebaseAuth,
-        database: FirebaseDatabase,
-        firestore: FirebaseFirestore,
-        storage: FirebaseStorage
+        firestore: FirebaseFirestore
     ): MapRouteRepository {
         val user = auth.currentUser
             ?: throw IllegalStateException("User must be logged in to access MapRouteRepository")
-        return MapRouteRepository(user, database, firestore, storage)
+        return MapRouteRepository(user, firestore)
     }
 
     @Provides
@@ -71,10 +69,9 @@ object RepositoryModule {
     fun provideChatRepository(
         auth: FirebaseAuth,
         database: FirebaseDatabase,
-        firestore: FirebaseFirestore,
         storage: FirebaseStorage
     ): ChatRepository {
-        return ChatRepository(auth, database, firestore, storage)
+        return ChatRepository(auth, database, storage)
     }
 
     @Provides

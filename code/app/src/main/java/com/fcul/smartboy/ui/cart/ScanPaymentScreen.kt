@@ -13,13 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.fcul.smartboy.R
-import com.fcul.smartboy.utils.QRCodeScanner
+import com.fcul.smartboy.ui.common.QRCodeScanner
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScanPaymentScreen(
-    viewModel: CartViewmodel,
+    onCompletePurchase: suspend (String, String) -> Result<String>,
     onBackClick: () -> Unit,
     onPaymentComplete: () -> Unit
 ) {
@@ -62,15 +63,15 @@ fun ScanPaymentScreen(
                         val data = parsePaymentQR(qrData)
 
                         scope.launch {
-                            val result = viewModel.completePurchase(
-                                buyerId = data.buyerId,
-                                sellerId = data.sellerId
+                            val result = onCompletePurchase(
+                                data.buyerId,
+                                data.sellerId
                             )
 
                             result.onSuccess { message ->
                                 successMessage = message
                                 // Navigate back after 2 seconds
-                                kotlinx.coroutines.delay(2000)
+                                delay(2000)
                                 onPaymentComplete()
                             }
 

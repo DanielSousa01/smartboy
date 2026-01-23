@@ -11,22 +11,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+sealed class WalletError {
+    object FailedToLoadTransactions : WalletError()
+}
+
 @HiltViewModel
 class WalletViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository
 ) : ViewModel() {
-
     private val _transactions = MutableStateFlow<List<Transaction>>(emptyList())
     val transactions: StateFlow<List<Transaction>> = _transactions.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
+    private val _error = MutableStateFlow<WalletError?>(null)
+    val error: StateFlow<WalletError?> = _error.asStateFlow()
 
     init {
         loadTransactions()
+    }
+
+    fun onDismissError() {
+        _error.value = null
     }
 
     private fun loadTransactions() {
@@ -36,14 +43,10 @@ class WalletViewModel @Inject constructor(
                 val transactions = transactionRepository.getTransactions()
                 _transactions.value = transactions.sortedByDescending { it.date }
             } catch (e: Exception) {
-                _error.value = "Failed to load transactions: ${e.message}"
+                _error.value = WalletError.FailedToLoadTransactions
             } finally {
                 _isLoading.value = false
             }
         }
-    }
-
-    fun refresh() {
-        loadTransactions()
     }
 }

@@ -1,5 +1,6 @@
 package com.fcul.smartboy.repository
 
+import android.util.Log
 import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.domain.inventory.SellingItemEntity
 import com.fcul.smartboy.repository.base.CRUD
@@ -35,6 +36,28 @@ class SellingRepository @Inject constructor(
         val listener = sellingRef.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
+                Log.e(TAG, "Error observing selling items", error)
+                return@addSnapshotListener
+            }
+
+            val items = snapshot?.documents?.mapNotNull { doc ->
+                doc.toObject(SellingItemEntity::class.java)?.toSellingItem()
+            } ?: emptyList()
+
+            trySend(items)
+        }
+
+        awaitClose { listener.remove() }
+    }
+
+    fun observeSellingItemsForUser(userId: String): Flow<List<SellingItem>> = callbackFlow {
+        val sellingRef = usersCol.document(userId)
+            .collection(Path.SELLING.path)
+
+        val listener = sellingRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                Log.e(TAG, "Error observing selling items for user: $userId", error)
                 return@addSnapshotListener
             }
 
@@ -107,6 +130,7 @@ class SellingRepository @Inject constructor(
             docRef.get().awaitTask()
                 .toObject(SellingItemEntity::class.java)?.toSellingItem()
         } catch (e: Exception) {
+            Log.e(TAG, "Error reading selling item: $itemId for user: $userId", e)
             null
         }
     }
@@ -121,6 +145,7 @@ class SellingRepository @Inject constructor(
             docRef.set(entity).awaitTask()
             true
         } catch (e: Exception) {
+            Log.e(TAG, "Error updating selling item: $itemId for user: $userId", e)
             false
         }
     }
@@ -134,7 +159,12 @@ class SellingRepository @Inject constructor(
             docRef.delete().awaitTask()
             true
         } catch (e: Exception) {
+            Log.e(TAG, "Error deleting selling item: $itemId for user: $userId", e)
             false
         }
+    }
+
+    companion object {
+        private const val TAG = "SellingRepository"
     }
 }

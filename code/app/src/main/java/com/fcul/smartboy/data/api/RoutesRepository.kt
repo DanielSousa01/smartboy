@@ -1,5 +1,6 @@
 package com.fcul.smartboy.data.api
 
+import android.util.Log
 import com.fcul.smartboy.domain.user.MeasurementUnit
 import com.google.android.gms.maps.model.LatLng
 import retrofit2.Retrofit
@@ -79,6 +80,7 @@ class RoutesRepository @Inject constructor() {
             )
 
         } catch (e: Exception) {
+            Log.e("RoutesRepository", "Error computing route", e)
             RouteResult.Error(e.message ?: "Unknown error")
         }
     }

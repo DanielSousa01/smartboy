@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.domain.user.Profile
+import com.fcul.smartboy.ui.common.ErrorSnackbar
+import com.fcul.smartboy.ui.profile.vm.ProfileError
 import com.fcul.smartboy.utils.MeasurementUtils
 import java.util.Locale
 
@@ -25,10 +27,17 @@ fun UserDetailsScreen(
     profile: Profile?,
     sellingItems: List<SellingItem>,
     isLoading: Boolean,
-    error: String?,
+    error: ProfileError?,
     onSendMessage: (String) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onDismissError: () -> Unit,
 ) {
+    val errorMessage = when (error) {
+        is ProfileError.FailedToLoadProfile -> stringResource(R.string.error_profile_failed_to_load)
+        is ProfileError.FailedToLoadSellingItems -> stringResource(R.string.error_profile_failed_to_load_selling_items)
+        else -> null
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -56,26 +65,6 @@ fun UserDetailsScreen(
                     )
                 }
 
-                error != null -> {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = stringResource(R.string.error_loading_user),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = error,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-
                 profile != null -> {
                     UserDetailsContent(
                         profile = profile,
@@ -85,6 +74,11 @@ fun UserDetailsScreen(
                 }
             }
         }
+
+        ErrorSnackbar(
+            errorMessage = errorMessage,
+            onDismissError = onDismissError
+        )
     }
 }
 

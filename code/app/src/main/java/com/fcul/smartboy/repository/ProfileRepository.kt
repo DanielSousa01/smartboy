@@ -31,7 +31,10 @@ class ProfileRepository(
         val snapshot = usersRef.child(id).get().await()
         return if (snapshot.exists()) {
             fromSnapshot(snapshot)
-        } else null
+        } else {
+            Log.e(TAG, "Profile not found for user: $id")
+            null
+        }
     }
 
     override suspend fun update(id: String, data: Any): Boolean {
@@ -92,17 +95,6 @@ class ProfileRepository(
             val newCaps = profile.caps - amount
             updateCaps(userId, newCaps)
             return true
-        }
-        return false
-    }
-
-    suspend fun transferCaps(fromUserId: String, toUserId: String, amount: Int): Boolean {
-        val fromProfile = read(fromUserId)
-        if (fromProfile != null && fromProfile.caps >= amount) {
-            if (deductCaps(fromUserId, amount)) {
-                addCaps(toUserId, amount)
-                return true
-            }
         }
         return false
     }

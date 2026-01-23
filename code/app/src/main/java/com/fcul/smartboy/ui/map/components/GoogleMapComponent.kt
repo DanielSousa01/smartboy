@@ -3,6 +3,8 @@ package com.fcul.smartboy.ui.map.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.route.ActiveRoute
 import com.fcul.smartboy.domain.route.RadiationData
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -78,21 +80,21 @@ fun GoogleMapComponent(
             )
             Marker(
                 state = state,
-                title = "☢️ Radiation Zone",
-                snippet = "Level: ${rad.radiationLevelInMSv} MSv\nRadius: ${rad.radius} m\n⚠️ Danger: -${(rad.radiationLevelInMSv * 10).roundToLong()} steps every 5s",
+                title = stringResource(R.string.rad_point),
+                snippet = "${rad.radiationLevelInMSv} MSv ${rad.radius} m -${(rad.radiationLevelInMSv * 10).roundToLong()} steps every 5s",
                 icon = BitmapDescriptorFactory.defaultMarker(
                     if (isSelected) BitmapDescriptorFactory.HUE_YELLOW
                     else BitmapDescriptorFactory.HUE_RED
                 ),
                 onClick = {
                     onRadiationMarkerClick(rad)
-                    true
+                    false
                 }
             )
         }
         // Marker for selected RAD
         selectedRadLocation?.let {
-            Marker(state = MarkerState(it), title = "RAD Point")
+            Marker(state = MarkerState(it), title = stringResource(R.string.rad_point))
         }
         // Show pending checkpoints if not active, else show active route checkpoints
         val checkpointsToShow = pendingCheckpoints
@@ -117,7 +119,7 @@ fun GoogleMapComponent(
                 icon = BitmapDescriptorFactory.defaultMarker(markerColor),
                 onClick = {
                     onCheckpointMarkerClick(checkpoint)
-                    true
+                    false
                 }
             )
         }
@@ -175,12 +177,11 @@ fun GoogleMapComponent(
                 Marker(
                     state = MarkerState(checkpoint),
                     title = "${route.userName}'s Checkpoint ${index + 1}",
-                    snippet = "Selling route - Tap to view details",
+                    snippet = "Selling route",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET),
                     alpha = 0.7f,
                     onClick = {
-                        onUserMarkerClick(route.userId)
-                        true
+                        false
                     }
                 )
             }
@@ -202,9 +203,13 @@ fun GoogleMapComponent(
                 Marker(
                     state = MarkerState(location),
                     title = route.userName ?: "User",
-                    snippet = "Currently on a selling route",
+                    snippet = stringResource(R.string.map_on_route),
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA),
-                    alpha = 0.9f
+                    alpha = 0.9f,
+                    onClick = {
+                        onUserMarkerClick(route.userId)
+                        true
+                    }
                 )
             }
         }

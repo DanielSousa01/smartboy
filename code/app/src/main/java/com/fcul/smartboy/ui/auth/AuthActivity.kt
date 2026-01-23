@@ -113,7 +113,7 @@ class AuthActivity : ComponentActivity() {
                                 userId = user.uid,
                                 username = user.displayName ?: "Guest",
                                 steps = 0,
-                                caps = 1000
+                                caps = CAPS_FOR_NEW_USER
                             )
                             profileRepository.create(newProfile)
 
@@ -173,5 +173,6 @@ class AuthActivity : ComponentActivity() {
 
     companion object {
         private const val TAG = "SignInActivity"
+        private const val CAPS_FOR_NEW_USER = 1000
     }
 }

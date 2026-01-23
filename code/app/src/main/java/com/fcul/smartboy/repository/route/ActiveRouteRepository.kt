@@ -18,7 +18,7 @@ import javax.inject.Singleton
 
 @Singleton
 class ActiveRouteRepository @Inject constructor(
-    private val database: FirebaseDatabase
+    database: FirebaseDatabase
 ) {
     private val activeRoutesRef = database.getReference("active_routes")
 

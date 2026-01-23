@@ -1,6 +1,7 @@
-package com.fcul.smartboy.ui.chat
+package com.fcul.smartboy.ui.chat.vm
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fcul.smartboy.domain.chat.Conversation
@@ -16,10 +17,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ChatViewmodel @Inject constructor(
+class ChatViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val profileRepository: ProfileRepository,
-    private val auth: FirebaseAuth
 ) : ViewModel() {
     private val _conversations = MutableStateFlow<List<Conversation>>(emptyList())
     val conversations: StateFlow<List<Conversation>> = _conversations
@@ -33,8 +33,8 @@ class ChatViewmodel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+    private val _error = MutableStateFlow<ChatError?>(null)
+    val error: StateFlow<ChatError?> = _error
 
     private val _userCaps = MutableStateFlow(0)
     val userCaps: StateFlow<Int> = _userCaps
@@ -43,11 +43,9 @@ class ChatViewmodel @Inject constructor(
 
     init {
         observeConversations()
-        observeUserProfile()
     }
 
-    private fun observeUserProfile() {
-        val userId = auth.currentUser?.uid ?: return
+    fun observeUserProfile(userId: String) {
         viewModelScope.launch {
             profileRepository.observeProfile(userId).collect { profile ->
                 _userCaps.value = profile?.caps ?: 0
@@ -60,17 +58,12 @@ class ChatViewmodel @Inject constructor(
         observeMessages(userId)
     }
 
-    fun stopChat() {
-        currentChatUserId = null
-        _messages.value = emptyList()
-    }
-
-
     private fun observeConversations() {
         viewModelScope.launch {
             chatRepository.observeConversations()
                 .catch { e ->
-                    _error.value = "Failed to load conversations: ${e.message}"
+                    _error.value = ChatError.ConversationLoadFailed
+                    Log.e(TAG, "Conversation load failed", e)
                 }
                 .collect { conversationList ->
                     _conversations.value = conversationList
@@ -82,7 +75,8 @@ class ChatViewmodel @Inject constructor(
         viewModelScope.launch {
             chatRepository.observeConversation(otherUserId)
                 .catch { e ->
-                    _error.value = "Failed to load messages: ${e.message}"
+                    _error.value = ChatError.MessageLoadFailed
+                    Log.e(TAG, "Message load failed", e)
                 }
                 .collect { messageList ->
                     _messages.value = messageList
@@ -111,7 +105,8 @@ class ChatViewmodel @Inject constructor(
                 _messageText.value = ""
                 _error.value = null
             } catch (e: Exception) {
-                _error.value = "Failed to send message: ${e.message}"
+                _error.value = ChatError.MessageSendFailed
+                Log.e(TAG, "Message send failed", e)
             } finally {
                 _isLoading.value = false
             }
@@ -131,9 +126,9 @@ class ChatViewmodel @Inject constructor(
                     text = "",
                     imageUrl = imageUrl
                 )
-                _error.value = null
             } catch (e: Exception) {
-                _error.value = "Failed to upload image: ${e.message}"
+                _error.value = ChatError.MessageImageUploadFailed
+                Log.e(TAG, "Image message send failed", e)
             } finally {
                 _isLoading.value = false
             }
@@ -143,5 +138,8 @@ class ChatViewmodel @Inject constructor(
     fun clearError() {
         _error.value = null
     }
-}
 
+    companion object {
+        private const val TAG = "ChatViewModel"
+    }
+}

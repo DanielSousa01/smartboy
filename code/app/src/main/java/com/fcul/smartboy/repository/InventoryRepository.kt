@@ -1,5 +1,6 @@
 package com.fcul.smartboy.repository
 
+import android.util.Log
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.domain.inventory.ItemEntity
 import com.fcul.smartboy.repository.base.CRUD
@@ -26,6 +27,7 @@ class InventoryRepository @Inject constructor(
     fun observeInventory(): Flow<List<Item>> = callbackFlow {
         val user = user ?: run {
             close()
+            Log.e(TAG, "observeInventory: No authenticated user found.")
             return@callbackFlow
         }
 
@@ -125,6 +127,10 @@ class InventoryRepository @Inject constructor(
         val entity = item.toEntity()
         docRef.set(entity).awaitTask()
         return true
+    }
+
+    companion object {
+        private const val TAG = "InventoryRepository"
     }
 }
 

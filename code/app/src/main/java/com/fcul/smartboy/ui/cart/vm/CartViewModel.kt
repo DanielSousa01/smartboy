@@ -1,7 +1,10 @@
-package com.fcul.smartboy.ui.cart
+package com.fcul.smartboy.ui.cart.vm
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.util.Log
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.set
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fcul.smartboy.domain.cart.Cart
@@ -23,11 +26,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
-import androidx.core.graphics.createBitmap
-import androidx.core.graphics.set
 
 @HiltViewModel
-class CartViewmodel @Inject constructor(
+class CartViewModel @Inject constructor(
     private val inventoryRepository: InventoryRepository,
     private val sellingRepository: SellingRepository,
     private val cartRepository: CartRepository,
@@ -49,8 +50,8 @@ class CartViewmodel @Inject constructor(
     private val _qrCodeBitmap = MutableStateFlow<Bitmap?>(null)
     val qrCodeBitmap: StateFlow<Bitmap?> = _qrCodeBitmap.asStateFlow()
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
+    private val _error = MutableStateFlow<CartError?>(null)
+    val error: StateFlow<CartError?> = _error.asStateFlow()
 
     // Track last processed transaction to prevent duplicates
     private var lastProcessedTransaction: Pair<String, String>? = null
@@ -58,6 +59,10 @@ class CartViewmodel @Inject constructor(
 
     init {
         loadAllCarts()
+    }
+
+    fun onDismissError() {
+        _error.value = null
     }
 
     private fun loadAllCarts() {
@@ -74,24 +79,19 @@ class CartViewmodel @Inject constructor(
                     val cartsMap = cartsList.associateBy { it.sellerId ?: "" }
                     _carts.value = cartsMap
                     _isLoading.value = false
-                    Log.d("CartViewModel", "Loaded ${cartsMap.size} carts")
+                    Log.d(TAG, "Loaded ${cartsMap.size} carts")
                 }
                 _error.value = null
             } catch (e: Exception) {
-                _error.value = "Failed to load carts: ${e.message}"
+                _error.value = CartError.Generic("Failed to load carts: ${e.message}")
                 _isLoading.value = false
-                Log.e("CartViewModel", "Failed to load carts", e)
+                Log.e(TAG, "Failed to load carts", e)
             }
         }
     }
 
     fun selectCart(sellerId: String?) {
         _selectedSellerId.value = sellerId
-    }
-
-    fun getCurrentCart(): Cart? {
-        val sellerId = _selectedSellerId.value ?: return null
-        return _carts.value[sellerId]
     }
 
     fun getOrCreateCartForSeller(sellerId: String, sellerName: String): Cart {
@@ -133,8 +133,8 @@ class CartViewmodel @Inject constructor(
 
                 // Validate against available quantity
                 if (newTotalQuantity > item.quantity) {
-                    _error.value = "Cannot add more than ${item.quantity} of ${item.name} (already have $currentCartQuantity in cart)"
-                    Log.w("CartViewModel", "Attempted to add more than available: $newTotalQuantity > ${item.quantity}")
+                    _error.value = CartError.ItemQuantityExceeded(item.name, item.quantity)
+                    Log.w(TAG, "Attempted to add more than available: $newTotalQuantity > ${item.quantity}")
                     return@launch
                 }
 
@@ -163,11 +163,11 @@ class CartViewmodel @Inject constructor(
                 // Update local state
                 _carts.value += (sellerId to updatedCart)
 
-                Log.d("CartViewModel", "Added item to cart for seller: $sellerName (${newTotalQuantity}/${item.quantity})")
-                Log.d("CartViewModel", "Cart ID: $cartId, UserId: $userId, SellerId: $sellerId")
+                Log.d(TAG, "Added item to cart for seller: $sellerName (${newTotalQuantity}/${item.quantity})")
+                Log.d(TAG, "Cart ID: $cartId, UserId: $userId, SellerId: $sellerId")
             } catch (e: Exception) {
-                _error.value = "Failed to add item: ${e.message}"
-                Log.e("CartViewModel", "Failed to add item to cart", e)
+                _error.value = CartError.FailedToAddItem
+                Log.e(TAG, "Failed to add item to cart", e)
             }
         }
     }
@@ -194,10 +194,10 @@ class CartViewmodel @Inject constructor(
 
                 _carts.value += (sellerId to updatedCart)
 
-                Log.d("CartViewModel", "Removed item from cart: $itemId")
+                Log.d(TAG, "Removed item from cart: $itemId")
             } catch (e: Exception) {
-                _error.value = "Failed to remove item: ${e.message}"
-                Log.e("CartViewModel", "Failed to remove item from cart", e)
+                _error.value = CartError.FailedToRemoveItem
+                Log.e(TAG, "Failed to remove item from cart", e)
             }
         }
     }
@@ -217,7 +217,7 @@ class CartViewmodel @Inject constructor(
                 // Find the item being updated
                 val cartItem = currentCart.items.find { it.id == itemId }
                 if (cartItem == null) {
-                    _error.value = "Item not found in cart"
+                    _error.value = CartError.ItemNotFound()
                     return@launch
                 }
 
@@ -225,19 +225,19 @@ class CartViewmodel @Inject constructor(
                 val sellerItem = try {
                     sellingRepository.readFromUser(sellerId, itemId)
                 } catch (e: Exception) {
-                    Log.e("CartViewModel", "Failed to get seller item", e)
+                    Log.e(TAG, "Failed to get seller item", e)
                     null
                 }
 
                 // Validate sellerItem is not null and quantity is within bounds
                 val sellerAvailable = sellerItem?.quantity ?: 0
                 if (sellerItem == null) {
-                    _error.value = "Item no longer available from seller"
+                    _error.value = CartError.ItemsUnavailable
                     return@launch
                 }
                 if (newQuantity > sellerAvailable) {
-                    _error.value = "Cannot set quantity to $newQuantity. Seller only has $sellerAvailable available."
-                    Log.w("CartViewModel", "Quantity validation failed: $newQuantity > $sellerAvailable")
+                    _error.value = CartError.ItemQuantityExceeded(cartItem.name, sellerAvailable)
+                    Log.w(TAG, "Quantity validation failed: $newQuantity > $sellerAvailable")
                     return@launch
                 }
 
@@ -260,10 +260,10 @@ class CartViewmodel @Inject constructor(
 
                 _carts.value += (sellerId to updatedCart)
 
-                Log.d("CartViewModel", "Updated item quantity: $itemId to $newQuantity (max: $sellerAvailable)")
+                Log.d(TAG, "Updated item quantity: $itemId to $newQuantity (max: $sellerAvailable)")
             } catch (e: Exception) {
-                _error.value = "Failed to update quantity: ${e.message}"
-                Log.e("CartViewModel", "Failed to update item quantity", e)
+                _error.value = CartError.FailedToUpdateQuantity
+                Log.e(TAG, "Failed to update item quantity", e)
             }
         }
     }
@@ -285,10 +285,10 @@ class CartViewmodel @Inject constructor(
                 _carts.value += (sellerId to emptyCart)
                 _qrCodeBitmap.value = null
 
-                Log.d("CartViewModel", "Cart cleared for seller: $sellerId")
+                Log.d(TAG, "Cart cleared for seller: $sellerId")
             } catch (e: Exception) {
-                _error.value = "Failed to clear cart: ${e.message}"
-                Log.e("CartViewModel", "Failed to clear cart", e)
+                _error.value = CartError.FailedToClearCart
+                Log.e(TAG, "Failed to clear cart", e)
             }
         }
     }
@@ -301,25 +301,25 @@ class CartViewmodel @Inject constructor(
                 val userId = auth.currentUser?.uid ?: return@launch
 
                 if (currentCart.items.isEmpty()) {
-                    _error.value = "Cart is empty"
+                    _error.value = CartError.CartEmpty
                     return@launch
                 }
 
                 // Check if items are still available before generating QR
                 if (!checkItemsAvailability(sellerId)) {
-                    _error.value = "Some items are no longer available. Please review your cart."
+                    _error.value = CartError.ItemsUnavailable
                     return@launch
                 }
 
                 // Check if buyer has enough caps
                 val buyerProfile = profileRepository.read(userId)
                 if (buyerProfile == null) {
-                    _error.value = "Failed to load profile"
+                    _error.value = CartError.ProfileLoadFailed
                     return@launch
                 }
 
                 if (buyerProfile.caps < currentCart.totalPrice) {
-                    _error.value = "Insufficient caps. You need ${currentCart.totalPrice} caps but have ${buyerProfile.caps}"
+                    _error.value = CartError.InsufficientCaps(currentCart.totalPrice, buyerProfile.caps)
                     return@launch
                 }
 
@@ -338,8 +338,8 @@ class CartViewmodel @Inject constructor(
                 val bitMatrix = qrCodeWriter.encode(
                     paymentData,
                     BarcodeFormat.QR_CODE,
-                    512,
-                    512
+                    QR_CODE_SIZE,
+                    QR_CODE_SIZE
                 )
 
                 val width = bitMatrix.width
@@ -348,27 +348,22 @@ class CartViewmodel @Inject constructor(
 
                 for (x in 0 until width) {
                     for (y in 0 until height) {
-                        bitmap[x, y] =
-                            if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                        bitmap[x, y] = if (bitMatrix[x, y]) Color.BLACK else Color.WHITE
                     }
                 }
 
                 _qrCodeBitmap.value = bitmap
-                Log.d("CartViewModel", "QR code generated for payment: $paymentData")
+                Log.d(TAG, "QR code generated for payment: $paymentData")
 
             } catch (e: Exception) {
-                _error.value = "Failed to generate QR code: ${e.message}"
-                Log.e("CartViewModel", "Failed to generate QR code", e)
+                _error.value = CartError.FailedToGenerateQRCode
+                Log.e(TAG, "Failed to generate QR code", e)
             }
         }
     }
 
     fun dismissQRCode() {
         _qrCodeBitmap.value = null
-    }
-
-    fun dismissError() {
-        _error.value = null
     }
 
     fun getSellingItem(sellerId: String, itemId: Long) {
@@ -378,8 +373,8 @@ class CartViewmodel @Inject constructor(
                 val item = sellingRepository.readFromUser(sellerId, itemId)
 
                 if (item == null) {
-                    _error.value = "Item not found or no longer available"
-                    Log.e("CartViewModel", "Item $itemId not found from seller $sellerId")
+                    _error.value = CartError.ItemsUnavailable
+                    Log.e(TAG, "Item $itemId not found from seller $sellerId")
                     return@launch
                 }
 
@@ -390,10 +385,10 @@ class CartViewmodel @Inject constructor(
                 // Add item to this seller's cart
                 addItemToCart(item, sellerId, sellerName)
 
-                Log.d("CartViewModel", "Added item ${item.name} from seller $sellerName to cart")
+                Log.d(TAG, "Added item ${item.name} from seller $sellerName to cart")
             } catch (e: Exception) {
-                _error.value = "Failed to add item: ${e.message}"
-                Log.e("CartViewModel", "Failed to fetch and add item", e)
+                _error.value = CartError.FailedToFetchAndAddItem
+                Log.e(TAG, "Failed to fetch and add item", e)
             }
         }
     }
@@ -403,12 +398,20 @@ class CartViewmodel @Inject constructor(
 
         return try {
             // For each item in cart, check if seller still has enough quantity
-            currentCart.items.all { cartItem ->
+            val enough = currentCart.items.all { cartItem ->
                 val sellerItem = sellingRepository.readFromUser(sellerId, cartItem.id)
                 sellerItem != null && sellerItem.quantity >= cartItem.quantity
             }
+            if (!enough) {
+                Log.w(TAG, "Some items in cart are no longer available from seller $sellerId")
+                _error.value = CartError.ItemsUnavailable
+                false
+            } else {
+                true
+            }
         } catch (e: Exception) {
-            Log.e("CartViewModel", "Failed to check availability", e)
+            _error.value = CartError.FailedToCheckAvailability
+            Log.e(TAG, "Failed to check availability", e)
             false
         }
     }
@@ -420,8 +423,8 @@ class CartViewmodel @Inject constructor(
             val transactionKey = Pair(buyerId, sellerId)
 
             if (lastProcessedTransaction == transactionKey &&
-                (currentTime - lastProcessedTimestamp) < 3000) { // 3 second window
-                Log.w("CartViewModel", "Duplicate transaction detected, ignoring")
+                (currentTime - lastProcessedTimestamp) < TRANSACTION_PROCESSING_WINDOW_MS) { // 3 second window
+                Log.w(TAG, "Duplicate transaction detected, ignoring")
                 return Result.failure(Exception("Transaction already being processed"))
             }
 
@@ -440,9 +443,9 @@ class CartViewmodel @Inject constructor(
             val cartId = generateCartId(buyerId, sellerId)
             val buyerCart = cartRepository.readFromUser(buyerId, cartId)
 
-            Log.d("CartViewModel", "Completing purchase for buyer $buyerId from seller $sellerId")
-            Log.d("CartViewModel", "Generated cart ID: $cartId")
-            Log.d("CartViewModel", "Buyer cart: $buyerCart")
+            Log.d(TAG, "Completing purchase for buyer $buyerId from seller $sellerId")
+            Log.d(TAG, "Generated cart ID: $cartId")
+            Log.d(TAG, "Buyer cart: $buyerCart")
 
             if (buyerCart == null || buyerCart.items.isEmpty()) {
                 return Result.failure(Exception("Buyer's cart is empty or not found"))
@@ -536,16 +539,22 @@ class CartViewmodel @Inject constructor(
             // 6. Delete buyer's cart from BUYER'S collection
             cartRepository.deleteForUser(buyerId, cartId)
 
-            Log.d("CartViewModel", "Purchase completed: ${buyerCart.items.size} items for ${buyerCart.totalPrice} caps")
+            Log.d(TAG, "Purchase completed: ${buyerCart.items.size} items for ${buyerCart.totalPrice} caps")
             Result.success("Purchase completed successfully!")
 
         } catch (e: Exception) {
-            Log.e("CartViewModel", "Failed to complete purchase", e)
+            Log.e(TAG, "Failed to complete purchase", e)
             Result.failure(e)
         }
     }
 
     private fun calculateTotalPrice(items: List<SellingItem>): Int {
         return items.sumOf { it.valuePerUnit * it.quantity }
+    }
+
+    companion object {
+        private const val QR_CODE_SIZE = 512
+        private const val TRANSACTION_PROCESSING_WINDOW_MS = 3000L
+        private const val TAG = "CartViewModel"
     }
 }

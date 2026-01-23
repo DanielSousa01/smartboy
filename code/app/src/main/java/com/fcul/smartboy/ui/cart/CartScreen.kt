@@ -21,13 +21,16 @@ import androidx.compose.ui.window.Dialog
 import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.cart.Cart
 import com.fcul.smartboy.ui.cart.components.CartItemCard
+import androidx.compose.ui.platform.LocalContext
+import com.fcul.smartboy.ui.cart.vm.CartError
+import com.fcul.smartboy.ui.common.ErrorSnackbar
 
 @Composable
 fun CartScreen(
     currentCart: Cart?,
     isLoading: Boolean,
     qrCodeBitmap: Bitmap?,
-    error: String?,
+    error: CartError?,
     onRemoveItem: (Long) -> Unit,
     onUpdateQuantity: (Long, Int) -> Unit,
     onClearCart: () -> Unit,
@@ -36,6 +39,32 @@ fun CartScreen(
     onDismissQRCode: () -> Unit,
     onDismissError: () -> Unit
 ) {
+    val context = LocalContext.current
+    val errorMessage = when (error) {
+        is CartError.CartEmpty -> context.getString(R.string.error_cart_empty)
+        is CartError.ItemsUnavailable -> context.getString(R.string.error_cart_items_unavailable)
+        is CartError.ProfileLoadFailed -> context.getString(R.string.error_profile_load_failed)
+        is CartError.InsufficientCaps -> context.getString(
+            R.string.error_cart_insufficient_caps,
+            error.required,
+            error.available
+        )
+        is CartError.ItemNotFound -> context.getString(R.string.error_cart_item_not_found)
+        is CartError.ItemQuantityExceeded -> context.getString(
+            R.string.error_cart_item_quantity_exceeded,
+            error.itemName,
+            error.available
+        )
+        is CartError.FailedToAddItem -> context.getString(R.string.error_cart_failed_to_add_item)
+        is CartError.FailedToRemoveItem -> context.getString(R.string.error_cart_failed_to_remove_item)
+        is CartError.FailedToUpdateQuantity -> context.getString(R.string.error_cart_failed_to_update_quantity)
+        is CartError.FailedToClearCart -> context.getString(R.string.error_cart_failed_to_clear_cart)
+        is CartError.FailedToGenerateQRCode -> context.getString(R.string.error_cart_failed_to_generate_qr_code)
+        is CartError.FailedToCheckAvailability -> context.getString(R.string.error_failed_to_check_availability)
+        is CartError.FailedToFetchAndAddItem -> context.getString(R.string.error_cart_failed_to_fetch_and_add_item)
+        is CartError.Generic -> error.message ?: context.getString(R.string.error_generic)
+        else -> null
+    }
 
     Scaffold { paddingValues ->
         Box(
@@ -69,6 +98,11 @@ fun CartScreen(
                 }
             }
         }
+
+        ErrorSnackbar(
+            errorMessage = errorMessage,
+            onDismissError = onDismissError
+        )
     }
 
     // QR Code Dialog
@@ -78,20 +112,6 @@ fun CartScreen(
             totalPrice = currentCart?.totalPrice ?: 0,
             onDismiss = onDismissQRCode
         )
-    }
-
-    // Error Snackbar
-    error?.let { errorMessage ->
-        Snackbar(
-            modifier = Modifier.padding(16.dp),
-            action = {
-                TextButton(onClick = onDismissError) {
-                    Text(stringResource(R.string.dismiss))
-                }
-            }
-        ) {
-            Text(errorMessage)
-        }
     }
 }
 
@@ -320,5 +340,9 @@ private fun QRCodeDialog(
                 }
             }
         }
+    }
+
+    fun handleError() {
+
     }
 }

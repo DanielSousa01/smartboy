@@ -1,6 +1,7 @@
 package com.fcul.smartboy.repository
 
 import android.net.Uri
+import android.util.Log
 import com.fcul.smartboy.domain.chat.Conversation
 import com.fcul.smartboy.domain.chat.Message
 import com.fcul.smartboy.repository.base.Path
@@ -9,7 +10,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -21,7 +21,6 @@ import javax.inject.Inject
 class ChatRepository @Inject constructor(
     private val auth: FirebaseAuth,
     private val database: FirebaseDatabase,
-    private val firestore: FirebaseFirestore,
     private val storage: FirebaseStorage
 ) {
     private val messagesRef get() = database.getReference(Path.MESSAGES.path)
@@ -59,6 +58,7 @@ class ChatRepository @Inject constructor(
     fun observeConversation(otherUserId: String): Flow<List<Message>> = callbackFlow {
         val currentUserId = auth.currentUser?.uid ?: run {
             close()
+            Log.e(TAG, "observeConversation: No authenticated user found.")
             return@callbackFlow
         }
 
@@ -74,6 +74,7 @@ class ChatRepository @Inject constructor(
             }
 
             override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "observeConversation:onCancelled", error.toException())
                 close(error.toException())
             }
         }
@@ -85,6 +86,7 @@ class ChatRepository @Inject constructor(
     fun observeConversations(): Flow<List<Conversation>> = callbackFlow {
         val currentUserId = auth.currentUser?.uid ?: run {
             close()
+            Log.e(TAG, "observeConversations: No authenticated user found.")
             return@callbackFlow
         }
 
@@ -128,6 +130,7 @@ class ChatRepository @Inject constructor(
             }
 
             override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "observeConversations:onCancelled", error.toException())
                 close(error.toException())
             }
         }
@@ -171,8 +174,13 @@ class ChatRepository @Inject constructor(
                 imageUrl = data["imageUrl"] as? String
             )
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse Message from map: $data", e)
             null
         }
+    }
+
+    companion object {
+        private const val TAG = "ChatRepository"
     }
 }
 

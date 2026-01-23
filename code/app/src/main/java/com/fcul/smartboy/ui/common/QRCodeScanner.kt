@@ -1,4 +1,4 @@
-package com.fcul.smartboy.utils
+package com.fcul.smartboy.ui.common
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import com.fcul.smartboy.R
+import com.fcul.smartboy.utils.QRCodeAnalyzer
 
 @Composable
 fun QRCodeScanner(

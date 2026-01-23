@@ -6,16 +6,12 @@ import com.fcul.smartboy.repository.base.CRUD
 import com.fcul.smartboy.repository.base.Path
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 
 class MapRouteRepository(
     private val user: FirebaseUser,
-    private val db: FirebaseDatabase,
     private val firestore: FirebaseFirestore,
-    private val storage: FirebaseStorage
 ) : CRUD<MapRoute, Long> {
 
     private val routesCol get() = firestore.collection(Path.ROUTES.path)
@@ -118,6 +114,7 @@ class MapRouteRepository(
                 data["longitude"] as Double
             )
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse LatLng from map: $data", e)
             null
         }
     }

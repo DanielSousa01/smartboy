@@ -3,6 +3,8 @@ package com.fcul.smartboy.utils
 import android.location.Location
 import com.fcul.smartboy.domain.user.MeasurementUnit
 import com.google.android.gms.maps.model.LatLng
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 /**
@@ -36,6 +38,32 @@ object MeasurementUtils {
                     String.format(Locale.US, "%.0f ft", distanceFeet)
                 }
             }
+        }
+    }
+
+    /**
+     * Format a Date object to a readable string
+     * @param date Date object
+     * @return Formatted date string (e.g., "Jan 01, 2024 14:30")
+     */
+    fun formatDate(date: Date): String {
+        val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+        return dateFormat.format(date)
+    }
+
+    /**
+     * Format duration in seconds to a human-readable string
+     * @param seconds Duration in seconds
+     * @return Formatted string (e.g., "1h 30m" or "45 min")
+     */
+    fun formatDuration(seconds: Int): String {
+        val durationMins = seconds / 60
+        return if (durationMins >= 60) {
+            val hours = durationMins / 60
+            val mins = durationMins % 60
+            "${hours}h ${mins}m"
+        } else {
+            "$durationMins min"
         }
     }
 

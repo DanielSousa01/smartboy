@@ -1,5 +1,6 @@
-package com.fcul.smartboy.ui.profile
+package com.fcul.smartboy.ui.profile.vm
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fcul.smartboy.domain.user.Profile
@@ -8,27 +9,31 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ProfileViewmodel @Inject constructor(
+class ProfileViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val auth: FirebaseAuth
 ) : ViewModel() {
-
     private val _profile = MutableStateFlow<Profile?>(null)
-    val profile: StateFlow<Profile?> = _profile
+    val profile: StateFlow<Profile?> = _profile.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+    private val _error = MutableStateFlow<ProfileError?>(null)
+    val error: StateFlow<ProfileError?> = _error.asStateFlow()
 
     init {
         loadProfile()
         observeProfile()
+    }
+
+    fun onDismissError() {
+        _error.value = null
     }
 
     private fun observeProfile() {
@@ -38,6 +43,9 @@ class ProfileViewmodel @Inject constructor(
             profileRepository.observeProfile(user.uid).collect { profile ->
                 if (profile != null) {
                     _profile.value = profile
+                } else {
+                    _error.value = ProfileError.FailedToLoadProfile
+                    Log.e(TAG, "Observed null profile for user ${user.uid})")
                 }
             }
         }
@@ -51,17 +59,16 @@ class ProfileViewmodel @Inject constructor(
                 _isLoading.value = true
                 val userProfile = profileRepository.read(user.uid)
                 _profile.value = userProfile
-                _error.value = null
             } catch (e: Exception) {
-                _error.value = "Failed to load profile: ${e.message}"
+                _error.value = ProfileError.FailedToLoadProfile
+                Log.e(TAG, "Error loading profile", e)
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun refresh() {
-        loadProfile()
+    companion object {
+        private const val TAG = "ProfileViewmodel"
     }
 }
-

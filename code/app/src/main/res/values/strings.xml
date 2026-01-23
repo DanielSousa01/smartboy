@@ -16,6 +16,7 @@
     <string name="no_items_in_category">No items in this category</string>
     <string name="messages">Messages</string>
     <string name="sign_in_failed">There was an error signing in</string>
+    <string name="map_on_route">Currently en route.</string>
     <string name="map_permissions_title">Location Permission Required</string>
     <string name="map_permissions_description">This app requires location and activity recognition permissions to function properly. Location is needed for the map, and activity recognition is required for step counting and health features.</string>
     <string name="grant_permission">Grant Permission</string>
@@ -42,12 +43,13 @@
     <string name="start_route">Start route</string>
     <string name="clear_selected_checkpoint">Clear selected checkpoint</string>
     <string name="open_settings">Open settings</string>
+    <string name="rad_point">Radiation Zone</string>
     <string name="rad_resistance">Radiation resistance</string>
     <string name="rad_active_rad_x">Active Rad-X Effect</string>
     <string name="rad_alert">Radiation Alert</string>
     <string name="rad_alert_message_1">You have entered a radiation zone!</string>
-    <string name="rad_alert_message_2">Level:</string>
-    <string name="rad_alert_message_3">Radius</string>
+    <string name="rad_alert_message_2">Level: </string>
+    <string name="rad_alert_message_3">Radius: </string>
     <string name="confirm" translatable="false">OK</string>
     <string name="rad_add_radiation_point">Add Radiation Point</string>
     <string name="location_format" translatable="false">Location: %1$s, %2$s</string>

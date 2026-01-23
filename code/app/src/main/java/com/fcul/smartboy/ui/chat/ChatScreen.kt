@@ -37,6 +37,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -58,6 +59,8 @@ import coil.compose.AsyncImage
 import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.chat.Conversation
 import com.fcul.smartboy.domain.chat.Message
+import com.fcul.smartboy.ui.chat.vm.ChatError
+import com.fcul.smartboy.ui.common.ErrorSnackbar
 import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -66,45 +69,15 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConversationsScreen(
-    viewModel: ChatViewmodel,
+    conversations: List<Conversation>,
+    isLoading: Boolean,
     onConversationClick: (Conversation) -> Unit
 ) {
-    val conversations by viewModel.conversations.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-
     Scaffold { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            error?.let {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.weight(1f)
-                        )
-                        TextButton(onClick = { viewModel.clearError() }) {
-                            Text(stringResource(R.string.dismiss))
-                        }
-                    }
-                }
-            }
-
             if (isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -211,18 +184,16 @@ fun ChatMessagesScreen(
     messages: List<Message>,
     messageText: String,
     isLoading: Boolean,
-    error: String?,
+    error: ChatError?,
     userCaps: Int,
     userId: String,
     userName: String,
     onSendImage: (Uri, String) -> Unit,
     onStartChat: (String) -> Unit,
-    onClearError: () -> Unit,
     onSendMessage: (String) -> Unit,
     onUpdateMessageText: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
-
     val listState = rememberLazyListState()
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
@@ -230,6 +201,15 @@ fun ChatMessagesScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { onSendImage(it, userName) }
+    }
+
+    val errorMessage = when (error) {
+        is ChatError.MessageSendFailed -> stringResource(R.string.error_chat_message_send_failed)
+        is ChatError.MessageLoadFailed -> stringResource(R.string.error_chat_message_load_failed)
+        is ChatError.ConversationLoadFailed -> stringResource(R.string.error_chat_conversation_load_failed)
+        is ChatError.MessageImageUploadFailed -> stringResource(R.string.error_chat_image_upload_failed)
+        is ChatError.Generic -> error.message ?: stringResource(R.string.error_generic)
+        null -> null
     }
 
     LaunchedEffect(userId) {
@@ -296,34 +276,12 @@ fun ChatMessagesScreen(
                 .padding(padding)
                 .padding(8.dp)
         ) {
-            error?.let {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.weight(1f)
-                        )
-                        TextButton(onClick = { onClearError() }) {
-                            Text(stringResource(R.string.dismiss))
-                        }
-                    }
-                }
-            }
-
-            LazyColumn {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                state = listState,
+            ) {
                 items(messages) { message ->
                     MessageItem(
                         message = message,
@@ -371,6 +329,10 @@ fun ChatMessagesScreen(
                 }
             }
         }
+
+        ErrorSnackbar(
+            errorMessage = errorMessage
+        )
     }
 }
 

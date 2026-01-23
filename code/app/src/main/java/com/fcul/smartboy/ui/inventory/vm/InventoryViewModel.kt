@@ -1,17 +1,16 @@
-package com.fcul.smartboy.ui.inventory
+package com.fcul.smartboy.ui.inventory.vm
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.fcul.smartboy.domain.inventory.Category
 import com.fcul.smartboy.domain.inventory.Item
 import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.repository.InventoryRepository
 import com.fcul.smartboy.repository.ProfileRepository
 import com.fcul.smartboy.repository.SellingRepository
-import com.fcul.smartboy.utils.SampleItems
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,23 +19,31 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class InventoryViewmodel @Inject constructor(
+class InventoryViewModel @Inject constructor(
     private val inventoryRepository: InventoryRepository,
     private val sellingRepository: SellingRepository,
     private val profileRepository: ProfileRepository,
     private val auth: FirebaseAuth
 ) : ViewModel() {
     private val _items = MutableStateFlow<List<Item>>(emptyList())
-    private val _sellingItems = MutableStateFlow<List<SellingItem>>(emptyList())
-    private val _isLoading = MutableStateFlow(false)
-
     val items: StateFlow<List<Item>> = _items.asStateFlow()
+
+    private val _sellingItems = MutableStateFlow<List<SellingItem>>(emptyList())
     val sellingItems: StateFlow<List<SellingItem>> = _sellingItems.asStateFlow()
+
+    private val _error = MutableStateFlow<InventoryError?>(null)
+    val error: StateFlow<InventoryError?> = _error.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     init {
         observeInventory()
         observeSellingItems()
+    }
+
+    fun onDismissError() {
+        _error.value = null
     }
 
     private fun observeInventory() {
@@ -48,7 +55,8 @@ class InventoryViewmodel @Inject constructor(
                     _isLoading.value = false
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                _error.value = InventoryError.FailedToObserveInventory
+                Log.e(TAG, "Error observing inventory: ${e.message}", e)
                 _isLoading.value = false
             }
         }
@@ -63,7 +71,8 @@ class InventoryViewmodel @Inject constructor(
                     _isLoading.value = false
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                _error.value = InventoryError.FailedToObserveSellingItems
+                Log.e(TAG, "Error observing selling items: ${e.message}", e)
                 _isLoading.value = false
             }
         }
@@ -72,14 +81,24 @@ class InventoryViewmodel @Inject constructor(
     fun addItem(item: Item) {
         _items.update { it + item }
         viewModelScope.launch {
-            inventoryRepository.create(item)
+            try {
+                inventoryRepository.create(item)
+            } catch (e: Exception) {
+                _error.value = InventoryError.FailedToAddItem
+                Log.e(TAG, "Error adding item: ${e.message}", e)
+            }
         }
     }
 
     fun removeItem(item: Long) {
         _items.update { list -> list.filter { it.id != item } }
         viewModelScope.launch {
-            inventoryRepository.delete(item)
+            try {
+                inventoryRepository.delete(item)
+            } catch (e: Exception) {
+                _error.value = InventoryError.FailedToRemoveItem
+                Log.e(TAG, "Error removing item: ${e.message}", e)
+            }
         }
     }
 
@@ -112,7 +131,12 @@ class InventoryViewmodel @Inject constructor(
             val newItem = item.copyItem(quantity = quantity)
             _items.update { list -> list.map { if (it.id == itemId) newItem else it } }
             viewModelScope.launch {
-                inventoryRepository.update(itemId, newItem)
+                try {
+                    inventoryRepository.update(itemId, newItem)
+                } catch (e: Exception) {
+                    _error.value = InventoryError.FailedToUpdateItem
+                    Log.e(TAG, "Error updating item quantity: ${e.message}", e)
+                }
             }
         }
     }
@@ -137,7 +161,6 @@ class InventoryViewmodel @Inject constructor(
             } else if (quantityDiff > 0) {
                 addItem(newSellingItem.toItem())
             }
-
 
             viewModelScope.launch {
                 sellingRepository.update(itemId, newSellingItem)
@@ -186,44 +209,53 @@ class InventoryViewmodel @Inject constructor(
             && weapon.ammoMax != null && weapon.ammoLoaded != null
             && weapon.ammoLoaded < weapon.ammoMax
         ) {
-            Log.d("InventoryViewmodel", "Reloading ammo for weapon with ID: ${weapon.name}")
+            Log.d(TAG, "Reloading ammo for weapon with ID: ${weapon.name}")
 
             val ammo = _items.value.find { it.id == weapon.ammoId }
 
             if (ammo is Item.Ammo) {
-                if (ammo.quantity <= weapon.ammoMax - weapon.ammoLoaded) {
-                    val newWeapon = weapon.copyItem(ammoLoaded = weapon.ammoLoaded + ammo.quantity)
-                    removeItem(ammo.id)
-                    _items.update { list ->
-                        list.map { if (it.id == itemId) newWeapon else it }
-                    }
-                    viewModelScope.launch {
-                        inventoryRepository.update(itemId, newWeapon)
-                    }
-
-                } else {
-                    val newAmmo =
-                        ammo.copyItem(quantity = ammo.quantity - (weapon.ammoMax - weapon.ammoLoaded))
+                val ammoNeeded = weapon.ammoMax - weapon.ammoLoaded
+                if (ammo.quantity >= ammoNeeded) {
+                    // Enough ammo to fully reload
                     val newWeapon = weapon.copyItem(ammoLoaded = weapon.ammoMax)
+                    val newAmmo = ammo.copyItem(quantity = ammo.quantity - ammoNeeded)
 
                     _items.update { list ->
                         list.map {
                             when (it.id) {
+                                weapon.id -> newWeapon
                                 ammo.id -> newAmmo
-                                itemId -> newWeapon
                                 else -> it
                             }
+                        }.filterNot { it is Item.Ammo && it.quantity == 0 }
+                    }
+                    viewModelScope.launch {
+                        inventoryRepository.update(itemId, newWeapon)
+                        if (newAmmo.quantity > 0) {
+                            inventoryRepository.update(ammo.id, newAmmo)
+                        } else {
+                            inventoryRepository.delete(ammo.id)
                         }
+                    }
+                } else {
+                    // Not enough ammo to fully reload
+                    val newWeapon = weapon.copyItem(ammoLoaded = weapon.ammoLoaded + ammo.quantity)
+                    _items.update { list ->
+                        list.map {
+                            if (it.id == weapon.id) newWeapon else it
+                        }.filter { it.id != ammo.id }
+                    }
+                    viewModelScope.launch {
+                        inventoryRepository.update(itemId, newWeapon)
+                        inventoryRepository.delete(ammo.id)
                     }
                 }
             }
-
         }
     }
 
     fun sellItem(itemId: Long, quantity: Int, value: Int) {
         val item = _items.value.find { it.id == itemId }
-
         if (item != null) {
             val newSellingItem = item.toSellingItem(quantity, value)
 
@@ -232,9 +264,13 @@ class InventoryViewmodel @Inject constructor(
             } else {
                 changeItemQuantity(itemId, item.quantity - quantity)
             }
-
             viewModelScope.launch {
-                sellingRepository.create(newSellingItem)
+                try {
+                    sellingRepository.create(newSellingItem)
+                } catch (e: Exception) {
+                    _error.value = InventoryError.FailedToSellItem
+                    Log.e(TAG, "Error selling item: ${e.message}", e)
+                }
             }
         }
     }
@@ -243,8 +279,15 @@ class InventoryViewmodel @Inject constructor(
         val userId = auth.currentUser?.uid ?: return false
         val item = _items.value.find { it.id == itemId }
 
-        if (item == null || item.quantity <= 0) {
-            Log.w("InventoryViewmodel", "Cannot use item: not found or quantity is 0")
+        if (item == null) {
+            Log.w(TAG, "Cannot use item: not found")
+            _error.value = InventoryError.ItemNotFound
+            return false
+        }
+
+        if (item.quantity <= 0) {
+            Log.w(TAG, "Cannot use item, quantity is 0")
+            _error.value = InventoryError.QuantityZero
             return false
         }
 
@@ -257,12 +300,12 @@ class InventoryViewmodel @Inject constructor(
                         if (success) {
                             changeItemQuantity(itemId, item.quantity - 1)
                             Log.i(
-                                "InventoryViewmodel",
+                                TAG,
                                 "RadAway used: reduced radiation by $RADAWAY_REDUCTION Sv"
                             )
                         } else {
                             Log.w(
-                                "InventoryViewmodel",
+                                TAG,
                                 "RadAway use failed: no radiation to remove"
                             )
                         }
@@ -278,28 +321,29 @@ class InventoryViewmodel @Inject constructor(
                         if (success) {
                             changeItemQuantity(itemId, item.quantity - 1)
                             Log.i(
-                                "InventoryViewmodel",
+                                TAG,
                                 "Rad-X used: increased resistance by ${RADX_RESISTANCE_BOOST * 100}%"
                             )
 
                             // Schedule resistance decay after duration
                             viewModelScope.launch {
-                                kotlinx.coroutines.delay(RADX_DURATION_MS)
+                                delay(RADX_DURATION_MS)
                                 profileRepository.decreaseRadiationResistance(
                                     userId,
                                     RADX_RESISTANCE_BOOST
                                 )
-                                Log.i("InventoryViewmodel", "Rad-X effect expired")
+                                Log.i(TAG, "Rad-X effect expired")
                             }
                         }
                     }
 
                     else -> {
-                        Log.w("InventoryViewmodel", "Item ${item.name} has no use effect")
+                        Log.w(TAG, "Item ${item.name} has no use effect")
                     }
                 }
             } catch (e: Exception) {
-                Log.e("InventoryViewmodel", "Failed to use item: ${e.message}", e)
+                Log.e(TAG, "Failed to use item: ${e.message}", e)
+                _error.value = InventoryError.ItemFailToUse
             }
         }
         return true
@@ -309,7 +353,6 @@ class InventoryViewmodel @Inject constructor(
         private const val RADAWAY_REDUCTION = 50.0 // Reduces 50 Sv of radiation
         private const val RADX_RESISTANCE_BOOST = 0.5 // 50% radiation resistance
         private const val RADX_DURATION_MS = 300000L // 5 minutes
+        private const val TAG = "InventoryViewmodel"
     }
 }
-
-

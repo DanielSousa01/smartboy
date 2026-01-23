@@ -26,15 +26,25 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.fcul.smartboy.R
 import com.fcul.smartboy.domain.user.MeasurementUnit
+import com.fcul.smartboy.domain.user.Profile
+import com.fcul.smartboy.ui.common.ErrorSnackbar
+import com.fcul.smartboy.ui.profile.vm.ProfileError
 
 @Composable
 fun SettingsScreen(
+    profile: Profile?,
+    error: ProfileError?,
+    onUpdateMeasurementUnit: (MeasurementUnit) -> Unit,
     onBackClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: SettingsViewModel = hiltViewModel()
+    onDismissError: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val profile by viewModel.profile.collectAsState()
     val currentUnit = profile?.preferences?.measurementUnit ?: MeasurementUnit.METRIC
+
+    val errorMessage = when (error) {
+        is ProfileError.FailedToUpdateProfile -> stringResource(R.string.error_profile_update_preferences)
+        else -> stringResource(R.string.error_generic)
+    }
 
     Scaffold(
         topBar = {
@@ -69,13 +79,13 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { viewModel.updateMeasurementUnit(MeasurementUnit.METRIC) }
+                    .clickable { onUpdateMeasurementUnit(MeasurementUnit.METRIC) }
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
                     selected = currentUnit == MeasurementUnit.METRIC,
-                    onClick = { viewModel.updateMeasurementUnit(MeasurementUnit.METRIC) }
+                    onClick = { onUpdateMeasurementUnit(MeasurementUnit.METRIC) }
                 )
                 Text(
                     text = stringResource(R.string.metric),
@@ -88,13 +98,13 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { viewModel.updateMeasurementUnit(MeasurementUnit.IMPERIAL) }
+                    .clickable { onUpdateMeasurementUnit(MeasurementUnit.IMPERIAL) }
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(
                     selected = currentUnit == MeasurementUnit.IMPERIAL,
-                    onClick = { viewModel.updateMeasurementUnit(MeasurementUnit.IMPERIAL) }
+                    onClick = { onUpdateMeasurementUnit(MeasurementUnit.IMPERIAL) }
                 )
                 Text(
                     text = stringResource(R.string.imperial),
@@ -105,6 +115,11 @@ fun SettingsScreen(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         }
+
+        ErrorSnackbar(
+            errorMessage = errorMessage,
+            onDismissError = onDismissError
+        )
     }
 }
 

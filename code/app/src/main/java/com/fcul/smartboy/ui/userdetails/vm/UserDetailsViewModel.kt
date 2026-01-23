@@ -1,4 +1,4 @@
-package com.fcul.smartboy.ui.userdetails
+package com.fcul.smartboy.ui.userdetails.vm
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -7,37 +7,38 @@ import com.fcul.smartboy.domain.inventory.SellingItem
 import com.fcul.smartboy.domain.user.Profile
 import com.fcul.smartboy.repository.ProfileRepository
 import com.fcul.smartboy.repository.SellingRepository
-import com.google.firebase.firestore.FirebaseFirestore
+import com.fcul.smartboy.ui.profile.vm.ProfileError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class UserDetailsViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val sellingRepository: SellingRepository,
-    private val firestore: FirebaseFirestore
 ) : ViewModel() {
-
     private val _profile = MutableStateFlow<Profile?>(null)
-    val profile: StateFlow<Profile?> = _profile
+    val profile: StateFlow<Profile?> = _profile.asStateFlow()
 
     private val _sellingItems = MutableStateFlow<List<SellingItem>>(emptyList())
-    val sellingItems: StateFlow<List<SellingItem>> = _sellingItems
+    val sellingItems: StateFlow<List<SellingItem>> = _sellingItems.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+    private val _error = MutableStateFlow<ProfileError?>(null)
+    val error: StateFlow<ProfileError?> = _error.asStateFlow()
+
+    fun onDismissError() {
+        _error.value = null
+    }
 
     fun loadUserProfile(userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            _error.value = null
 
             try {
                 // Load profile
@@ -47,10 +48,10 @@ class UserDetailsViewModel @Inject constructor(
                 // Load selling items
                 loadSellingItems(userId)
 
-                Log.d("UserDetailsViewModel", "Loaded profile for user: $userId")
+                Log.d(TAG, "Loaded profile for user: $userId")
             } catch (e: Exception) {
-                _error.value = e.message ?: "Unknown error"
-                Log.e("UserDetailsViewModel", "Failed to load user profile", e)
+                _error.value = ProfileError.FailedToLoadProfile
+                Log.e(TAG, "Failed to load user profile", e)
             } finally {
                 _isLoading.value = false
             }
@@ -59,22 +60,21 @@ class UserDetailsViewModel @Inject constructor(
 
     private suspend fun loadSellingItems(userId: String) {
         try {
-            val snapshot = firestore.collection("users")
-                .document(userId)
-                .collection("selling")
-                .get()
-                .await()
-
-            val items = snapshot.documents.mapNotNull { doc ->
-                doc.toObject(com.fcul.smartboy.domain.inventory.SellingItemEntity::class.java)
-                    ?.toSellingItem()
+            sellingRepository.observeSellingItemsForUser(
+                userId
+            ).collect {
+                _sellingItems.value = it
+                _isLoading.value = false
+                Log.d(TAG, "Loaded ${it.size} selling items for user: $userId")
             }
-
-            _sellingItems.value = items
-            Log.d("UserDetailsViewModel", "Loaded ${items.size} selling items for user: $userId")
         } catch (e: Exception) {
-            Log.e("UserDetailsViewModel", "Failed to load selling items", e)
+            _error.value = ProfileError.FailedToLoadSellingItems
+            Log.e(TAG, "Failed to load selling items", e)
             _sellingItems.value = emptyList()
         }
+    }
+
+    companion object {
+        private const val TAG = "UserDetailsViewModel"
     }
 }
