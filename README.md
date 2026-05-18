@@ -1,5 +1,13 @@
 # SmartBoy 
 
+<p>
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?logo=kotlin&logoColor=white" />
+  <img alt="Android" src="https://img.shields.io/badge/Android-SDK%2036-3DDC84?logo=android&logoColor=white" />
+  <img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-UI-4285F4?logo=jetpackcompose&logoColor=white" />
+  <img alt="Gradle" src="https://img.shields.io/badge/Gradle-9.1.0%20(Kotlin%20DSL)-02303A?logo=gradle&logoColor=white" />
+  <img alt="License" src="https://img.shields.io/badge/License-Not%20specified-lightgrey" />
+</p>
+
 ### Faculdade de Ciências da Universidade de Lisboa
 ### Master's in Computer Engineering
 #### Mobile Computing Course - Winter Semester 2025/2026
